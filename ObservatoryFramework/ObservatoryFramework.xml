@@ -4,54 +4,54 @@
         <name>ObservatoryFramework</name>
     </assembly>
     <members>
-        <member name="T:Observatory.Framework.SettingDisplayName">
+        <member name="T:Observatory.Framework.SettingDisplayNameAttribute">
             <summary>
             Specifies text to display as the name of the setting in the UI instead of the property name.
             </summary>
         </member>
-        <member name="M:Observatory.Framework.SettingDisplayName.#ctor(System.String)">
+        <member name="M:Observatory.Framework.SettingDisplayNameAttribute.#ctor(System.String)">
             <summary>
             Specifies text to display as the name of the setting in the UI instead of the property name.
             </summary>
             <param name="name">Name to display</param>
         </member>
-        <member name="P:Observatory.Framework.SettingDisplayName.DisplayName">
+        <member name="P:Observatory.Framework.SettingDisplayNameAttribute.DisplayName">
             <summary>
             Accessor to get/set displayed name.
             </summary>
         </member>
-        <member name="T:Observatory.Framework.SettingIgnore">
+        <member name="T:Observatory.Framework.SettingIgnoreAttribute">
             <summary>
             Indicates that the property should not be displayed to the user in the UI.
             </summary>
         </member>
-        <member name="T:Observatory.Framework.SettingNumericUseSlider">
+        <member name="T:Observatory.Framework.SettingNumericUseSliderAttribute">
             <summary>
             Indicates numeric properly should use a slider control instead of a numeric textbox with roller.
             </summary>
         </member>
-        <member name="T:Observatory.Framework.SettingBackingValue">
+        <member name="T:Observatory.Framework.SettingBackingValueAttribute">
             <summary>
             Specify backing value used by Dictionary&lt;string, object&gt; to indicate selected option.
             </summary>
         </member>
-        <member name="M:Observatory.Framework.SettingBackingValue.#ctor(System.String)">
+        <member name="M:Observatory.Framework.SettingBackingValueAttribute.#ctor(System.String)">
             <summary>
             Specify backing value used by Dictionary&lt;string, object&gt; to indicate selected option.
             </summary>
             <param name="property">Property name for backing value.</param>
         </member>
-        <member name="P:Observatory.Framework.SettingBackingValue.BackingProperty">
+        <member name="P:Observatory.Framework.SettingBackingValueAttribute.BackingProperty">
             <summary>
             Accessor to get/set backing value property name.
             </summary>
         </member>
-        <member name="T:Observatory.Framework.SettingNumericBounds">
+        <member name="T:Observatory.Framework.SettingNumericBoundsAttribute">
             <summary>
             Specify bounds for numeric inputs.
             </summary>
         </member>
-        <member name="M:Observatory.Framework.SettingNumericBounds.#ctor(System.Double,System.Double,System.Double)">
+        <member name="M:Observatory.Framework.SettingNumericBoundsAttribute.#ctor(System.Double,System.Double,System.Double)">
             <summary>
             Specify bounds for numeric inputs.
             </summary>
@@ -59,17 +59,17 @@
             <param name="maximum">Maximum allowed value.</param>
             <param name="increment">Increment between allowed values in slider/roller inputs.</param>
         </member>
-        <member name="P:Observatory.Framework.SettingNumericBounds.Minimum">
+        <member name="P:Observatory.Framework.SettingNumericBoundsAttribute.Minimum">
             <summary>
             Minimum allowed value.
             </summary>
         </member>
-        <member name="P:Observatory.Framework.SettingNumericBounds.Maximum">
+        <member name="P:Observatory.Framework.SettingNumericBoundsAttribute.Maximum">
             <summary>
             Maxunyn allowed value.
             </summary>
         </member>
-        <member name="P:Observatory.Framework.SettingNumericBounds.Increment">
+        <member name="P:Observatory.Framework.SettingNumericBoundsAttribute.Increment">
             <summary>
             Increment between allowed values in slider/roller inputs.
             </summary>

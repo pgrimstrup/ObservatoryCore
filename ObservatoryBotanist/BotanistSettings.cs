@@ -9,7 +9,7 @@ namespace Observatory.Botanist
 {
     class BotanistSettings
     {
-        [SettingDisplayName("Enable Sampler Status Overlay")]
+        [SettingDisplayNameAttribute("Enable Sampler Status Overlay")]
         public bool OverlayEnabled { get; set; }
     }
 }

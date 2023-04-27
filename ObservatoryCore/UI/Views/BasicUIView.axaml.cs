@@ -910,7 +910,7 @@ namespace Observatory.UI.Views
                 gridPanel.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(0, GridUnitType.Auto) });
                 gridPanel.AddControl(expander, nextRow, 0, 3);
 
-                var nonIgnoredSettings = displayedSettings.Where(s => !Attribute.IsDefined(s.Key, typeof(SettingIgnore)));
+                var nonIgnoredSettings = displayedSettings.Where(s => !Attribute.IsDefined(s.Key, typeof(SettingIgnoreAttribute)));
 
                 foreach (var setting in nonIgnoredSettings)
                 {
@@ -962,8 +962,8 @@ namespace Observatory.UI.Views
                             // 2) A numeric up/down (default otherwise, and is unbounded by default).
                             // Bounds for both can be set via the SettingNumericBounds attribute, only the up/down uses Increment.
                             Control intControl;
-                            SettingNumericBounds bounds = (SettingNumericBounds)System.Attribute.GetCustomAttribute(setting.Key, typeof(SettingNumericBounds));
-                            if (System.Attribute.IsDefined(setting.Key, typeof(SettingNumericUseSlider)))
+                            SettingNumericBoundsAttribute bounds = (SettingNumericBoundsAttribute)System.Attribute.GetCustomAttribute(setting.Key, typeof(SettingNumericBoundsAttribute));
+                            if (System.Attribute.IsDefined(setting.Key, typeof(SettingNumericUseSliderAttribute)))
                             {
                                 // TODO: Suss the contents of this block into a function to share with non-integral numeric types as well?
                                 Slider slider = new()
@@ -1097,7 +1097,7 @@ namespace Observatory.UI.Views
                             break;
                         case Dictionary<string, object> dictSetting:
 
-                            var backingValueName = (SettingBackingValue)Attribute.GetCustomAttribute(setting.Key, typeof(SettingBackingValue));
+                            var backingValueName = (SettingBackingValueAttribute)Attribute.GetCustomAttribute(setting.Key, typeof(SettingBackingValueAttribute));
 
                             var backingValue = from s in displayedSettings
                                                where s.Value == backingValueName.BackingProperty
@@ -1138,35 +1138,6 @@ namespace Observatory.UI.Views
                     }
                 }
             }
-        }
-
-        private string GetStatusText(PluginManagement.PluginManager.PluginStatus status)
-        {
-            string statusText;
-
-            switch (status)
-            {
-                case PluginManagement.PluginManager.PluginStatus.Signed:
-                    statusText = "Signed";
-                    break;
-                case PluginManagement.PluginManager.PluginStatus.Unsigned:
-                    statusText = "Unsigned";
-                    break;
-                case PluginManagement.PluginManager.PluginStatus.InvalidSignature:
-                    statusText = "Signature Invalid";
-                    break;
-                case PluginManagement.PluginManager.PluginStatus.InvalidPlugin:
-                    statusText = "No Interface";
-                    break;
-                case PluginManagement.PluginManager.PluginStatus.InvalidLibrary:
-                    statusText = "Invalid Library";
-                    break;
-                default:
-                    statusText = "Unknown";
-                    break;
-            }
-
-            return statusText;
         }
 
         //From https://stackoverflow.com/questions/5796383/insert-spaces-between-words-on-a-camel-cased-token

@@ -6,140 +6,160 @@ using NetCoreAudio;
 using System.Threading;
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Collections.Concurrent;
+using Observatory.Framework.Files.ParameterTypes;
 
 namespace Observatory.Herald
 {
+    class HeraldQueueItem
+    {
+        public NotificationArgs Args;
+        public string SelectedVoice;
+        public string SelectedStyle;
+        public string SelectedRate;
+        public byte Volume;
+    }
+
     class HeraldQueue
     {
-        private Queue<NotificationArgs> notifications;
-        private bool processing;
-        private string voice;
-        private string style;
-        private string rate;
-        private byte volume;
+        private BlockingCollection<HeraldQueueItem> notifications;
         private SpeechRequestManager speechManager;
         private Player audioPlayer;
         private Action<Exception, String> ErrorLogger;
+        private Task queueTask;
+        private CancellationTokenSource CancellationToken;
 
         public HeraldQueue(SpeechRequestManager speechManager, Action<Exception, String> errorLogger)
         {
             this.speechManager = speechManager;
-            processing = false;
             notifications = new();
             audioPlayer = new();
             ErrorLogger = errorLogger;
+            CancellationToken = new CancellationTokenSource();
+            ProcessQueueAsync();
         }
 
 
         internal void Enqueue(NotificationArgs notification, string selectedVoice, string selectedStyle = "", string selectedRate = "", int volume = 75)
         {
-            voice = selectedVoice;
-            style = selectedStyle;
-            rate = selectedRate;
-            // Ignore invalid values; assume default.
-            volume = volume >= 0 && volume <= 100 ? volume : 75;
+            HeraldQueueItem item = new HeraldQueueItem {
+                Args = notification,
+                SelectedVoice = selectedVoice,
+                SelectedStyle = selectedStyle,
+                SelectedRate = selectedRate,
+                Volume = (byte)(volume >= 0 && volume <= 100 ? volume : 75)
+            };
 
             // Volume is perceived logarithmically, convert to exponential curve
             // to make perceived volume more in line with value set.
-            this.volume = ((byte)System.Math.Floor(System.Math.Pow(volume / 100.0, 2.0) * 100));
+            item.Volume = ((byte)Math.Floor(Math.Pow(item.Volume / 100.0, 2.0) * 100));
 
-            Debug.WriteLine("Attempting to de-dupe notification titles against '{0}': '{1}'",
-                notification.Title.Trim().ToLower(),
-                String.Join(',', notifications.Select(n => n.Title.Trim().ToLower())));
-
-            if (notifications.Where(n => n.Title.Trim().ToLower() == notification.Title.Trim().ToLower()).Any())
-            {
-                // Suppress title.
-                notification.Suppression |= NotificationSuppression.Title;
-            }
-            notifications.Enqueue(notification);
-
-            if (!processing)
-            {
-                processing = true;
-                ProcessQueueAsync();
-            }
+            notifications.Add(item);
         }
 
-        private async void ProcessQueueAsync()
+        private void ProcessQueueAsync()
         {
-            await Task.Factory.StartNew(ProcessQueue);
+            queueTask = Task.Run(ProcessQueue);
         }
 
-        private void ProcessQueue()
+        public void Cancel()
         {
-            Thread.Sleep(200); // Allow time for other notifications to arrive.
-            NotificationArgs notification = null;
-            try
+            CancellationToken.Cancel();
+        }
+
+        private async Task ProcessQueue()
+        {
+            string? lastTitle = null;
+            DateTime lastTitleTime = DateTime.Now;
+            CancellationToken cancelToken = CancellationToken.Token;
+            while (!Environment.HasShutdownStarted && !cancelToken.IsCancellationRequested)
             {
-                while (notifications.Any())
+                if (notifications.TryTake(out var item, 100, cancelToken))
                 {
-                    audioPlayer.SetVolume(volume).Wait();
-                    notification = notifications.Dequeue();
-                    Debug.WriteLine("Processing notification: {0} - {1}", notification.Title, notification.Detail);
-
-                    List<Task<string>> audioRequestTasks = new();
-
-                    if (!notification.Suppression.HasFlag(NotificationSuppression.Title))
+                    try
                     {
-                        audioRequestTasks.Add(string.IsNullOrWhiteSpace(notification.TitleSsml)
-                            ? RetrieveAudioToFile(notification.Title)
-                            : RetrieveAudioSsmlToFile(notification.TitleSsml));
-                    }
+                        await audioPlayer.SetVolume(item.Volume);
+                        Debug.WriteLine("Processing notification: {0} - {1}", item.Args.Title, item.Args.Detail);
 
-                    if (!notification.Suppression.HasFlag(NotificationSuppression.Detail))
+                        List<Task<string>> audioRequestTasks = new();
+
+                        if (item.Args.Title != null)
+                        {
+                            if (lastTitle != null && item.Args.Title == lastTitle && DateTime.Now.Subtract(lastTitleTime).TotalSeconds < 30)
+                                item.Args.Suppression |= NotificationSuppression.Title;
+
+                            lastTitle = item.Args.Title;
+                            lastTitleTime = DateTime.Now;
+                        }
+
+                        if (!item.Args.Suppression.HasFlag(NotificationSuppression.Title))
+                        {
+                            if (!String.IsNullOrEmpty(item.Args.Title) || !String.IsNullOrEmpty(item.Args.TitleSsml))
+                            {
+                                audioRequestTasks.Add(string.IsNullOrWhiteSpace(item.Args.TitleSsml)
+                                    ? RetrieveAudioToFile(item, item.Args.Title)
+                                    : RetrieveAudioSsmlToFile(item, item.Args.TitleSsml));
+
+                            }
+                        }
+
+                        if (!item.Args.Suppression.HasFlag(NotificationSuppression.Detail))
+                        {
+                            if (!String.IsNullOrEmpty(item.Args.Detail) || !String.IsNullOrEmpty(item.Args.DetailSsml))
+                            {
+                                audioRequestTasks.Add(string.IsNullOrWhiteSpace(item.Args.DetailSsml)
+                                    ? RetrieveAudioToFile(item, item.Args.Detail)
+                                    : RetrieveAudioSsmlToFile(item, item.Args.DetailSsml));
+                            }
+                        }
+
+                        await PlayAudioRequestsSequentially(audioRequestTasks);
+                    }
+                    catch (Exception ex)
                     {
-                        audioRequestTasks.Add(string.IsNullOrWhiteSpace(notification.DetailSsml)
-                            ? RetrieveAudioToFile(notification.Detail)
-                            : RetrieveAudioSsmlToFile(notification.DetailSsml));
+                        Debug.WriteLine($"Failed to fetch/play notification: {item?.Args.Title} - {item?.Args.Detail}");
+                        ErrorLogger(ex, "while retrieving and playing audio for a notification");
                     }
-
-                    PlayAudioRequestsSequentially(audioRequestTasks);
                 }
             }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Failed to fetch/play notification: {notification?.Title} - {notification?.Detail}");
-                ErrorLogger(ex, "while retrieving and playing audio for a notification");
-            }
-            finally
-            {
-                processing = false;
-            }
         }
 
-        private async Task<string> RetrieveAudioToFile(string text)
+        private async Task<string> RetrieveAudioToFile(HeraldQueueItem item, string text)
         {
-            return await RetrieveAudioSsmlToFile($"<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xml:lang=\"en-US\"><voice name=\"\">{System.Security.SecurityElement.Escape(text)}</voice></speak>");
+            return await RetrieveAudioSsmlToFile(item, $"<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xml:lang=\"en-US\"><voice name=\"\">{System.Security.SecurityElement.Escape(text)}</voice></speak>");
         }
 
-        private async Task<string> RetrieveAudioSsmlToFile(string ssml)
+        private async Task<string> RetrieveAudioSsmlToFile(HeraldQueueItem item, string ssml)
         {
-            return await speechManager.GetAudioFileFromSsml(ssml, voice, style, rate);
+            return await speechManager.GetAudioFileFromSsml(ssml, item.SelectedVoice, item.SelectedStyle, item.SelectedRate);
         }
 
-        private void PlayAudioRequestsSequentially(List<Task<string>> requestTasks)
+        private async Task PlayAudioRequestsSequentially(List<Task<string>> requestTasks)
         {
             foreach (var request in requestTasks)
             {
-                string file = request.Result;
-                try
+                string file = await request;
+                if (!string.IsNullOrWhiteSpace(file))
                 {
-                    Debug.WriteLine($"Playing audio file: {file}");
-                    audioPlayer.Play(file).Wait();
-                } catch (Exception ex)
-                {
-                    Debug.WriteLine($"Failed to play {file}: {ex.Message}");
-                    ErrorLogger(ex, $"while playing: {file}");
+                    try
+                    {
+                        Debug.WriteLine($"Playing audio file: {file}");
+                        await audioPlayer.Play(file);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Failed to play {file}: {ex.Message}");
+                        ErrorLogger(ex, $"while playing: {file}");
+                    }
+
+                    while (audioPlayer.Playing)
+                        await Task.Delay(50);
+
+                    // Explicit stop to ensure device is ready for next file.
+                    // ...hopefully.
+                    await audioPlayer.Stop(true);
                 }
-
-                while (audioPlayer.Playing)
-                    Thread.Sleep(50);
-
-                // Explicit stop to ensure device is ready for next file.
-                // ...hopefully.
-                audioPlayer.Stop(true).Wait();
-
             }
             speechManager.CommitCache();
         }

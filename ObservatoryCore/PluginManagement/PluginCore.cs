@@ -1,24 +1,45 @@
 ﻿using Observatory.Framework;
 using Observatory.Framework.Files;
+using Observatory.Framework.Files.Journal;
 using Observatory.Framework.Interfaces;
 using Observatory.NativeNotification;
 using System;
 using System.IO;
+using System.Text.Json;
 
 namespace Observatory.PluginManagement
 {
     public class PluginCore : IObservatoryCore
     {
 
-        private readonly NativeVoice NativeVoice;
-        private readonly NativePopup NativePopup;
+        private readonly NativeVoice _nativeVoice;
+        private readonly NativePopup _nativePopup;
+        private readonly PluginManager _pluginManager;
+
 
         public PluginCore()
         {
-            NativeVoice = new();
-            NativePopup = new();
+            _nativeVoice = new();
+            _nativePopup = new();
+            _pluginManager = new PluginManager(this);
         }
 
+        internal void InitializePlugins()
+        {
+            _pluginManager.LoadPlugins();
+
+            var logMonitor = LogMonitor.GetInstance;
+            logMonitor.JournalEntry += OnJournalEvent;
+            logMonitor.StatusUpdate += OnStatusUpdate;
+            logMonitor.LogMonitorStateChanged += OnLogMonitorStateChanged;
+
+            _pluginManager.LoadPluginSettings();
+
+            // Enable notifications
+            this.Notification += OnNotificationEvent;
+        }
+
+        public PluginManager PluginManager => _pluginManager;
         public string Version => System.Reflection.Assembly.GetEntryAssembly().GetName().Version.ToString();
 
         public Action<Exception, String> GetPluginErrorLogger(IObservatoryPlugin plugin)
@@ -53,12 +74,12 @@ namespace Observatory.PluginManagement
 
                 if (Properties.Core.Default.NativeNotify && notificationArgs.Rendering.HasFlag(NotificationRendering.NativeVisual))
                 {
-                    guid = NativePopup.InvokeNativeNotification(notificationArgs);
+                    guid = _nativePopup.InvokeNativeNotification(notificationArgs);
                 }
 
                 if (Properties.Core.Default.VoiceNotify && notificationArgs.Rendering.HasFlag(NotificationRendering.NativeVocal))
                 {
-                    NativeVoice.EnqueueAndAnnounce(notificationArgs);
+                    _nativeVoice.EnqueueAndAnnounce(notificationArgs);
                 }
             }
 
@@ -67,7 +88,7 @@ namespace Observatory.PluginManagement
 
         public void CancelNotification(Guid id)
         {
-            NativePopup.CloseNotification(id);
+            _nativePopup.CloseNotification(id);
         }
 
         public void UpdateNotification(Guid id, NotificationArgs notificationArgs)
@@ -82,11 +103,11 @@ namespace Observatory.PluginManagement
                 }
 
                 if (notificationArgs.Rendering.HasFlag(NotificationRendering.NativeVisual))
-                    NativePopup.UpdateNotification(id, notificationArgs);
+                    _nativePopup.UpdateNotification(id, notificationArgs);
 
                 if (Properties.Core.Default.VoiceNotify && notificationArgs.Rendering.HasFlag(NotificationRendering.NativeVocal))
                 {
-                    NativeVoice.EnqueueAndAnnounce(notificationArgs);
+                    _nativeVoice.EnqueueAndAnnounce(notificationArgs);
                 }
             }
         }
@@ -180,7 +201,8 @@ namespace Observatory.PluginManagement
 
         internal void Shutdown()
         {
-            NativePopup.CloseAll();
+            _nativePopup.CloseAll();
+            _pluginManager.Shutdown();
         }
 
         private static bool FirstRowIsAllNull(IObservatoryWorker worker)
@@ -198,5 +220,78 @@ namespace Observatory.PluginManagement
 
             return allNull;
         }
+
+        public void OnJournalEvent(object source, JournalEventArgs e)
+        {
+            foreach (var plugin in _pluginManager.Plugins.Where(p => p.Instance != null && p.Error == null))
+            {
+                try
+                {
+                    (plugin.Instance as IObservatoryWorker)?.JournalEvent((JournalBase)e.journalEvent);
+                }
+                catch (PluginException ex)
+                {
+                    //RecordError(ex);
+                }
+                catch (Exception ex)
+                {
+                    //RecordError(ex, worker.Name, journalEventArgs.journalType.Name, ((JournalBase)journalEventArgs.journalEvent).Json);
+                }
+            }
+        }
+
+        public void OnStatusUpdate(object sourece, JournalEventArgs e)
+        {
+            foreach (var plugin in _pluginManager.Plugins.Where(p => p.Instance != null && p.Error == null))
+            {
+                try
+                {
+                    (plugin.Instance as IObservatoryWorker)?.StatusChange((Status)e.journalEvent);
+                }
+                catch (PluginException ex)
+                {
+                    //RecordError(ex);
+                }
+                catch (Exception ex)
+                {
+                    //RecordError(ex, worker.Name, journalEventArgs.journalType.Name, ((JournalBase)journalEventArgs.journalEvent).Json);
+                }
+            }
+        }
+
+        internal void OnLogMonitorStateChanged(object sender, LogMonitorStateChangedEventArgs e)
+        {
+            foreach (var plugin in _pluginManager.Plugins.Where(p => p.Instance != null && p.Error == null))
+            {
+                try
+                {
+                    (plugin.Instance as IObservatoryWorker)?.LogMonitorStateChanged(e);
+                }
+                catch (Exception ex)
+                {
+                    //RecordError(ex, worker.Name, "LogMonitorStateChanged event", ex.StackTrace);
+                }
+            }
+        }
+
+        public void OnNotificationEvent(object source, NotificationArgs e)
+        {
+            foreach (var plugin in _pluginManager.Plugins.Where(p => p.Instance != null && p.Error == null))
+            {
+                try
+                {
+                    (plugin.Instance as IObservatoryNotifier)?.OnNotificationEvent(e);
+                }
+                catch (PluginException ex)
+                {
+                    //RecordError(ex);
+                }
+                catch (Exception ex)
+                {
+                    //RecordError(ex, notifier.Name, notificationArgs.Title, notificationArgs.Detail);
+                }
+            }
+        }
+
     }
 }

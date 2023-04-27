@@ -14,16 +14,9 @@
     <Version Condition=" '$(VersionSuffix)' == '' ">0.0.1.0</Version>
     <Version Condition=" '$(VersionSuffix)' != '' ">$(VersionSuffix)</Version>
   </PropertyGroup>
-  
+
   <ItemGroup>
-    <Reference Include="ObservatoryFramework">
-      <HintPath>..\ObservatoryFramework\bin\Release\net6.0\ObservatoryFramework.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\ObservatoryFramework\ObservatoryFramework.csproj" />
   </ItemGroup>
   
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Condition=" '$(OS)' == 'Windows_NT' " Command="xcopy &quot;$(TargetPath)&quot; &quot;$(ProjectDir)..\ObservatoryCore\$(OutDir)plugins\&quot; /y" />
-    <Exec Condition=" '$(OS)' != 'Windows_NT' " Command="cp &quot;$(TargetPath)&quot; &quot;$(ProjectDir)../ObservatoryCore/$(OutDir)plugins/&quot; -f" />
-  </Target>
-
 </Project>

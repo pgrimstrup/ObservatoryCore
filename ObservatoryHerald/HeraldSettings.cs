@@ -1,4 +1,5 @@
 ﻿using Observatory.Framework;
+using Observatory.Herald.TextToSpeech;
 using System;
 using System.Collections.Generic;
 
@@ -6,18 +7,29 @@ namespace Observatory.Herald
 {
     public class HeraldSettings
     {
-        [SettingDisplayName("API Key Override: ")]
+        [SettingIgnoreAttribute]
+        internal Func<Dictionary<string, object>> GetVoices;
+
+        [SettingDisplayNameAttribute("API Key Override: ")]
         public string AzureAPIKeyOverride { get; set; }
 
-        [SettingDisplayName("Voice")]
-        [SettingBackingValue("SelectedVoice")]
-        [System.Text.Json.Serialization.JsonIgnore]
-        public Dictionary<string, object> Voices {get; internal set;}
+        [SettingIgnoreAttribute]
+        public string ApiEndpoint { get; set; }
 
-        [SettingIgnore]
+
+        [SettingDisplayNameAttribute("Voice")]
+        [SettingBackingValueAttribute("SelectedVoice")]
+        [System.Text.Json.Serialization.JsonIgnore]
+        public Dictionary<string, object> Voices 
+        {
+            get => GetVoices();
+        }
+
+        [SettingIgnoreAttribute]
         public string SelectedVoice { get; set; }
 
-        [SettingBackingValue("SelectedRate")]
+        [SettingBackingValueAttribute("SelectedRate")]
+        [System.Text.Json.Serialization.JsonIgnore]
         public Dictionary<string, object> Rate
         { get => new Dictionary<string, object> 
             {
@@ -29,23 +41,20 @@ namespace Observatory.Herald
             }; 
         }
 
-        [SettingIgnore]
+        [SettingIgnoreAttribute]
         public string SelectedRate { get; set; }
 
-        [SettingDisplayName("Volume")]
-        [SettingNumericUseSlider, SettingNumericBounds(0,100,1)]
+        [SettingDisplayNameAttribute("Volume")]
+        [SettingNumericUseSliderAttribute, SettingNumericBoundsAttribute(0,100,1)]
         public int Volume { get; set;}
 
         [System.Text.Json.Serialization.JsonIgnore]
         public Action Test { get; internal set; }
 
-        [SettingDisplayName("Enabled")]
+        [SettingDisplayNameAttribute("Enabled")]
         public bool Enabled { get; set; }
 
-        [SettingIgnore]
-        public string ApiEndpoint { get; set; }
-
-        [SettingDisplayName("Cache Size (MB): ")]
+        [SettingDisplayNameAttribute("Cache Size (MB): ")]
         public int CacheSize { get; set; }
     }
 }

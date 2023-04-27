@@ -16,12 +16,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="ObservatoryFramework">
-      <HintPath>..\ObservatoryFramework\bin\Release\net6.0\ObservatoryFramework.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Update="ObservatoryAPI.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -40,9 +34,9 @@
     <Folder Include="NetCoreAudio\Players\" />
   </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Condition=" '$(OS)' == 'Windows_NT' " Command="xcopy &quot;$(TargetPath)&quot; &quot;$(ProjectDir)..\ObservatoryCore\$(OutDir)plugins\&quot; /y" />
-    <Exec Condition=" '$(OS)' != 'Windows_NT' " Command="[ ! -d &quot;$(ProjectDir)../ObservatoryCore/$(OutDir)plugins/deps&quot; ] &amp;&amp; mkdir -p &quot;$(ProjectDir)../ObservatoryCore/$(OutDir)plugins/deps&quot; || echo Directory already exists" />
-  </Target>
+  <ItemGroup>
+    <ProjectReference Include="..\ObservatoryFramework\ObservatoryFramework.csproj" />
+  </ItemGroup>
+
   
 </Project>

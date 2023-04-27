@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Observatory.Herald
 {
-    public class HeraldNotifier : IObservatoryNotifier
+    public class HeraldNotifier : IObservatoryNotifier, IDisposable
     {
         public HeraldNotifier()
         {
@@ -51,21 +51,27 @@ namespace Observatory.Herald
                 }
             }
         }
+
+        public void Dispose()
+        {
+            heraldQueue.Cancel();
+        }
+
         public void Load(IObservatoryCore observatoryCore)
         {
             var speechManager = new SpeechRequestManager(
                 heraldSettings, observatoryCore.HttpClient, observatoryCore.PluginStorageFolder, observatoryCore.GetPluginErrorLogger(this));
-            heraldSpeech = new HeraldQueue(speechManager, observatoryCore.GetPluginErrorLogger(this));
+            heraldQueue = new HeraldQueue(speechManager, observatoryCore.GetPluginErrorLogger(this));
             heraldSettings.Test = TestVoice;
         }
 
         private void TestVoice()
         {
-            heraldSpeech.Enqueue(
+            heraldQueue.Enqueue(
                 new NotificationArgs() 
                 { 
                     Title = "Herald voice testing", 
-                    Detail = $"This is {heraldSettings.SelectedVoice.Split(" - ")[1]}." 
+                    Detail = $"This is {heraldSettings.SelectedVoice.Split(" - ")[1]}, your Herald Vocalizer for spoken notifications." 
                 }, 
                 GetAzureNameFromSetting(heraldSettings.SelectedVoice),
                 GetAzureStyleNameFromSetting(heraldSettings.SelectedVoice),
@@ -76,7 +82,7 @@ namespace Observatory.Herald
         public void OnNotificationEvent(NotificationArgs notificationEventArgs)
         {
             if (heraldSettings.Enabled)
-                heraldSpeech.Enqueue(
+                heraldQueue.Enqueue(
                     notificationEventArgs, 
                     GetAzureNameFromSetting(heraldSettings.SelectedVoice),
                     GetAzureStyleNameFromSetting(heraldSettings.SelectedVoice),
@@ -86,8 +92,9 @@ namespace Observatory.Herald
 
         private string GetAzureNameFromSetting(string settingName)
         {
-            var voiceInfo = (JsonElement)heraldSettings.Voices[settingName];
-            return voiceInfo.GetProperty("ShortName").GetString();
+            if (heraldSettings.Voices.TryGetValue(settingName, out var name))
+                return name.ToString();
+            return settingName;
         }
 
         private string GetAzureStyleNameFromSetting(string settingName)
@@ -101,6 +108,6 @@ namespace Observatory.Herald
         }
 
         private HeraldSettings heraldSettings;
-        private HeraldQueue heraldSpeech;
+        private HeraldQueue heraldQueue;
     }
 }

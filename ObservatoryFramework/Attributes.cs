@@ -10,7 +10,7 @@ namespace Observatory.Framework
     /// Specifies text to display as the name of the setting in the UI instead of the property name.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-    public class SettingDisplayName : Attribute
+    public class SettingDisplayNameAttribute : Attribute
     {
         private string name;
 
@@ -18,7 +18,7 @@ namespace Observatory.Framework
         /// Specifies text to display as the name of the setting in the UI instead of the property name.
         /// </summary>
         /// <param name="name">Name to display</param>
-        public SettingDisplayName(string name)
+        public SettingDisplayNameAttribute(string name)
         {
             this.name = name;
         }
@@ -37,21 +37,21 @@ namespace Observatory.Framework
     /// Indicates that the property should not be displayed to the user in the UI.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-    public class SettingIgnore : Attribute
+    public class SettingIgnoreAttribute : Attribute
     { }
 
     /// <summary>
     /// Indicates numeric properly should use a slider control instead of a numeric textbox with roller.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-    public class SettingNumericUseSlider : Attribute
+    public class SettingNumericUseSliderAttribute : Attribute
     { }
 
     /// <summary>
     /// Specify backing value used by Dictionary&lt;string, object&gt; to indicate selected option.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-    public class SettingBackingValue : Attribute
+    public class SettingBackingValueAttribute : Attribute
     {
         private string property;
 
@@ -59,7 +59,7 @@ namespace Observatory.Framework
         /// Specify backing value used by Dictionary&lt;string, object&gt; to indicate selected option.
         /// </summary>
         /// <param name="property">Property name for backing value.</param>
-        public SettingBackingValue(string property)
+        public SettingBackingValueAttribute(string property)
         {
             this.property = property;
         }
@@ -78,7 +78,7 @@ namespace Observatory.Framework
     /// Specify bounds for numeric inputs.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-    public class SettingNumericBounds : Attribute
+    public class SettingNumericBoundsAttribute : Attribute
     {
         private double minimum;
         private double maximum;
@@ -90,7 +90,7 @@ namespace Observatory.Framework
         /// <param name="minimum">Minimum allowed value.</param>
         /// <param name="maximum">Maximum allowed value.</param>
         /// <param name="increment">Increment between allowed values in slider/roller inputs.</param>
-        public SettingNumericBounds(double minimum, double maximum, double increment = 1.0)
+        public SettingNumericBoundsAttribute(double minimum, double maximum, double increment = 1.0)
         {
             this.minimum = minimum;
             this.maximum = maximum;

@@ -1,4 +1,5 @@
 ﻿using System;
+using Observatory.Framework.Files.Journal;
 
 namespace Observatory.Framework
 {

@@ -8,6 +8,8 @@ using System.Net.Http;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Observatory.Framework.Interfaces;
+using Observatory.PluginManagement;
+using Observatory.Properties;
 using Observatory.UI.Models;
 using ReactiveUI;
 
@@ -20,17 +22,19 @@ namespace Observatory.UI.ViewModels
         private readonly ObservableCollection<CoreModel> tabs;
         private string toggleButtonText;
         private bool _UpdateAvailable;
+        readonly PluginCore _core;
         
-        public CoreViewModel(IEnumerable<(IObservatoryWorker plugin, PluginManagement.PluginManager.PluginStatus signed)> workers, IEnumerable<(IObservatoryNotifier plugin, PluginManagement.PluginManager.PluginStatus signed)> notifiers)
+        public CoreViewModel(PluginCore core)
         {
+            _core = core;
             _UpdateAvailable = CheckUpdate();
             
-            this.notifiers = new ObservableCollection<IObservatoryNotifier>(notifiers.Select(p => p.plugin));
-            this.workers = new ObservableCollection<IObservatoryWorker>(workers.Select(p => p.plugin));
+            this.notifiers = new ObservableCollection<IObservatoryNotifier>(notifiers.ToArray());
+            this.workers = new ObservableCollection<IObservatoryWorker>(workers.ToArray());
             ToggleButtonText = "Start Monitor";
             tabs = new ObservableCollection<CoreModel>();
             
-            foreach(var worker in workers.Select(p => p.plugin))
+            foreach(var worker in workers)
             {
                 if (worker.PluginUI.PluginUIType == Framework.PluginUI.UIType.Basic)
                 {
@@ -45,7 +49,7 @@ namespace Observatory.UI.ViewModels
                 }
             }
 
-            foreach(var notifier in notifiers.Select(p => p.plugin))
+            foreach(var notifier in notifiers)
             {
                 Panel notifierPanel = new Panel();
                 TextBlock notifierTextBlock = new TextBlock();

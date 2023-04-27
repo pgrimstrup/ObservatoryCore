@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Observatory.PluginManagement;
 
 namespace Observatory.UI.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        public MainWindowViewModel(PluginManagement.PluginManager pluginManager)
+        public MainWindowViewModel(PluginCore pluginCore)
         {
-            core = new CoreViewModel(pluginManager.workerPlugins, pluginManager.notifyPlugins);
-
-            if (pluginManager.errorList.Any())
-                ErrorReporter.ShowErrorPopup("Plugin Load Error", pluginManager.errorList);
+            core = new CoreViewModel(pluginCore);
         }
 
         public CoreViewModel core { get; }

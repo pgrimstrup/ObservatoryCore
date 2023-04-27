@@ -10,25 +10,26 @@ using System.Xml;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
+using Observatory.Herald.TextToSpeech;
 
 namespace Observatory.Herald
 {
     class SpeechRequestManager
     {
-        private HttpClient httpClient;
-        private string ApiKey;
-        private string ApiEndpoint;
         private DirectoryInfo cacheLocation;
         private int cacheSize;
         private Action<Exception, string> ErrorLogger;
         private ConcurrentDictionary<string, CacheData> cacheIndex;
+        private Dictionary<string, object> voices;
+        private string initialVoice;
+
+        AzureCloud Speech;
 
         internal SpeechRequestManager(
             HeraldSettings settings, HttpClient httpClient, string cacheFolder, Action<Exception, String> errorLogger)
         {
-            ApiKey = ObservatoryAPI.ApiKey;
-            ApiEndpoint = settings.ApiEndpoint;
-            this.httpClient = httpClient;
+            Speech = new AzureCloud(httpClient, ObservatoryAPI.ApiKey, settings.ApiEndpoint);
+
             cacheSize = Math.Max(settings.CacheSize, 1);
             cacheLocation = new DirectoryInfo(cacheFolder);
             ReadCache();
@@ -39,7 +40,8 @@ namespace Observatory.Herald
                 Directory.CreateDirectory(cacheLocation.FullName);
             }
 
-            settings.Voices = PopulateVoiceSettingOptions();
+            initialVoice = settings.SelectedVoice;
+            settings.GetVoices = PopulateVoiceSettingOptions;
         }
 
         internal async Task<string> GetAudioFileFromSsml(string ssml, string voice, string style, string rate)
@@ -69,38 +71,19 @@ namespace Observatory.Herald
 
             if (audioFileInfo == null)
             {
-                using StringContent request = new(ssml)
+                try
                 {
-                    Headers = {
-                        { "obs-plugin", "herald" },
-                        { "api-key", ApiKey }
-                    }
-                };
-                
-                var requestTask = httpClient.PostAsync(ApiEndpoint + "/Speak", request);
-
-                requestTask.Wait(5000);
-
-                if (requestTask.IsFaulted) 
-                    throw new PluginException("Herald", "Error retrieving voice audio.", requestTask.Exception);
-
-                using var response = await requestTask;
-
-                if (response.IsSuccessStatusCode)
-                {
-                    using FileStream fileStream = new FileStream(audioFilename, FileMode.CreateNew);
-                    response.Content.ReadAsStream().CopyTo(fileStream);
-                    fileStream.Close();
+                    audioFileInfo = await Speech.GetTextToSpeech(ssml, audioFilename);
                 }
-                else
+                catch(Exception ex)
                 {
-                    throw new PluginException("Herald", "Unable to retrieve audio data.", new Exception(response.StatusCode.ToString() + ": " + response.ReasonPhrase));
+                    ErrorLogger(ex, "while processing text-to-speech");
                 }
-                audioFileInfo = new FileInfo(audioFilename);
             }
 
-            UpdateAndPruneCache(audioFileInfo);
-                        
+            if(audioFileInfo != null)
+                UpdateAndPruneCache(audioFileInfo);
+
             return audioFilename;
         }
 
@@ -137,115 +120,34 @@ namespace Observatory.Herald
             return ssmlDoc.OuterXml;
         }
 
-        private Dictionary<string, object> PopulateVoiceSettingOptions()
+        internal  Dictionary<string, object> PopulateVoiceSettingOptions()
         {
-            Dictionary<string, object> voices = new();
+            if (voices != null)
+                return voices;
 
-            using var request = new HttpRequestMessage(HttpMethod.Get, ApiEndpoint + "/List")
+            try
             {
-                Headers = {
-                    { "obs-plugin", "herald" },
-                    { "api-key", ApiKey }
-                }
-            };
+                var awaiter = Task.Run(Speech.GetVoicesAsync).GetAwaiter();
+                var speechVoices = awaiter.GetResult();
 
-            var requestTask = httpClient.SendAsync(request);
-
-            requestTask.Wait(1000);
-
-            if (requestTask.IsFaulted) 
-                throw new PluginException("Herald", "Unable to retrieve available voices.", requestTask.Exception);
-
-            var response = requestTask.Result;
-
-            if (response.IsSuccessStatusCode)
-            {
-                var voiceJson = JsonDocument.Parse(response.Content.ReadAsStringAsync().Result);
-
-                var englishSpeakingVoices = from v in voiceJson.RootElement.EnumerateArray()
-                                            where v.GetProperty("Locale").GetString().StartsWith("en-")
-                                            select v;
-
-                foreach(var voice in englishSpeakingVoices)
+                voices = new Dictionary<string, object>();
+                foreach(var voice in speechVoices)
                 {
-                    string demonym = GetDemonymFromLocale(voice.GetProperty("Locale").GetString());
-
-                    voices.Add(
-                        demonym + " - " + voice.GetProperty("LocalName").GetString(),
-                        voice);
-
-                    if (voice.TryGetProperty("StyleList", out var styles))
-                    foreach (var style in styles.EnumerateArray())
-                    {
-                        voices.Add(
-                            demonym + " - " + voice.GetProperty("LocalName").GetString() + " - " + style.GetString(),
-                            voice);
-                    }
+                    voices.Add(voice.Description, voice.Name);
                 }
+                return voices;
             }
-            else
+            catch (Exception ex)
             {
-                throw new PluginException("Herald", "Unable to retrieve available voices.", new Exception(response.StatusCode.ToString() + ": " + response.ReasonPhrase));
-            }
+                ErrorLogger(ex, "When retrieving a list of available voices from the server");
 
-            return voices;
+                // Return the last known voice
+                var result = new Dictionary<string, object>();
+                result.Add(initialVoice, initialVoice);
+                return result;
+            }
         }
 
-        private static string GetDemonymFromLocale(string locale)
-        {
-            string demonym;
-
-            switch (locale)
-            {
-                case "en-AU":
-                    demonym = "Australian";
-                    break;
-                case "en-CA":
-                    demonym = "Canadian";
-                    break;
-                case "en-GB":
-                    demonym = "British";
-                    break;
-                case "en-HK":
-                    demonym = "Hong Konger";
-                    break;
-                case "en-IE":
-                    demonym = "Irish";
-                    break;
-                case "en-IN":
-                    demonym = "Indian";
-                    break;
-                case "en-KE":
-                    demonym = "Kenyan";
-                    break;
-                case "en-NG":
-                    demonym = "Nigerian";
-                    break;
-                case "en-NZ":
-                    demonym = "Kiwi";
-                    break;
-                case "en-PH":
-                    demonym = "Filipino";
-                    break;
-                case "en-SG":
-                    demonym = "Singaporean";
-                    break;
-                case "en-TZ":
-                    demonym = "Tanzanian";
-                    break;
-                case "en-US":
-                    demonym = "American";
-                    break;
-                case "en-ZA":
-                    demonym = "South African";
-                    break;
-                default:
-                    demonym = locale;
-                    break;
-            }
-
-            return demonym;
-        }
 
         private void ReadCache()
         {
@@ -300,8 +202,8 @@ namespace Observatory.Herald
             while (indexedCacheSize > cacheSize * 1024 * 1024)
             {
                 var staleFile = (from file in cacheIndex
-                                orderby file.Value.HitCount, file.Value.Created
-                                select file.Key).First();
+                                 orderby file.Value.HitCount, file.Value.Created
+                                 select file.Key).First();
 
                 if (staleFile == currentFile.Name)
                     break;
@@ -320,7 +222,7 @@ namespace Observatory.Herald
             // Race condition isn't a concern anymore, but should check this anyway to be safe.
             // (Maybe someone is poking at the file with notepad?)
             while (!IsFileWritable(cacheIndexFile) && stopwatch.ElapsedMilliseconds < 1000)
-                await Task.Factory.StartNew(() => System.Threading.Thread.Sleep(100));
+                await Task.Delay(100); // Task.Factory.StartNew(() => System.Threading.Thread.Sleep(100));
 
             // 1000ms should be more than enough for a conflicting title or detail to complete,
             // if we're still waiting something else is locking the file, just give up.

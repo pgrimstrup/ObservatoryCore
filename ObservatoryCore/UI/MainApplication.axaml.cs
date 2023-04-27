@@ -1,12 +1,15 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Observatory.PluginManagement;
 using Observatory.UI.ViewModels;
 
 namespace Observatory.UI
 {
     public class MainApplication : Application
     {
+        private PluginCore _core;
+
         public override void Initialize()
         {
             AvaloniaXamlLoader.Load(this);
@@ -16,15 +19,15 @@ namespace Observatory.UI
         {
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                var pluginManager = PluginManagement.PluginManager.GetInstance;
+                _core = new PluginCore();
                 desktop.MainWindow = new Views.MainWindow()
                 {
-                    DataContext = new MainWindowViewModel(pluginManager)
+                    DataContext = new MainWindowViewModel(_core)
                 };
 
                 desktop.MainWindow.Closing += (o, e) =>
                 {
-                    pluginManager.Shutdown();
+                    _core.Shutdown();
                 };
             }
 
