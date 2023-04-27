@@ -132,13 +132,11 @@ namespace Observatory.Botanist
                                         };
                                         if (samplerStatusNotification == null)
                                         {
-                                            samplerStatusNotification = args.Id;
-                                            Core.SendNotification(args);
+                                            samplerStatusNotification = Core.SendNotification(args);
                                         }
                                         else
                                         {
-                                            args.Id = samplerStatusNotification.Value;
-                                            Core.SendNotification(args);
+                                            Core.UpdateNotification(samplerStatusNotification.Value, args);
                                         }
                                     }
 

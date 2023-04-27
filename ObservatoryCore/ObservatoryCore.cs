@@ -8,13 +8,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Observatory
 {
-    public class ObservatoryCore : IObservatoryCore
+    public class ObservatoryCore : IObservatoryCore2
     {
-        private readonly PluginManager _pluginManager;
+        private PluginManager _pluginManager;
         private readonly ILogger _logger;
         private readonly ILogMonitor _logMonitor;
         private readonly IServiceProvider _serviceProvider;
-        private bool _notificationsEnabled;
+        private bool _pluginsInitialized;
 
 
         public ObservatoryCore(IServiceProvider services, ILogger<ObservatoryCore> logger, ILogMonitor logMonitor)
@@ -22,7 +22,6 @@ namespace Observatory
             _serviceProvider = services;
             _logger = logger;
             _logMonitor = logMonitor;
-            _pluginManager = new PluginManager(this);
         }
 
         public T GetService<T>()
@@ -30,9 +29,12 @@ namespace Observatory
             return (T)_serviceProvider.GetService(typeof(T));
         }
 
-        internal void InitializePlugins()
+        public void Initialize()
         {
-            _notificationsEnabled = false;
+            if (_pluginsInitialized)
+                throw new InvalidOperationException("IObserverCore.InitializePlugins cannot be called more than once");
+
+            _pluginManager = GetService<PluginManager>();
             _pluginManager.LoadPlugins();
 
             _logMonitor.JournalEntry += OnJournalEvent;
@@ -42,7 +44,7 @@ namespace Observatory
             _pluginManager.LoadPluginSettings();
 
             // Enable notifications
-            _notificationsEnabled = true;
+            _pluginsInitialized = true;
         }
 
         public PluginManager PluginManager => _pluginManager;
@@ -53,47 +55,83 @@ namespace Observatory
             throw new NotImplementedException();
         }
 
-        public void SendNotification(string title, string text)
+        public Guid SendNotification(string title, string text)
         {
-            SendNotification(new NotificationArgs() { Title = title, Detail = text });
+            return SendNotification(new NotificationArgs() { Title = title, Detail = text });
         }
 
-        public void SendNotification(NotificationArgs notificationArgs)
+        public Guid SendNotification(NotificationArgs notificationArgs)
         {
-            if (!_notificationsEnabled)
-                return;
+            if (!_pluginsInitialized)
+                return Guid.Empty;
 
-            foreach (var plugin in _pluginManager.Plugins.Where(p => p.Instance != null && p.Error == null))
+            Guid id = Guid.NewGuid();
+            foreach (var plugin in _pluginManager.ActivePlugins)
             {
                 try
                 {
-                    if(plugin.Instance is IObservatoryNotifier notifier)
+                    if(plugin is IInbuiltNotifier inbuilt)
                     {
-                        if ((notifier.Filter & notificationArgs.Rendering) != 0)
-                            notifier.OnNotificationEvent(notificationArgs);
+                        if ((inbuilt.Filter & notificationArgs.Rendering) != 0)
+                            inbuilt.OnNotificationEvent(id, notificationArgs);
+                    }
+                    else if(plugin is IObservatoryNotifier notifier)
+                    {
+                        notifier.OnNotificationEvent(notificationArgs);
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"Plugin {plugin.Instance.Name} exception while sending notification");
+                    _logger.LogError(ex, $"Plugin {plugin.Name} exception while sending notification");
+                }
+            }
+
+            return id;
+        }
+
+        public void UpdateNotification(Guid id, NotificationArgs notificationArgs)
+        {
+            if (!_pluginsInitialized)
+                return;
+
+            foreach (var plugin in _pluginManager.ActivePlugins)
+            {
+                try
+                {
+                    // Updates are only sent to InbuiltNotifiers
+                    if (plugin is IInbuiltNotifier inbuilt)
+                    {
+                        if ((inbuilt.Filter & notificationArgs.Rendering) != 0)
+                            inbuilt.OnNotificationEvent(id, notificationArgs);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Plugin {plugin.Name} exception while sending notification");
                 }
             }
         }
 
         public void CancelNotification(Guid id)
         {
-            foreach (var plugin in _pluginManager.Plugins.Where(p => p.Instance != null && p.Error == null))
+            foreach (var plugin in _pluginManager.ActivePlugins)
             {
                 try
                 {
-                    (plugin.Instance as IObservatoryNotifier)?.OnNotificationCancelled(id);
+                    (plugin as IInbuiltNotifier)?.OnNotificationCancelled(id);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"Plugin {plugin.Instance.Name} exception while cancelling notification");
+                    _logger.LogError(ex, $"Plugin {plugin.Name} exception while cancelling notification");
                 }
             }
         }
+
+        public Action<Exception, string> GetPluginErrorLogger(IObservatoryPlugin plugin)
+        {
+            return (ex, msg) => _logger.LogError(ex, msg);
+        }
+
 
         /// <summary>
         /// Adds an item to the datagrid on UI thread to ensure visual update.
@@ -172,6 +210,8 @@ namespace Observatory
             }
         }
 
+        public HttpClient HttpClient => GetService<HttpClient>();
+
         internal void Shutdown()
         {
             _pluginManager.Shutdown();
@@ -193,47 +233,47 @@ namespace Observatory
             return allNull;
         }
 
-        public void OnJournalEvent(object source, JournalEventArgs e)
+        public void OnJournalEvent(object sender, JournalEventArgs e)
         {
-            foreach (var plugin in _pluginManager.Plugins.Where(p => p.Instance != null && p.Error == null))
+            foreach (var plugin in _pluginManager.ActivePlugins)
             {
                 try
                 {
-                    (plugin.Instance as IObservatoryWorker)?.JournalEvent((JournalBase)e.journalEvent);
+                    (plugin as IObservatoryWorker)?.JournalEvent((JournalBase)e.journalEvent);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"Plugin {plugin.Instance.Name}, EventType {e.journalEvent} exception while handling journal event");
+                    _logger.LogError(ex, $"Plugin {plugin.Name}, EventType {e.journalEvent} exception while handling journal event");
                 }
             }
         }
 
-        public void OnStatusUpdate(object sourece, JournalEventArgs e)
+        public void OnStatusUpdate(object sender, JournalEventArgs e)
         {
-            foreach (var plugin in _pluginManager.Plugins.Where(p => p.Instance != null && p.Error == null))
+            foreach (var plugin in _pluginManager.ActivePlugins)
             {
                 try
                 {
-                    (plugin.Instance as IObservatoryWorker)?.StatusChange((Status)e.journalEvent);
+                    (plugin as IObservatoryWorker)?.StatusChange((Status)e.journalEvent);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"Plugin {plugin.Instance.Name}, EventType {e.journalEvent} exception while handling status update");
+                    _logger.LogError(ex, $"Plugin {plugin.Name}, EventType {e.journalEvent} exception while handling status update");
                 }
             }
         }
 
         internal void OnLogMonitorStateChanged(object sender, LogMonitorStateChangedEventArgs e)
         {
-            foreach (var plugin in _pluginManager.Plugins.Where(p => p.Instance != null && p.Error == null))
+            foreach (var plugin in _pluginManager.ActivePlugins)
             {
                 try
                 {
-                    (plugin.Instance as IObservatoryWorker)?.LogMonitorStateChanged(e);
+                    (plugin as IObservatoryWorker)?.LogMonitorStateChanged(e);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"Plugin {plugin.Instance.Name}  exception while handling state change");
+                    _logger.LogError(ex, $"Plugin {plugin.Name}  exception while handling state change");
                 }
             }
         }

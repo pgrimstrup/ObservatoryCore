@@ -1,12 +1,19 @@
-﻿namespace ObservatoryUI
+﻿using Observatory;
+using Observatory.Framework.Interfaces;
+
+namespace ObservatoryUI
 {
     public partial class MainPage : ContentPage
     {
+        readonly IObservatoryCore _core;
         int count = 0;
 
-        public MainPage()
+        public MainPage(IObservatoryCore core)
         {
             InitializeComponent();
+
+            _core = core;
+            (_core as ObservatoryCore)?.Initialize();
         }
 
         private void OnCounterClicked(object sender, EventArgs e)
