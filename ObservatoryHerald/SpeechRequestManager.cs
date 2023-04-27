@@ -11,6 +11,7 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using Observatory.Herald.TextToSpeech;
+using Microsoft.Extensions.Logging;
 
 namespace Observatory.Herald
 {
@@ -18,7 +19,7 @@ namespace Observatory.Herald
     {
         private DirectoryInfo cacheLocation;
         private int cacheSize;
-        private Action<Exception, string> ErrorLogger;
+        private ILogger ErrorLogger;
         private ConcurrentDictionary<string, CacheData> cacheIndex;
         private Dictionary<string, object> voices;
         private string initialVoice;
@@ -26,7 +27,7 @@ namespace Observatory.Herald
         AzureCloud Speech;
 
         internal SpeechRequestManager(
-            HeraldSettings settings, HttpClient httpClient, string cacheFolder, Action<Exception, String> errorLogger)
+            HeraldSettings settings, HttpClient httpClient, string cacheFolder, ILogger errorLogger)
         {
             Speech = new AzureCloud(httpClient, ObservatoryAPI.ApiKey, settings.ApiEndpoint);
 
@@ -77,7 +78,7 @@ namespace Observatory.Herald
                 }
                 catch(Exception ex)
                 {
-                    ErrorLogger(ex, "while processing text-to-speech");
+                    ErrorLogger.LogError(ex, "while processing text-to-speech");
                 }
             }
 
@@ -139,7 +140,7 @@ namespace Observatory.Herald
             }
             catch (Exception ex)
             {
-                ErrorLogger(ex, "When retrieving a list of available voices from the server");
+                ErrorLogger.LogError(ex, "When retrieving a list of available voices from the server");
 
                 // Return the last known voice
                 var result = new Dictionary<string, object>();
@@ -164,7 +165,7 @@ namespace Observatory.Herald
                 {
                     Console.WriteLine(ex.Message);
                     cacheIndex = new();
-                    ErrorLogger(ex, "deserializing CacheIndex.json");
+                    ErrorLogger.LogError(ex, "deserializing CacheIndex.json");
                 }
             }
             else

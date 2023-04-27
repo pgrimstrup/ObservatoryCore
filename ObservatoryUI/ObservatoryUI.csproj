@@ -51,4 +51,13 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0-preview.2.23128.3" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\ObservatoryBotanist\ObservatoryBotanist.csproj" />
+	  <ProjectReference Include="..\ObservatoryBridge\ObservatoryBridge.csproj" />
+	  <ProjectReference Include="..\ObservatoryCore\ObservatoryCore.csproj" />
+	  <ProjectReference Include="..\ObservatoryExplorer\ObservatoryExplorer.csproj" />
+	  <ProjectReference Include="..\ObservatoryFramework\ObservatoryFramework.csproj" />
+	  <ProjectReference Include="..\ObservatoryHerald\ObservatoryHerald.csproj" />
+	</ItemGroup>
+
 </Project>

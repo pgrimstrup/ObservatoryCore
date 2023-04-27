@@ -1432,13 +1432,6 @@
             </summary>
             <param name="notificationId">Guid of notification to be cancelled.</param>
         </member>
-        <member name="M:Observatory.Framework.Interfaces.IObservatoryCore.UpdateNotification(System.Guid,Observatory.Framework.NotificationArgs)">
-            <summary>
-            Update an active notification with a new set of NotificationsArgs. Timeout values are reset and begin counting again from zero if specified.
-            </summary>
-            <param name="notificationId">Guid of notification to be updated.</param>
-            <param name="notificationEventArgs">NotificationArgs object specifying updated notification content and behaviour.</param>
-        </member>
         <member name="M:Observatory.Framework.Interfaces.IObservatoryCore.AddGridItem(Observatory.Framework.Interfaces.IObservatoryWorker,System.Object)">
             <summary>
             Add an item to the bottom of the basic UI grid.
@@ -1471,23 +1464,11 @@
             Version string of Observatory Core.
             </summary>
         </member>
-        <member name="M:Observatory.Framework.Interfaces.IObservatoryCore.GetPluginErrorLogger(Observatory.Framework.Interfaces.IObservatoryPlugin)">
-            <summary>
-            Returns a delegate for logging an error for the calling plugin. A plugin can wrap this method
-            or pass it along to its collaborators.
-            </summary>
-            <param name="plugin">The calling plugin</param>
-        </member>
         <member name="M:Observatory.Framework.Interfaces.IObservatoryCore.ExecuteOnUIThread(System.Action)">
             <summary>
             Perform an action on the current Avalonia UI thread.
             </summary>
             <param name="action"></param>
-        </member>
-        <member name="P:Observatory.Framework.Interfaces.IObservatoryCore.HttpClient">
-            <summary>
-            Shared application HttpClient object. Provided so that plugins can adhere to .NET recommended behaviour of a single HttpClient object per application.
-            </summary>
         </member>
         <member name="P:Observatory.Framework.Interfaces.IObservatoryCore.CurrentLogMonitorState">
             <summary>

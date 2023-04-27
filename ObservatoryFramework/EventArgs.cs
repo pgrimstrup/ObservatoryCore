@@ -25,6 +25,8 @@ namespace Observatory.Framework
     /// </summary>
     public class NotificationArgs
     {
+        public Guid Id = Guid.NewGuid();
+
         /// <summary>
         /// Text typically displayed as header content.
         /// </summary>

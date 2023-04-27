@@ -2,7 +2,6 @@
 using Observatory.Framework.Files;
 using Observatory.Framework.Files.Journal;
 using Observatory.Framework.Interfaces;
-using Observatory.NativeNotification;
 using System;
 using System.IO;
 using System.Text.Json;
@@ -12,15 +11,11 @@ namespace Observatory.PluginManagement
     public class PluginCore : IObservatoryCore
     {
 
-        private readonly NativeVoice _nativeVoice;
-        private readonly NativePopup _nativePopup;
         private readonly PluginManager _pluginManager;
 
 
         public PluginCore()
         {
-            _nativeVoice = new();
-            _nativePopup = new();
             _pluginManager = new PluginManager(this);
         }
 
@@ -42,25 +37,17 @@ namespace Observatory.PluginManagement
         public PluginManager PluginManager => _pluginManager;
         public string Version => System.Reflection.Assembly.GetEntryAssembly().GetName().Version.ToString();
 
-        public Action<Exception, String> GetPluginErrorLogger(IObservatoryPlugin plugin)
-        {
-            return (ex, context) =>
-            {
-                ObservatoryCore.LogError(ex, $"from plugin {plugin.ShortName} {context}");
-            };
-        }
-
         public Status GetStatus()
         {
             throw new NotImplementedException();
         }
 
-        public Guid SendNotification(string title, string text)
+        public void SendNotification(string title, string text)
         {
-            return SendNotification(new NotificationArgs() { Title = title, Detail = text });
+            SendNotification(new NotificationArgs() { Title = title, Detail = text });
         }
 
-        public Guid SendNotification(NotificationArgs notificationArgs)
+        public void SendNotification(NotificationArgs notificationArgs)
         {
             var guid = Guid.Empty;
 
@@ -74,7 +61,7 @@ namespace Observatory.PluginManagement
 
                 if (Properties.Core.Default.NativeNotify && notificationArgs.Rendering.HasFlag(NotificationRendering.NativeVisual))
                 {
-                    guid = _nativePopup.InvokeNativeNotification(notificationArgs);
+                    _nativePopup.InvokeNativeNotification(notificationArgs);
                 }
 
                 if (Properties.Core.Default.VoiceNotify && notificationArgs.Rendering.HasFlag(NotificationRendering.NativeVocal))

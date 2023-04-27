@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Collections.Concurrent;
 using Observatory.Framework.Files.ParameterTypes;
+using Microsoft.Extensions.Logging;
 
 namespace Observatory.Herald
 {
@@ -26,11 +27,11 @@ namespace Observatory.Herald
         private BlockingCollection<HeraldQueueItem> notifications;
         private SpeechRequestManager speechManager;
         private Player audioPlayer;
-        private Action<Exception, String> ErrorLogger;
+        private ILogger ErrorLogger;
         private Task queueTask;
         private CancellationTokenSource CancellationToken;
 
-        public HeraldQueue(SpeechRequestManager speechManager, Action<Exception, String> errorLogger)
+        public HeraldQueue(SpeechRequestManager speechManager, ILogger errorLogger)
         {
             this.speechManager = speechManager;
             notifications = new();
@@ -80,7 +81,7 @@ namespace Observatory.Herald
                     try
                     {
                         await audioPlayer.SetVolume(item.Volume);
-                        Debug.WriteLine("Processing notification: {0} - {1}", item.Args.Title, item.Args.Detail);
+                        ErrorLogger.LogDebug("Processing notification: {0} - {1}", item.Args.Title, item.Args.Detail);
 
                         List<Task<string>> audioRequestTasks = new();
 
@@ -118,8 +119,7 @@ namespace Observatory.Herald
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine($"Failed to fetch/play notification: {item?.Args.Title} - {item?.Args.Detail}");
-                        ErrorLogger(ex, "while retrieving and playing audio for a notification");
+                        ErrorLogger.LogError(ex, $"Failed to fetch/play notification: {item?.Args.Title} - {item?.Args.Detail}");
                     }
                 }
             }
@@ -144,13 +144,12 @@ namespace Observatory.Herald
                 {
                     try
                     {
-                        Debug.WriteLine($"Playing audio file: {file}");
+                        ErrorLogger.LogDebug($"Playing audio file: {file}");
                         await audioPlayer.Play(file);
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine($"Failed to play {file}: {ex.Message}");
-                        ErrorLogger(ex, $"while playing: {file}");
+                        ErrorLogger.LogError(ex, $"Failed to play {file}: {ex.Message}");
                     }
 
                     while (audioPlayer.Playing)

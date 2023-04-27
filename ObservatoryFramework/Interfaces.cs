@@ -18,6 +18,8 @@ namespace Observatory.Framework.Interfaces
         /// <param name="observatoryCore">Object implementing Observatory Core's main interface. A reference to this object should be maintained by the plugin for communication back to Core.</param>
         public void Load(IObservatoryCore observatoryCore);
 
+        public void Unload();
+
         /// <summary>
         /// Full name of the plugin. Displayed in the Core settings tab's plugin list.
         /// </summary>
@@ -114,6 +116,10 @@ namespace Observatory.Framework.Interfaces
         /// </summary>
         /// <param name="notificationEventArgs">Details of the notification as sent from the originating worker plugin.</param>
         public void OnNotificationEvent(NotificationArgs notificationEventArgs);
+
+        public void OnNotificationCancelled(Guid id);
+
+        public NotificationRendering Filter { get; }
     }
 
     /// <summary>
@@ -121,33 +127,28 @@ namespace Observatory.Framework.Interfaces
     /// </summary>
     public interface IObservatoryCore
     {
+        public T GetService<T>();
+
         /// <summary>
         /// Send a notification out to all native notifiers and any plugins implementing IObservatoryNotifier.
         /// </summary>
         /// <param name="title">Title text for notification.</param>
         /// <param name="detail">Detail/body text for notificaiton.</param>
         /// <returns>Guid associated with the notification during its lifetime. Used as an argument with CancelNotification and UpdateNotification.</returns>
-        public Guid SendNotification(string title, string detail);
+        public void SendNotification(string title, string detail);
 
         /// <summary>
         /// Send a notification with arguments out to all native notifiers and any plugins implementing IObservatoryNotifier.
         /// </summary>
         /// <param name="notificationEventArgs">NotificationArgs object specifying notification content and behaviour.</param>
         /// <returns>Guid associated with the notification during its lifetime. Used as an argument with CancelNotification and UpdateNotification.</returns>
-        public Guid SendNotification(NotificationArgs notificationEventArgs);
+        public void SendNotification(NotificationArgs notificationEventArgs);
         
         /// <summary>
         /// Cancel or close an active notification.
         /// </summary>
         /// <param name="notificationId">Guid of notification to be cancelled.</param>
         public void CancelNotification(Guid notificationId);
-
-        /// <summary>
-        /// Update an active notification with a new set of NotificationsArgs. Timeout values are reset and begin counting again from zero if specified.
-        /// </summary>
-        /// <param name="notificationId">Guid of notification to be updated.</param>
-        /// <param name="notificationEventArgs">NotificationArgs object specifying updated notification content and behaviour.</param>
-        public void UpdateNotification(Guid notificationId, NotificationArgs notificationEventArgs);
 
         /// <summary>
         /// Add an item to the bottom of the basic UI grid.
@@ -182,22 +183,10 @@ namespace Observatory.Framework.Interfaces
         public string Version { get; }
 
         /// <summary>
-        /// Returns a delegate for logging an error for the calling plugin. A plugin can wrap this method
-        /// or pass it along to its collaborators.
-        /// </summary>
-        /// <param name="plugin">The calling plugin</param>
-        public Action<Exception, String> GetPluginErrorLogger (IObservatoryPlugin plugin);
-
-        /// <summary>
         /// Perform an action on the current Avalonia UI thread.
         /// </summary>
         /// <param name="action"></param>
         public void ExecuteOnUIThread(Action action);
-
-        /// <summary>
-        /// Shared application HttpClient object. Provided so that plugins can adhere to .NET recommended behaviour of a single HttpClient object per application.
-        /// </summary>
-        public HttpClient HttpClient { get; }
 
         /// <summary>
         /// Returns the current LogMonitor state.
@@ -213,5 +202,16 @@ namespace Observatory.Framework.Interfaces
         /// Retrieves and ensures creation of a location which can be used by the plugin to store persistent data.
         /// </summary>
         public string PluginStorageFolder { get; }
+    }
+
+    public interface ILogMonitor
+    {
+        LogMonitorState CurrentState { get; }
+
+        event EventHandler<LogMonitorStateChangedEventArgs> LogMonitorStateChanged;
+
+        event EventHandler<JournalEventArgs> JournalEntry;
+
+        event EventHandler<JournalEventArgs> StatusUpdate;
     }
 }

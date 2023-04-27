@@ -1,4 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
+using Observatory;
+using Observatory.Framework.Interfaces;
+using ObservatoryUI.Inbuilt;
 
 namespace ObservatoryUI
 {
@@ -14,9 +17,14 @@ namespace ObservatoryUI
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
 
+            builder.Logging.AddProvider(new FileLoggerProvider());
 #if DEBUG
-		builder.Logging.AddDebug();
+            builder.Logging.AddDebug();
 #endif
+
+
+            builder.Services.AddSingleton<IObservatoryCore, IObservatoryCore>();
+            builder.Services.AddSingleton<ILogMonitor, LogMonitor>();
 
             return builder.Build();
         }

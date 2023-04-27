@@ -5,39 +5,25 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 using Observatory.Framework;
 using Observatory.Framework.Files;
+using Observatory.Framework.Interfaces;
 
 namespace Observatory
 {
-    class LogMonitor
+    public class LogMonitor : ILogMonitor
     {
-        #region Singleton Instantiation
+        readonly ILogger _logger;
 
-        public static LogMonitor GetInstance
+        public LogMonitor(ILogger<LogMonitor> logger)
         {
-            get
-            {
-                return _instance.Value;
-            }
-        }
-
-        private static readonly Lazy<LogMonitor> _instance = new Lazy<LogMonitor>(NewLogMonitor);
-
-        private static LogMonitor NewLogMonitor()
-        {
-            return new LogMonitor();
-        }
-
-        private LogMonitor()
-        {
+            _logger = logger;
             currentLine = new();
             journalTypes = JournalReader.PopulateEventClasses();
             InitializeWatchers(string.Empty);
             SetLogMonitorState(LogMonitorState.Idle);
         }
-
-        #endregion
 
         #region Public properties
         public LogMonitorState CurrentState
@@ -388,7 +374,8 @@ namespace Observatory
                     return ($"Error reading file {error.file}: {message}", error.line);
                 });
 
-                ErrorReporter.ShowErrorPopup($"Journal Read Error{(readErrors.Count > 1 ? "s" : "")}", errorList.ToList());
+                // TODO
+                //ErrorReporter.ShowErrorPopup($"Journal Read Error{(readErrors.Count > 1 ? "s" : "")}", errorList.ToList());
                 
             }
         }

@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-	<TargetFramework>net6.0</TargetFramework>
+    <OutputType>Library</OutputType>
+	<TargetFramework>net8.0</TargetFramework>
 	<ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Observatory</RootNamespace>
     <SignAssembly>false</SignAssembly>
@@ -23,19 +23,29 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="0.10.15" />
-    <PackageReference Include="Avalonia.Controls.DataGrid" Version="0.10.15" />
-    <PackageReference Include="Avalonia.Desktop" Version="0.10.15" />
-    <PackageReference Include="Avalonia.Diagnostics" Version="0.10.15" />
-    <PackageReference Include="Avalonia.ReactiveUI" Version="0.10.15" />
-    <PackageReference Include="Egorozh.ColorPicker.Avalonia.Dialog" Version="0.10.7" />
-    <PackageReference Include="MessageBox.Avalonia" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0-preview.2.23128.3" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
     <PackageReference Include="System.Speech" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaXaml Remove="NativeNotification\**" />
+    <AvaloniaXaml Remove="UI\**" />
+    <Compile Remove="NativeNotification\**" />
+    <Compile Remove="UI\**" />
+    <EmbeddedResource Remove="NativeNotification\**" />
+    <EmbeddedResource Remove="UI\**" />
+    <None Remove="NativeNotification\**" />
+    <None Remove="UI\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="ErrorReporter.cs" />
+    <Compile Remove="PluginManagement\PluginCore.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -48,12 +58,6 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Core.settings</DependentUpon>
     </Compile>
-    <Compile Update="UI\Views\CoreView.axaml.cs">
-      <DependentUpon>CoreView.axaml</DependentUpon>
-    </Compile>
-    <Compile Update="UI\Views\NotificationView.axaml.cs">
-      <DependentUpon>NotificationView.axaml</DependentUpon>
-    </Compile>
   </ItemGroup>
 
   <ItemGroup>
@@ -63,11 +67,9 @@
     </None>
   </ItemGroup>
 
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Condition=" '$(OS)' == 'Windows_NT'" Command="if not exist &quot;$(ProjectDir)..\ObservatoryFramework\bin\Release\net5.0\ObservatoryFramework.dll&quot; dotnet build &quot;$(ProjectDir)..\ObservatoryFramework\ObservatoryFramework.csproj&quot; -c Release" />
-    <Exec Condition=" '$(OS)' == 'Windows_NT'" Command="if not exist &quot;$(OutDir)plugins\ObservatoryExplorer.dll&quot; dotnet build &quot;$(ProjectDir)..\ObservatoryExplorer\ObservatoryExplorer.csproj&quot; -c $(ConfigurationName)" />
-    <Exec Condition=" '$(OS)' != 'Windows_NT'" Command="[ ! -e &quot;$(ProjectDir)../ObservatoryFramework/bin/Release/net5.0/ObservatoryFramework.dll&quot; ] &amp;&amp; dotnet build &quot;$(ProjectDir)../ObservatoryFramework/ObservatoryFramework.csproj&quot; -c Release || echo No build necessary" />
-    <Exec Condition=" '$(OS)' != 'Windows_NT'" Command="[ ! -e &quot;$(ProjectDir)$(OutDir)plugins/ObservatoryExplorer.dll&quot; ] &amp;&amp; dotnet build &quot;$(ProjectDir)../ObservatoryExplorer/ObservatoryExplorer.csproj&quot; -c $(ConfigurationName) || echo No build necessary" />
-  </Target>
+  <ItemGroup>
+    <Folder Include="Logging\" />
+  </ItemGroup>
+
 
 </Project>

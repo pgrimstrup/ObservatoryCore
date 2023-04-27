@@ -5,19 +5,20 @@ using System.Text;
 using Observatory.Framework.Files.Journal;
 using NLua;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace Observatory.Explorer
 {
     internal class CustomCriteriaManager
     {
+        readonly ILogger _logger;
         private Lua LuaState;
         private Dictionary<String,LuaFunction> CriteriaFunctions;
-        Action<Exception, String> ErrorLogger;
         private uint ScanCount;
 
-        public CustomCriteriaManager(Action<Exception, String> errorLogger)
+        public CustomCriteriaManager(ILogger errorLogger)
         {
-            ErrorLogger = errorLogger;
+            _logger = errorLogger;
             CriteriaFunctions = new();
             ScanCount = 0;
         }
@@ -261,7 +262,7 @@ namespace Observatory.Explorer
                 errorDetail.AppendLine("Error Reading Custom Criteria File:")
                     .AppendLine(originalScript)
                     .AppendLine("NOTE: Custom criteria processing has been disabled to prevent further errors.");
-                ErrorLogger(e, errorDetail.ToString());
+                _logger.LogError(e, errorDetail.ToString());
                 throw new CriteriaLoadException(e.Message, originalScript);
             }
         }
@@ -333,7 +334,7 @@ namespace Observatory.Explorer
                     errorDetail.AppendLine($"while processing custom criteria '{criteriaFunction.Key}' on scan:")
                         .AppendLine(scan.Json)
                         .AppendLine("NOTE: Custom criteria processing has been disabled to prevent further errors.");
-                    ErrorLogger(e, errorDetail.ToString());
+                    _logger.LogError(e, errorDetail.ToString());
                     break;
                 }
             }

@@ -12,9 +12,9 @@ namespace Observatory.PluginManagement
 {
     public class PlaceholderPlugin : IObservatoryNotifier
     {
-        public PlaceholderPlugin(string name)
+        public PlaceholderPlugin()
         {
-            this.name = name;
+            this.name = "Null Implementation Plugin";
         }
 
         public string Name => name;
@@ -29,10 +29,18 @@ namespace Observatory.PluginManagement
 
         public object Settings { get => null; set { } }
 
+        public NotificationRendering Filter { get; } = 0;
+
         public void Load(IObservatoryCore observatoryCore)
         { }
 
+        public void Unload()
+        { }
+
         public void OnNotificationEvent(NotificationArgs notificationArgs)
+        { }
+
+        public void OnNotificationCancelled(Guid id)
         { }
     }
 }

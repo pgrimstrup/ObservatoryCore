@@ -132,11 +132,13 @@ namespace Observatory.Botanist
                                         };
                                         if (samplerStatusNotification == null)
                                         {
-                                            samplerStatusNotification = Core.SendNotification(args);
+                                            samplerStatusNotification = args.Id;
+                                            Core.SendNotification(args);
                                         }
                                         else
                                         {
-                                            Core.UpdateNotification(samplerStatusNotification.Value, args);
+                                            args.Id = samplerStatusNotification.Value;
+                                            Core.SendNotification(args);
                                         }
                                     }
 
@@ -209,6 +211,11 @@ namespace Observatory.Botanist
             BioPlanets = new();
             
             Core = observatoryCore;
+        }
+
+        public void Unload()
+        {
+
         }
 
         public void LogMonitorStateChanged(LogMonitorStateChangedEventArgs args)

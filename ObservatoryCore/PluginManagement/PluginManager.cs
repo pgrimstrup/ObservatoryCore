@@ -1,5 +1,4 @@
-﻿using Avalonia.Controls;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -14,16 +13,14 @@ namespace Observatory.PluginManagement
 {
     public class PluginManager
     {
-        public readonly List<Panel> pluginPanels;
         public readonly List<DataTable> pluginTables;
-        private readonly PluginCore _core;
+        private readonly ObservatoryCore _core;
 
         public List<PluginLoadState> Plugins { get; } = new();
 
-        internal PluginManager(PluginCore core)
+        internal PluginManager(ObservatoryCore core)
         {
             _core = core;
-            pluginPanels = new();
             pluginTables = new();
         }
 
@@ -88,7 +85,10 @@ namespace Observatory.PluginManagement
 
         public void Shutdown()
         {
-            // TODO
+            foreach(var plugin in Plugins.Where(p => p.Instance != null))
+            {
+                plugin.Instance.Unload();
+            }
         }
 
         public void LoadPlugins()

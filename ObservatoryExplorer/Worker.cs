@@ -54,6 +54,11 @@ namespace Observatory.Explorer
             Core = observatoryCore;
         }
 
+        public void Unload()
+        {
+
+        }
+
         public void JournalEvent<TJournal>(TJournal journal) where TJournal : JournalBase
         {
             switch (journal)

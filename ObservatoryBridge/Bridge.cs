@@ -61,6 +61,11 @@ namespace Observatory.Bridge
             }
         }
 
+        public void Unload()
+        {
+
+        }
+
         public void JournalEvent<TJournal>(TJournal journal) where TJournal : JournalBase
         {
             try

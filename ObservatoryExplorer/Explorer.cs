@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Microsoft.Extensions.Logging;
 using Observatory.Framework;
 using Observatory.Framework.Files.Journal;
 using Observatory.Framework.Interfaces;
@@ -30,7 +31,7 @@ namespace Observatory.Explorer
             ExplorerWorker = explorerWorker;
             ObservatoryCore = core;
             Results = results;
-            CustomCriteriaManager = new(core.GetPluginErrorLogger(explorerWorker));
+            CustomCriteriaManager = new(core.GetService<ILogger<Explorer>>());
             CriteriaLastModified = new DateTime(0);
         }
 

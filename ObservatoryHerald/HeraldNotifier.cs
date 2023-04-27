@@ -1,4 +1,5 @@
-﻿using Observatory.Framework;
+﻿using Microsoft.Extensions.Logging;
+using Observatory.Framework;
 using Observatory.Framework.Interfaces;
 using System.Text.Json;
 
@@ -32,6 +33,8 @@ namespace Observatory.Herald
 
         public PluginUI PluginUI => new (PluginUI.UIType.None, null);
 
+        public NotificationRendering Filter { get; } = NotificationRendering.PluginNotifier;
+
         public object Settings
         {
             get => heraldSettings;
@@ -57,12 +60,22 @@ namespace Observatory.Herald
             heraldQueue.Cancel();
         }
 
-        public void Load(IObservatoryCore observatoryCore)
+        public void Load(IObservatoryCore core)
         {
+            var logger = core.GetService<ILogger<HeraldNotifier>>();
             var speechManager = new SpeechRequestManager(
-                heraldSettings, observatoryCore.HttpClient, observatoryCore.PluginStorageFolder, observatoryCore.GetPluginErrorLogger(this));
-            heraldQueue = new HeraldQueue(speechManager, observatoryCore.GetPluginErrorLogger(this));
+                heraldSettings, 
+                core.GetService<HttpClient>(),
+                core.PluginStorageFolder, 
+                logger);
+
+            heraldQueue = new HeraldQueue(speechManager, logger);
             heraldSettings.Test = TestVoice;
+        }
+
+        public void Unload()
+        {
+
         }
 
         private void TestVoice()
@@ -88,6 +101,11 @@ namespace Observatory.Herald
                     GetAzureStyleNameFromSetting(heraldSettings.SelectedVoice),
                     heraldSettings.Rate[heraldSettings.SelectedRate].ToString(), 
                     heraldSettings.Volume);
+        }
+
+        public void OnNotificationCancelled(Guid id)
+        {
+
         }
 
         private string GetAzureNameFromSetting(string settingName)
