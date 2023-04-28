@@ -5,7 +5,6 @@ using Observatory.Framework;
 using Observatory.Framework.Interfaces;
 using Observatory.PluginManagement;
 using Microsoft.Extensions.Logging;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Observatory
 {
@@ -32,35 +31,19 @@ namespace Observatory
             return (T)_serviceProvider.GetService(typeof(T));
         }
 
-        public async Task InitializeAsync()
-        {
-            await Initialize_Internal(true);
-        }
-
         public void Initialize()
-        {
-            Task.Run(() => Initialize_Internal(false)).GetAwaiter().GetResult();
-        }
-
-        private async Task Initialize_Internal(bool sync)
         {
             if (_pluginsInitialized)
                 throw new InvalidOperationException("IObserverCore.Initializes cannot be called more than once");
 
             _pluginManager = GetService<PluginManager>();
-            //if (sync)
-            //    await _pluginManager.LoadPluginsAsync();
-            //else
-                _pluginManager.LoadPlugins();
+            _pluginManager.LoadPlugins();
 
             _logMonitor.JournalEntry += OnJournalEvent;
             _logMonitor.StatusUpdate += OnStatusUpdate;
             _logMonitor.LogMonitorStateChanged += OnLogMonitorStateChanged;
 
-            //if (sync)
-            //    await _pluginManager.LoadPluginSettingsAsync();
-            //else
-                _pluginManager.LoadPluginSettings();
+            _pluginManager.LoadPluginSettings();
 
             // Enable notifications
             _pluginsInitialized = true;
@@ -164,8 +147,6 @@ namespace Observatory
             });
         }
 
-
-
         public void CancelNotification(Guid id)
         {
             Task.Run(() => CancelNotificationAsync(id)).GetAwaiter().GetResult();
@@ -186,13 +167,10 @@ namespace Observatory
             });
         }
 
-
-
         public Action<Exception, string> GetPluginErrorLogger(IObservatoryPlugin plugin)
         {
             return (ex, msg) => _logger.LogError(ex, msg);
         }
-
 
         /// <summary>
         /// Adds an item to the datagrid on UI thread to ensure visual update.

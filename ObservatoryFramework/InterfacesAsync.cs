@@ -81,6 +81,8 @@ namespace Observatory.Framework.Interfaces
     /// </summary>
     public interface IObservatoryCoreAsync : IObservatoryCore
     {
+        public void Initialize();
+
         /// <summary>
         /// Send a notification out to all native notifiers and any plugins implementing IObservatoryNotifier.
         /// </summary>
@@ -114,8 +116,6 @@ namespace Observatory.Framework.Interfaces
         /// </summary>
         /// <returns>Status object reflecting current Elite Dangerous player status.</returns>
         public Task<Status> GetStatusAsync();
-
-        public Task InitializeAsync();
 
         public T GetService<T>();
     }

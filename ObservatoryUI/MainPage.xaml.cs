@@ -13,11 +13,7 @@ namespace ObservatoryUI
             InitializeComponent();
 
             _core = core;
-        }
-
-        protected override void OnAppearing()
-        {
-            Task.Run(() => _core.InitializeAsync()).GetAwaiter().GetResult();
+            _core.Initialize();
         }
 
         private void OnCounterClicked(object sender, EventArgs e)
