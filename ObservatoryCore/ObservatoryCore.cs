@@ -5,23 +5,26 @@ using Observatory.Framework;
 using Observatory.Framework.Interfaces;
 using Observatory.PluginManagement;
 using Microsoft.Extensions.Logging;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Observatory
 {
-    public class ObservatoryCore : IObservatoryCore2
+    public class ObservatoryCore : IObservatoryCoreAsync
     {
         private PluginManager _pluginManager;
         private readonly ILogger _logger;
         private readonly ILogMonitor _logMonitor;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IMainFormDispatcher _dispatcher;
         private bool _pluginsInitialized;
 
 
-        public ObservatoryCore(IServiceProvider services, ILogger<ObservatoryCore> logger, ILogMonitor logMonitor)
+        public ObservatoryCore(IServiceProvider services, ILogger<ObservatoryCore> logger, ILogMonitor logMonitor, IMainFormDispatcher dispatcher)
         {
             _serviceProvider = services;
             _logger = logger;
             _logMonitor = logMonitor;
+            _dispatcher = dispatcher;
         }
 
         public T GetService<T>()
@@ -29,19 +32,35 @@ namespace Observatory
             return (T)_serviceProvider.GetService(typeof(T));
         }
 
+        public async Task InitializeAsync()
+        {
+            await Initialize_Internal(true);
+        }
+
         public void Initialize()
         {
+            Task.Run(() => Initialize_Internal(false)).GetAwaiter().GetResult();
+        }
+
+        private async Task Initialize_Internal(bool sync)
+        {
             if (_pluginsInitialized)
-                throw new InvalidOperationException("IObserverCore.InitializePlugins cannot be called more than once");
+                throw new InvalidOperationException("IObserverCore.Initializes cannot be called more than once");
 
             _pluginManager = GetService<PluginManager>();
-            _pluginManager.LoadPlugins();
+            //if (sync)
+            //    await _pluginManager.LoadPluginsAsync();
+            //else
+                _pluginManager.LoadPlugins();
 
             _logMonitor.JournalEntry += OnJournalEvent;
             _logMonitor.StatusUpdate += OnStatusUpdate;
             _logMonitor.LogMonitorStateChanged += OnLogMonitorStateChanged;
 
-            _pluginManager.LoadPluginSettings();
+            //if (sync)
+            //    await _pluginManager.LoadPluginSettingsAsync();
+            //else
+                _pluginManager.LoadPluginSettings();
 
             // Enable notifications
             _pluginsInitialized = true;
@@ -57,75 +76,117 @@ namespace Observatory
 
         public Guid SendNotification(string title, string text)
         {
-            return SendNotification(new NotificationArgs() { Title = title, Detail = text });
+            if (!_pluginsInitialized)
+                return Guid.Empty;
+
+            var args = new NotificationArgs { Title = title, Detail = text };
+            return Task.Run(() => SendNotificationAsync(args)).GetAwaiter().GetResult();
         }
 
-        public Guid SendNotification(NotificationArgs notificationArgs)
+        public async Task<Guid> SendNotificationAsync(string title, string text)
+        {
+            if (!_pluginsInitialized)
+                return Guid.Empty;
+
+            var args = new NotificationArgs { Title = title, Detail = text };
+            return await SendNotificationAsync(args);
+        }
+
+        public Guid SendNotification(NotificationArgs args)
+        {
+            if (!_pluginsInitialized)
+                return Guid.Empty;
+
+            return Task.Run(() => SendNotificationAsync(args)).GetAwaiter().GetResult();
+        }
+
+        public async Task<Guid> SendNotificationAsync(NotificationArgs args)
         {
             if (!_pluginsInitialized)
                 return Guid.Empty;
 
             Guid id = Guid.NewGuid();
-            foreach (var plugin in _pluginManager.ActivePlugins)
+            await Parallel.ForEachAsync(_pluginManager.ActivePlugins, async (plugin, token) => 
             {
                 try
                 {
-                    if(plugin is IInbuiltNotifier inbuilt)
+                    if (plugin is IInbuiltNotifierAsync inbuilt)
                     {
-                        if ((inbuilt.Filter & notificationArgs.Rendering) != 0)
-                            inbuilt.OnNotificationEvent(id, notificationArgs);
+                        if ((inbuilt.Filter & args.Rendering) != 0)
+                            await inbuilt.OnNotificationEventAsync(id, args);
                     }
-                    else if(plugin is IObservatoryNotifier notifier)
+                    else if (plugin is IObservatoryNotifierAsync notifierAsync)
                     {
-                        notifier.OnNotificationEvent(notificationArgs);
+                        await notifierAsync.OnNotificationEventAsync(args);
+                    }
+                    else if (plugin is IObservatoryNotifier notifier)
+                    {
+                        notifier.OnNotificationEvent(args);
                     }
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, $"Plugin {plugin.Name} exception while sending notification");
                 }
-            }
+            });
 
             return id;
         }
 
-        public void UpdateNotification(Guid id, NotificationArgs notificationArgs)
+        public void UpdateNotification(Guid id, NotificationArgs args)
         {
             if (!_pluginsInitialized)
                 return;
 
-            foreach (var plugin in _pluginManager.ActivePlugins)
+            Task.Run(() => UpdateNotificationAsync(id, args)).GetAwaiter().GetResult();
+        }
+
+        public async Task UpdateNotificationAsync(Guid id, NotificationArgs args)
+        {
+            if (!_pluginsInitialized)
+                return;
+
+            await Parallel.ForEachAsync(_pluginManager.ActivePlugins, async (plugin, token) => 
             {
                 try
                 {
-                    // Updates are only sent to InbuiltNotifiers
-                    if (plugin is IInbuiltNotifier inbuilt)
+                    // Updates are only sent to InbuiltNotifiers 
+                    if (plugin is IInbuiltNotifierAsync inbuilt)
                     {
-                        if ((inbuilt.Filter & notificationArgs.Rendering) != 0)
-                            inbuilt.OnNotificationEvent(id, notificationArgs);
+                        if ((inbuilt.Filter & args.Rendering) != 0)
+                            await inbuilt.OnNotificationEventAsync(id, args);
                     }
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, $"Plugin {plugin.Name} exception while sending notification");
                 }
-            }
+            });
         }
+
+
 
         public void CancelNotification(Guid id)
         {
-            foreach (var plugin in _pluginManager.ActivePlugins)
+            Task.Run(() => CancelNotificationAsync(id)).GetAwaiter().GetResult();
+        }
+
+        public async Task CancelNotificationAsync(Guid id)
+        {
+            await Parallel.ForEachAsync(_pluginManager.ActivePlugins, async (plugin, token) => 
             {
                 try
                 {
-                    (plugin as IInbuiltNotifier)?.OnNotificationCancelled(id);
+                    await (plugin as IInbuiltNotifierAsync)?.OnNotificationCancelledAsync(id);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, $"Plugin {plugin.Name} exception while cancelling notification");
                 }
-            }
+            });
         }
+
+
 
         public Action<Exception, string> GetPluginErrorLogger(IObservatoryPlugin plugin)
         {
@@ -181,6 +242,7 @@ namespace Observatory
 
         public void ExecuteOnUIThread(Action action)
         {
+            _dispatcher.Run(action);
             //Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(action);
         }
 
@@ -277,5 +339,11 @@ namespace Observatory
                 }
             }
         }
+
+        public Task<Status> GetStatusAsync()
+        {
+            return Task.FromResult(this.GetStatus());
+        }
+
     }
 }

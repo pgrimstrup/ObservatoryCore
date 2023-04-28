@@ -26,14 +26,16 @@ namespace ObservatoryUI
 #endif
 
             // Register pages
-            builder.Services.AddTransient<MainPage>();
+            builder.Services.AddSingleton<MainPage>();
 
             // Register services
-            builder.Services.AddSingleton<IObservatoryCore, ObservatoryCore>();
-            builder.Services.AddSingleton<ILogMonitor, LogMonitor>();
+            builder.Services.AddSingleton<IObservatoryCoreAsync, ObservatoryCore>();
+            builder.Services.AddSingleton<IObservatoryCore>(services => services.GetService<IObservatoryCoreAsync>());
 
             builder.Services.AddSingleton<PluginManager>();
+            builder.Services.AddSingleton<ILogMonitor, LogMonitor>();
             builder.Services.AddTransient<ISolutionPlugins, SolutionPlugins>();
+            builder.Services.AddTransient<IMainFormDispatcher, AppDispatcher>();
 
             return builder.Build();
         }

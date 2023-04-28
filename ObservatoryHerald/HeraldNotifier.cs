@@ -1,15 +1,20 @@
 ﻿using Microsoft.Extensions.Logging;
 using Observatory.Framework;
 using Observatory.Framework.Interfaces;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 
 namespace Observatory.Herald
 {
-    public class HeraldNotifier : IObservatoryNotifier, IDisposable
+    public class HeraldNotifier : IObservatoryNotifierAsync
     {
+        IObservatoryCoreAsync _core;
+        private HeraldSettings _heraldSettings;
+        private HeraldQueue _heraldQueue;
+
         public HeraldNotifier()
         {
-            heraldSettings = DefaultSettings;
+            _heraldSettings = DefaultSettings;
         }
 
         private static HeraldSettings DefaultSettings
@@ -37,7 +42,7 @@ namespace Observatory.Herald
 
         public object Settings
         {
-            get => heraldSettings;
+            get => _heraldSettings;
             set
             {
                 // Need to perform migration here, older
@@ -45,72 +50,77 @@ namespace Observatory.Herald
                 var savedSettings = (HeraldSettings)value;
                 if (string.IsNullOrWhiteSpace(savedSettings.SelectedRate))
                 {
-                    heraldSettings.SelectedVoice = savedSettings.SelectedVoice;
-                    heraldSettings.Enabled = savedSettings.Enabled;
+                    _heraldSettings.SelectedVoice = savedSettings.SelectedVoice;
+                    _heraldSettings.Enabled = savedSettings.Enabled;
                 }
                 else
                 {
-                    heraldSettings = savedSettings;
+                    _heraldSettings = savedSettings;
                 }
             }
         }
 
-        public void Dispose()
-        {
-            heraldQueue.Cancel();
-        }
-
         public void Load(IObservatoryCore core)
         {
-            var logger = core.GetService<ILogger<HeraldNotifier>>();
-            var speechManager = new SpeechRequestManager(
-                heraldSettings, 
-                core.GetService<HttpClient>(),
-                core.PluginStorageFolder, 
-                logger);
-
-            heraldQueue = new HeraldQueue(speechManager, logger);
-            heraldSettings.Test = TestVoice;
+            Task.Run(() => LoadAsync(core as IObservatoryCoreAsync)).GetAwaiter().GetResult();
         }
 
-        public void Unload()
+        public async Task LoadAsync(IObservatoryCoreAsync core)
         {
+            _core = core;
+            var logger = _core.GetService<ILogger<HeraldNotifier>>();
+            var speechManager = new SpeechRequestManager(
+                _heraldSettings,
+                _core.GetService<HttpClient>(),
+                _core.PluginStorageFolder,
+                logger);
 
+            _heraldQueue = new HeraldQueue(speechManager, logger);
+            _heraldSettings.Test = () => {
+                _heraldQueue.Enqueue(
+                    new NotificationArgs() {
+                        Title = "Herald voice testing",
+                        Detail = $"This is {_heraldSettings.SelectedVoice.Split(" - ")[1]}, your Herald Vocalizer for spoken notifications."
+                    },
+                    GetAzureNameFromSetting(_heraldSettings.SelectedVoice),
+                    GetAzureStyleNameFromSetting(_heraldSettings.SelectedVoice),
+                    _heraldSettings.Rate[_heraldSettings.SelectedRate].ToString(),
+                    _heraldSettings.Volume);
+            };
+            await Task.CompletedTask;
+        }
+
+        public async Task UnloadAsync()
+        {
+            _heraldQueue.Cancel();
+            await Task.CompletedTask;
         }
 
         private void TestVoice()
         {
-            heraldQueue.Enqueue(
-                new NotificationArgs() 
-                { 
-                    Title = "Herald voice testing", 
-                    Detail = $"This is {heraldSettings.SelectedVoice.Split(" - ")[1]}, your Herald Vocalizer for spoken notifications." 
-                }, 
-                GetAzureNameFromSetting(heraldSettings.SelectedVoice),
-                GetAzureStyleNameFromSetting(heraldSettings.SelectedVoice),
-                heraldSettings.Rate[heraldSettings.SelectedRate].ToString(),
-                heraldSettings.Volume);
         }
 
         public void OnNotificationEvent(NotificationArgs notificationEventArgs)
         {
-            if (heraldSettings.Enabled)
-                heraldQueue.Enqueue(
-                    notificationEventArgs, 
-                    GetAzureNameFromSetting(heraldSettings.SelectedVoice),
-                    GetAzureStyleNameFromSetting(heraldSettings.SelectedVoice),
-                    heraldSettings.Rate[heraldSettings.SelectedRate].ToString(), 
-                    heraldSettings.Volume);
+            Task.Run(() => OnNotificationEventAsync(notificationEventArgs)).GetAwaiter().GetResult();
         }
 
-        public void OnNotificationCancelled(Guid id)
+        public async Task OnNotificationEventAsync(NotificationArgs notificationEventArgs)
         {
+            if (_heraldSettings.Enabled)
+                _heraldQueue.Enqueue(
+                    notificationEventArgs,
+                    GetAzureNameFromSetting(_heraldSettings.SelectedVoice),
+                    GetAzureStyleNameFromSetting(_heraldSettings.SelectedVoice),
+                    _heraldSettings.Rate[_heraldSettings.SelectedRate].ToString(),
+                    _heraldSettings.Volume);
 
+            await Task.CompletedTask;
         }
 
         private string GetAzureNameFromSetting(string settingName)
         {
-            if (heraldSettings.Voices.TryGetValue(settingName, out var name))
+            if (_heraldSettings.Voices.TryGetValue(settingName, out var name))
                 return name.ToString();
             return settingName;
         }
@@ -125,7 +135,5 @@ namespace Observatory.Herald
                 return string.Empty;
         }
 
-        private HeraldSettings heraldSettings;
-        private HeraldQueue heraldQueue;
     }
 }

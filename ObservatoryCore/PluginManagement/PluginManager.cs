@@ -14,7 +14,7 @@ namespace Observatory.PluginManagement
 {
     public class PluginManager
     {
-        readonly IObservatoryCore _core;
+        readonly IObservatoryCoreAsync _core;
         readonly ILogger _logger;
 
         public Dictionary<string, PluginLoadState> Plugins { get; } = new();
@@ -25,7 +25,7 @@ namespace Observatory.PluginManagement
         }
 
 
-        public PluginManager(IObservatoryCore core, ILogger<PluginManager> logger)
+        public PluginManager(IObservatoryCoreAsync core, ILogger<PluginManager> logger)
         {
             _core = core;
             _logger = logger;
@@ -40,10 +40,6 @@ namespace Observatory.PluginManagement
                 var properties = settings.GetType().GetProperties();
                 foreach (var property in properties)
                 {
-                    var ignore = property.GetCustomAttribute<SettingIgnoreAttribute>();
-                    if (ignore != null)
-                        continue;
-
                     var attrib = property.GetCustomAttribute<SettingDisplayNameAttribute>();
                     if (attrib == null)
                     {

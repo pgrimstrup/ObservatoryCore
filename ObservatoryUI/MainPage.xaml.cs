@@ -5,15 +5,19 @@ namespace ObservatoryUI
 {
     public partial class MainPage : ContentPage
     {
-        readonly IObservatoryCore _core;
+        readonly IObservatoryCoreAsync _core;
         int count = 0;
 
-        public MainPage(IObservatoryCore core)
+        public MainPage(IObservatoryCoreAsync core)
         {
             InitializeComponent();
 
             _core = core;
-            (_core as ObservatoryCore)?.Initialize();
+        }
+
+        protected override void OnAppearing()
+        {
+            Task.Run(() => _core.InitializeAsync()).GetAwaiter().GetResult();
         }
 
         private void OnCounterClicked(object sender, EventArgs e)

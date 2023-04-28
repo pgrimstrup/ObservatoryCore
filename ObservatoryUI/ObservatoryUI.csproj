@@ -52,10 +52,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\ObservatoryBotanist\ObservatoryBotanist.csproj" />
-	  <ProjectReference Include="..\ObservatoryBridge\ObservatoryBridge.csproj" />
 	  <ProjectReference Include="..\ObservatoryCore\ObservatoryCore.csproj" />
-	  <ProjectReference Include="..\ObservatoryExplorer\ObservatoryExplorer.csproj" />
 	  <ProjectReference Include="..\ObservatoryFramework\ObservatoryFramework.csproj" />
 	  <ProjectReference Include="..\ObservatoryHerald\ObservatoryHerald.csproj" />
 	</ItemGroup>

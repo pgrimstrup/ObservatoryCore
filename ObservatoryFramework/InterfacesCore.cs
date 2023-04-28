@@ -215,39 +215,4 @@ namespace Observatory.Framework.Interfaces
         /// </summary>
         public string PluginStorageFolder { get; }
     }
-
-    public interface IObservatoryCore2 : IObservatoryCore
-    {
-        public void Initialize();
-
-        public T GetService<T>();
-    }
-
-    public interface IInbuiltNotifier : IObservatoryPlugin
-    {
-        public NotificationRendering Filter { get; }
-
-        public void OnNotificationEvent(Guid id, NotificationArgs notificationEventArgs);
-
-        public void OnNotificationCancelled(Guid id);
-    }
-
-    public interface ILogMonitor
-    {
-        void Start();
-        void Stop();
-
-        LogMonitorState CurrentState { get; }
-
-        event EventHandler<LogMonitorStateChangedEventArgs> LogMonitorStateChanged;
-
-        event EventHandler<JournalEventArgs> JournalEntry;
-
-        event EventHandler<JournalEventArgs> StatusUpdate;
-    }
-
-    public interface ISolutionPlugins
-    {
-        IDictionary<string, string> PluginTypes { get; }
-    }
 }
