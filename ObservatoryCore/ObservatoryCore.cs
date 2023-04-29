@@ -15,15 +15,17 @@ namespace Observatory
         private readonly ILogMonitor _logMonitor;
         private readonly IServiceProvider _serviceProvider;
         private readonly IMainFormDispatcher _dispatcher;
+        private readonly IAppSettings _settings;
         private bool _pluginsInitialized;
 
 
-        public ObservatoryCore(IServiceProvider services, ILogger<ObservatoryCore> logger, ILogMonitor logMonitor, IMainFormDispatcher dispatcher)
+        public ObservatoryCore(IServiceProvider services, ILogger<ObservatoryCore> logger, ILogMonitor logMonitor, IMainFormDispatcher dispatcher, IAppSettings settings)
         {
             _serviceProvider = services;
             _logger = logger;
             _logMonitor = logMonitor;
             _dispatcher = dispatcher;
+            _settings = settings;
         }
 
         public T GetService<T>()
@@ -31,7 +33,7 @@ namespace Observatory
             return (T)_serviceProvider.GetService(typeof(T));
         }
 
-        public void Initialize()
+        public IEnumerable<IObservatoryPlugin> Initialize()
         {
             if (_pluginsInitialized)
                 throw new InvalidOperationException("IObserverCore.Initializes cannot be called more than once");
@@ -44,9 +46,12 @@ namespace Observatory
             _logMonitor.LogMonitorStateChanged += OnLogMonitorStateChanged;
 
             _pluginManager.LoadPluginSettings();
+            if(_settings.StartMonitor)
+                _logMonitor.Start();
 
             // Enable notifications
             _pluginsInitialized = true;
+            return _pluginManager.ActivePlugins;
         }
 
         public PluginManager PluginManager => _pluginManager;

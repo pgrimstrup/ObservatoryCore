@@ -23,7 +23,7 @@ namespace Observatory.Explorer
         private DateTime CriteriaLastModified;
         private string currentSystem = string.Empty;
 
-        internal Explorer(ExplorerWorker explorerWorker, IObservatoryCore core, ObservableCollection<object> results)
+        internal Explorer(ExplorerWorker explorerWorker, IObservatoryCoreAsync core, ObservableCollection<object> results)
         {
             SystemBodyHistory = new();
             BodySignalHistory = new();

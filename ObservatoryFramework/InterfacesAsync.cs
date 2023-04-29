@@ -81,7 +81,7 @@ namespace Observatory.Framework.Interfaces
     /// </summary>
     public interface IObservatoryCoreAsync : IObservatoryCore
     {
-        public void Initialize();
+        public IEnumerable<IObservatoryPlugin> Initialize();
 
         /// <summary>
         /// Send a notification out to all native notifiers and any plugins implementing IObservatoryNotifier.

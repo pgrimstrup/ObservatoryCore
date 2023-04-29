@@ -48,7 +48,7 @@ namespace Observatory.Explorer
 
         public void Load(IObservatoryCore observatoryCore)
         {
-            explorer = new Explorer(this, observatoryCore, resultsGrid);
+            explorer = new Explorer(this, (IObservatoryCoreAsync)observatoryCore, resultsGrid);
             resultsGrid.Add(new ExplorerUIResults());
             pluginUI = new PluginUI(resultsGrid);
             Core = observatoryCore;

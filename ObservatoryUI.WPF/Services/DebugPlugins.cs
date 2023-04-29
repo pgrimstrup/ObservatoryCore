@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Observatory.Framework.Interfaces;
 
-namespace ObservatoryUI.Inbuilt
+namespace ObservatoryUI.WPF.Services
 {
-    internal class SolutionPlugins : IDebugPlugins
+    internal class DebugPlugins : IDebugPlugins
     {
         public IDictionary<string, string> PluginTypes => new Dictionary<string, string> {
             { "Botanist", "Observatory.Botanist.Botanist, ObservatoryBotanist" },

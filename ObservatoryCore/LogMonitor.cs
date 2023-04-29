@@ -15,10 +15,13 @@ namespace Observatory
     public class LogMonitor : ILogMonitor
     {
         readonly ILogger _logger;
+        readonly IAppSettings _settings;
 
-        public LogMonitor(ILogger<LogMonitor> logger)
+        public LogMonitor(ILogger<LogMonitor> logger, IAppSettings settings)
         {
             _logger = logger;
+            _settings = settings;
+
             currentLine = new();
             journalTypes = JournalReader.PopulateEventClasses();
             InitializeWatchers(string.Empty);
@@ -99,12 +102,12 @@ namespace Observatory
 
         public void PrereadJournals()
         {
-            if (!Properties.Core.Default.TryPrimeSystemContextOnStartMonitor ||
-                Properties.Core.Default.StartReadAll) return;
+            if (!_settings.TryPrimeSystemContextOnStartMonitor || _settings.StartReadAll) 
+                return;
 
             SetLogMonitorState(currentState | LogMonitorState.PreRead);
 
-            DirectoryInfo logDirectory = GetJournalFolder(Properties.Core.Default.JournalFolder);
+            DirectoryInfo logDirectory = GetJournalFolder(_settings.JournalFolder);
             var files = GetJournalFilesOrdered(logDirectory);
             
             // Read at most the last two files (in case we were launched after the game and the latest
@@ -232,9 +235,9 @@ namespace Observatory
         {
             DirectoryInfo logDirectory;
 
-            if (path.Length == 0 && Properties.Core.Default.JournalFolder.Trim().Length > 0)
+            if (path.Length == 0 && _settings.JournalFolder != null && _settings.JournalFolder.Trim().Length > 0)
             {
-                path = Properties.Core.Default.JournalFolder;
+                path = _settings.JournalFolder;
             }
 
             if (path.Length > 0)
@@ -267,10 +270,10 @@ namespace Observatory
                 throw new NotImplementedException("Current OS Platform Not Supported.");
             }
 
-            if (Properties.Core.Default.JournalFolder != path)
+            if (_settings.JournalFolder != path)
             {
-                Properties.Core.Default.JournalFolder = path;
-                Properties.Core.Default.Save();
+                _settings.JournalFolder = path;
+                _settings.SaveSettings();
             }
 
             return logDirectory;

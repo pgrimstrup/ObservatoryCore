@@ -1,31 +1,59 @@
-﻿using Observatory;
+﻿using System.Collections.ObjectModel;
+using Observatory;
 using Observatory.Framework.Interfaces;
+using ObservatoryUI.Temp;
+using ObservatoryUI.ViewModels;
+using ObservatoryUI.Views;
 
 namespace ObservatoryUI
 {
     public partial class MainPage : ContentPage
     {
         readonly IObservatoryCoreAsync _core;
-        int count = 0;
+        readonly IAppSettings _settings;
+        readonly ObservableCollection<PluginViewModel> _views;
 
-        public MainPage(IObservatoryCoreAsync core)
+        public IList<PluginViewModel> Views => _views;
+
+        public MainPage(IObservatoryCoreAsync core, IAppSettings settings)
         {
             InitializeComponent();
 
+            _settings = settings;
             _core = core;
-            _core.Initialize();
+            var plugins = _core.Initialize();
+
+            _views = CreatePluginViews(plugins);
+            BindingContext = this;
         }
 
-        private void OnCounterClicked(object sender, EventArgs e)
+        private ObservableCollection<PluginViewModel> CreatePluginViews(IEnumerable<IObservatoryPlugin> plugins)
         {
-            count++;
+            ObservableCollection<PluginViewModel> models = new ObservableCollection<PluginViewModel>();
 
-            if (count == 1)
-                CounterBtn.Text = $"Clicked {count} time";
-            else
-                CounterBtn.Text = $"Clicked {count} times";
+            int column = 0;
+            int row = 0;
 
-            SemanticScreenReader.Announce(CounterBtn.Text);
+            foreach (var plugin in plugins.Where(p => p.PluginUI?.DataGrid != null))
+            {
+                PluginView view = new PluginView();
+                PluginViewModel viewmodel = new PluginViewModel(plugin, view);
+
+                viewmodel.Column = column++;
+                viewmodel.Row = row;
+
+                if(row < MainPageGrid.RowDefinitions.Count)
+                    models.Add(viewmodel);
+
+                if (column >= MainPageGrid.ColumnDefinitions.Count)
+                {
+                    row++;
+                    column = 0;
+                }
+            }
+
+            return models;
         }
+
     }
 }

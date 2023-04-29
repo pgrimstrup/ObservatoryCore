@@ -9,6 +9,7 @@ using Observatory.Framework;
 using System.Text.Json;
 using System.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace Observatory.PluginManagement
 {
@@ -16,6 +17,7 @@ namespace Observatory.PluginManagement
     {
         readonly IObservatoryCoreAsync _core;
         readonly ILogger _logger;
+        readonly IAppSettings _settings;
 
         public Dictionary<string, PluginLoadState> Plugins { get; } = new();
 
@@ -25,10 +27,11 @@ namespace Observatory.PluginManagement
         }
 
 
-        public PluginManager(IObservatoryCoreAsync core, ILogger<PluginManager> logger)
+        public PluginManager(IObservatoryCoreAsync core, ILogger<PluginManager> logger, IAppSettings settings)
         {
             _core = core;
             _logger = logger;
+            _settings = settings;   
         }
 
         public static Dictionary<PropertyInfo, string> GetSettingDisplayNames(object settings)
@@ -56,34 +59,8 @@ namespace Observatory.PluginManagement
 
         public void SaveSettings(IObservatoryPlugin plugin, object settings)
         {
-            string savedSettings = Properties.Core.Default.PluginSettings;
-            Dictionary<string, object> pluginSettings;
-
-            if (!String.IsNullOrWhiteSpace(savedSettings))
-            {
-                pluginSettings = JsonSerializer.Deserialize<Dictionary<string, object>>(savedSettings);
-            }
-            else
-            {
-                pluginSettings = new();
-            }
-
-            if (pluginSettings.ContainsKey(plugin.Name))
-            {
-                pluginSettings[plugin.Name] = settings;
-            }
-            else
-            {
-                pluginSettings.Add(plugin.Name, settings);
-            }
-
-            string newSettings = JsonSerializer.Serialize(pluginSettings, new JsonSerializerOptions()
-            {
-                ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
-            });
-
-            Properties.Core.Default.PluginSettings = newSettings;
-            Properties.Core.Default.Save();
+            plugin.Settings = settings;
+            _settings.SavePluginSettings(plugin);
         }
 
         public void Shutdown()
@@ -105,26 +82,32 @@ namespace Observatory.PluginManagement
                 {
                     var pluginState = LoadPlugin("Inbuilt:" + type.Name, type);
                     Plugins[pluginState.TypeName] = pluginState;
+                    Debug.WriteLine($"Plugin {pluginState.SettingKey} ({pluginState.TypeName}) loaded");
                 }
             }
 
             // Load plugins listed in the app.config
-            var solutionPlugins = _core.GetService<ISolutionPlugins>();
+            var solutionPlugins = _core.GetService<IDebugPlugins>();
             if(solutionPlugins != null)
             {
                 foreach(var key in solutionPlugins.PluginTypes.Keys)
                 {
                     var type = Type.GetType(solutionPlugins.PluginTypes[key], false);
-                    if (type != null)
+                    if (type == null)
+                    {
+                        Debug.WriteLine($"Plugin {key} ({solutionPlugins.PluginTypes[key]}) not found");
+                    }
+                    else
                     {
                         var pluginState = LoadPlugin("Solution:" + key, type);
                         Plugins[pluginState.TypeName] = pluginState;
+                        Debug.WriteLine($"Plugin {pluginState.SettingKey} ({pluginState.TypeName}) loaded");
                     }
                 }
             }
 
             // Load other plugins from the Documents folder
-            var pluginsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Elite Observatory", "Plugins");
+            var pluginsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ObservatoryCore", "Plugins");
             ExtractPlugins(pluginsFolder);
 
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
@@ -140,6 +123,7 @@ namespace Observatory.PluginManagement
                         {
                             var pluginState = LoadPlugin("Plugin:" + type.Name, type);
                             Plugins[pluginState.TypeName] = pluginState;
+                            Debug.WriteLine($"Plugin {pluginState.SettingKey} ({pluginState.TypeName}) loaded");
                         }
                     }
                 }
@@ -198,9 +182,7 @@ namespace Observatory.PluginManagement
             {
                 try
                 {
-                    var settings = GetSettings(plugin);
-                    if (settings != null)
-                        plugin.Settings = settings;
+                    _settings.LoadPluginSettings(plugin);
                     plugin.Load(_core);
                 }
                 catch (Exception ex)
@@ -209,31 +191,6 @@ namespace Observatory.PluginManagement
                 }
             }
         }
-
-        private object GetSettings(IObservatoryPlugin plugin)
-        {
-            string savedSettings = Properties.Core.Default.PluginSettings;
-            Dictionary<string, object> pluginSettings;
-
-            if (!String.IsNullOrWhiteSpace(savedSettings))
-            {
-                pluginSettings = JsonSerializer.Deserialize<Dictionary<string, object>>(savedSettings);
-            }
-            else
-            {
-                pluginSettings = new();
-            }
-
-            if (pluginSettings.ContainsKey(plugin.Name))
-            {
-                var settingsElement = (JsonElement)pluginSettings[plugin.Name];
-                var settingsObject = JsonSerializer.Deserialize(settingsElement.GetRawText(), plugin.Settings.GetType());
-                return settingsObject;
-            }
-
-            return null;
-        }
-
 
         private void ExtractPlugins(string pluginFolder)
         {

@@ -24,7 +24,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObservatoryHerald", "Observ
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObservatoryBridge", "ObservatoryBridge\ObservatoryBridge.csproj", "{C1A21063-8B44-4625-91BB-758CD95BF2AE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObservatoryUI", "ObservatoryUI\ObservatoryUI.csproj", "{9DD22A0E-EF1E-499C-8F94-C546DD7DF077}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObservatoryUI", "ObservatoryUI\ObservatoryUI.csproj", "{9DD22A0E-EF1E-499C-8F94-C546DD7DF077}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObservatoryUI.WPF", "ObservatoryUI.WPF\ObservatoryUI.WPF.csproj", "{8A8D8CE4-2A1B-476B-BEEB-2CEF30B4240F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -62,6 +64,10 @@ Global
 		{9DD22A0E-EF1E-499C-8F94-C546DD7DF077}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9DD22A0E-EF1E-499C-8F94-C546DD7DF077}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9DD22A0E-EF1E-499C-8F94-C546DD7DF077}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{8A8D8CE4-2A1B-476B-BEEB-2CEF30B4240F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A8D8CE4-2A1B-476B-BEEB-2CEF30B4240F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A8D8CE4-2A1B-476B-BEEB-2CEF30B4240F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A8D8CE4-2A1B-476B-BEEB-2CEF30B4240F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
