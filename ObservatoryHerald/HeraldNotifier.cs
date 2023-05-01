@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Observatory.Framework;
 using Observatory.Framework.Interfaces;
 using System.Runtime.CompilerServices;
@@ -68,10 +69,10 @@ namespace Observatory.Herald
         public async Task LoadAsync(IObservatoryCoreAsync core)
         {
             _core = core;
-            var logger = _core.GetService<ILogger<HeraldNotifier>>();
+            var logger = _core.Services.GetRequiredService<ILogger<HeraldNotifier>>();
             var speechManager = new SpeechRequestManager(
                 _heraldSettings,
-                _core.GetService<HttpClient>(),
+                _core.HttpClient,
                 _core.PluginStorageFolder,
                 logger);
 

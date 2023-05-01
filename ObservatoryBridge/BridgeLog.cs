@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,6 +20,7 @@ namespace Observatory.Bridge
         internal SsmlBuilder TitleSsml;
         internal SsmlBuilder DetailSsml;
 
+        [Display(Name = "Time")]
         public string EventTime => EventTimeUTC.ToString();
 
         public string Title => TitleSsml.ToString();

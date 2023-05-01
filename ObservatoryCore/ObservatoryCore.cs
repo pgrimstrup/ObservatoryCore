@@ -5,6 +5,7 @@ using Observatory.Framework;
 using Observatory.Framework.Interfaces;
 using Observatory.PluginManagement;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Observatory
 {
@@ -28,25 +29,22 @@ namespace Observatory
             _settings = settings;
         }
 
-        public T GetService<T>()
-        {
-            return (T)_serviceProvider.GetService(typeof(T));
-        }
+        public IServiceProvider Services => _serviceProvider;
 
         public IEnumerable<IObservatoryPlugin> Initialize()
         {
             if (_pluginsInitialized)
                 throw new InvalidOperationException("IObserverCore.Initializes cannot be called more than once");
 
-            _pluginManager = GetService<PluginManager>();
-            _pluginManager.LoadPlugins();
-
             _logMonitor.JournalEntry += OnJournalEvent;
             _logMonitor.StatusUpdate += OnStatusUpdate;
             _logMonitor.LogMonitorStateChanged += OnLogMonitorStateChanged;
 
-            _pluginManager.LoadPluginSettings();
-            if(_settings.StartMonitor)
+            // PluginManager needs Core to be created first (circular reference), so we can create PluginManager here
+            _pluginManager = Services.GetRequiredService<PluginManager>();
+            _pluginManager.LoadPlugins();
+
+            if (_settings.StartMonitor)
                 _logMonitor.Start();
 
             // Enable notifications
@@ -255,7 +253,7 @@ namespace Observatory
             }
         }
 
-        public HttpClient HttpClient => GetService<HttpClient>();
+        public HttpClient HttpClient => Services.GetRequiredService<HttpClient>();
 
         internal void Shutdown()
         {

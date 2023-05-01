@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Observatory.PluginManagement
 {
@@ -81,13 +82,13 @@ namespace Observatory.PluginManagement
                 if(pluginType.IsAssignableFrom(type) && !type.IsAbstract && !type.IsInterface)
                 {
                     var pluginState = LoadPlugin("Inbuilt:" + type.Name, type);
-                    Plugins[pluginState.TypeName] = pluginState;
+                    Plugins[type.FullName] = pluginState;
                     Debug.WriteLine($"Plugin {pluginState.SettingKey} ({pluginState.TypeName}) loaded");
                 }
             }
 
             // Load plugins listed in the app.config
-            var solutionPlugins = _core.GetService<IDebugPlugins>();
+            var solutionPlugins = _core.Services.GetRequiredService<IDebugPlugins>();
             if(solutionPlugins != null)
             {
                 foreach(var key in solutionPlugins.PluginTypes.Keys)
@@ -100,7 +101,7 @@ namespace Observatory.PluginManagement
                     else
                     {
                         var pluginState = LoadPlugin("Solution:" + key, type);
-                        Plugins[pluginState.TypeName] = pluginState;
+                        Plugins[type.FullName] = pluginState;
                         Debug.WriteLine($"Plugin {pluginState.SettingKey} ({pluginState.TypeName}) loaded");
                     }
                 }
@@ -122,7 +123,7 @@ namespace Observatory.PluginManagement
                         if (pluginType.IsAssignableFrom(type) && !type.IsAbstract && !type.IsInterface)
                         {
                             var pluginState = LoadPlugin("Plugin:" + type.Name, type);
-                            Plugins[pluginState.TypeName] = pluginState;
+                            Plugins[type.FullName] = pluginState;
                             Debug.WriteLine($"Plugin {pluginState.SettingKey} ({pluginState.TypeName}) loaded");
                         }
                     }
@@ -165,6 +166,10 @@ namespace Observatory.PluginManagement
                     pluginState.Instance = Activator.CreateInstance(type) as IObservatoryPlugin;
                     if (pluginState.Instance == null)
                         throw new InvalidCastException("Created instance does not implement IObservatoryPlugin");
+
+                    _settings.LoadPluginSettings(pluginState.Instance);
+                    pluginState.Instance.Load(_core);
+                    _settings.SavePluginSettings(pluginState.Instance);
                 }
             }
             catch (Exception ex)
@@ -176,29 +181,13 @@ namespace Observatory.PluginManagement
             return pluginState;
         }
 
-        public void LoadPluginSettings()
-        {
-            foreach (var plugin in ActivePlugins)
-            {
-                try
-                {
-                    _settings.LoadPluginSettings(plugin);
-                    plugin.Load(_core);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"Loading Plugin Settings {plugin.Name} threw an exception");
-                }
-            }
-        }
-
         private void ExtractPlugins(string pluginFolder)
         {
             if (!Directory.Exists(pluginFolder))
                 Directory.CreateDirectory(pluginFolder);
 
             var files = Directory.GetFiles(pluginFolder, "*.zip")
-                .Concat(Directory.GetFiles(pluginFolder, "*.pgeop")); // P Grimstrup's Elite Observatory Plugin
+                .Concat(Directory.GetFiles(pluginFolder, "*.eop")); 
 
             foreach (var file in files)
             {

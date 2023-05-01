@@ -1,4 +1,4 @@
-﻿<Window x:Class="ObservatoryUI.WPF.MainWindow"
+﻿<syncfusion:RibbonWindow x:Class="ObservatoryUI.WPF.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -6,28 +6,43 @@
         xmlns:local="clr-namespace:ObservatoryUI.WPF"
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
         mc:Ignorable="d"
-        Title="ChromelessWindow" Height="450" Width="800" ResizeMode="CanResizeWithGrip" 
-		Loaded="OnLoaded">
+        Title="Elite Observatory" Height="450" Width="800" ResizeMode="CanResizeWithGrip" 
+        Loaded="OnLoaded">
 	<Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"></RowDefinition>
             <RowDefinition Height="*"></RowDefinition>
             <RowDefinition Height="24"></RowDefinition>
         </Grid.RowDefinitions>
-		<syncfusion:DockingManager UseDocumentContainer="True" UseNativeFloatWindow="True"  >
-			<ContentControl x:Name="dockRight" syncfusion:DockingManager.Header="Dock Right" syncfusion:DockingManager.State="Dock" syncfusion:DockingManager.SideInDockedMode="Right"/>
-			<ContentControl x:Name="dockBottom" syncfusion:DockingManager.Header="Dock Bottom" syncfusion:DockingManager.State="Dock" syncfusion:DockingManager.SideInDockedMode="Bottom"/>
-			<ContentControl x:Name="dockTabbed" syncfusion:DockingManager.Header="Dock Tabbed" syncfusion:DockingManager.State="Dock" syncfusion:DockingManager.SideInDockedMode="Tabbed" syncfusion:DockingManager.TargetNameInDockedMode="dockBottom"/>
-			<ContentControl x:Name="autoHidden" syncfusion:DockingManager.Header="Auto Hidden" syncfusion:DockingManager.State="AutoHidden" syncfusion:DockingManager.SideInDockedMode="Left"/>
 
-			<ContentControl x:Name="document1" syncfusion:DockingManager.CanDocument="True" syncfusion:DockingManager.Header="Document1.xaml" syncfusion:DockingManager.State="Document"/>
-			<ContentControl x:Name="document2" syncfusion:DockingManager.CanDocument="True" syncfusion:DockingManager.Header="Document2.xaml" syncfusion:DockingManager.State="Document">
-				<syncfusion:SfDataGrid AutoGenerateColumns="True" ColumnSizer="Auto">
-
-				</syncfusion:SfDataGrid>
-			</ContentControl>
+        <syncfusion:Ribbon x:Name="Ribbon" EnableSimplifiedLayoutMode="True" LayoutMode="Simplified">
+            <syncfusion:RibbonTab Caption="Home" IsChecked="True">
+                <syncfusion:RibbonBar Header="" ShowInMoreCommands="False" IsLauncherButtonVisible="False">
+                    <syncfusion:RibbonButton SizeForm="Large" Label="Settings"></syncfusion:RibbonButton>
+                    <syncfusion:DropDownButton SizeForm="Large" Label="Theme" IsDropDownOpenChanged="OnThemeMenuOpenedChanged">
+                        <syncfusion:DropDownMenuItem Header="Fluent Dark" Click="OnThemeClick" CommandParameter="FluentDark"></syncfusion:DropDownMenuItem>
+                        <syncfusion:DropDownMenuItem Header="Fluent Light" Click="OnThemeClick" CommandParameter="FluentLight"></syncfusion:DropDownMenuItem>
+                        <syncfusion:DropDownMenuItem Header="Material Dark" Click="OnThemeClick" CommandParameter="MaterialDark"></syncfusion:DropDownMenuItem>
+                        <syncfusion:DropDownMenuItem Header="Material Light" Click="OnThemeClick" CommandParameter="MaterialLight"></syncfusion:DropDownMenuItem>
+                        <syncfusion:DropDownMenuItem Header="Windows 11 Dark" Click="OnThemeClick" CommandParameter="Windows11Dark"></syncfusion:DropDownMenuItem>
+                        <syncfusion:DropDownMenuItem Header="Windows 11 Light" Click="OnThemeClick" CommandParameter="Windows11Light"></syncfusion:DropDownMenuItem>
+                    </syncfusion:DropDownButton>
+                </syncfusion:RibbonBar>
+            </syncfusion:RibbonTab>
+            <syncfusion:RibbonTab Caption="Support">
+                <syncfusion:RibbonBar Header="Support">
+                    <syncfusion:RibbonButton SizeForm="Large" Label="Documentation"></syncfusion:RibbonButton>
+                    <syncfusion:RibbonButton SizeForm="Large" Label="Plugin Development"></syncfusion:RibbonButton>
+                    <syncfusion:RibbonButton SizeForm="Large" Label="Git Project"></syncfusion:RibbonButton>
+                    <syncfusion:RibbonButton SizeForm="Large" Label="Donate"></syncfusion:RibbonButton>
+                </syncfusion:RibbonBar>
+            </syncfusion:RibbonTab>
+        </syncfusion:Ribbon>
+        
+		<syncfusion:DockingManager x:Name="Docking" Grid.Row="1" Margin="4" UseDocumentContainer="True" UseNativeFloatWindow="True" ItemsSource="{Binding PluginViews}" >
 		</syncfusion:DockingManager>
 
-		<StatusBar Grid.Row="1"/>
+		<StatusBar Grid.Row="2"/>
 
 	</Grid>
-</Window>
+</syncfusion:RibbonWindow>

@@ -117,6 +117,6 @@ namespace Observatory.Framework.Interfaces
         /// <returns>Status object reflecting current Elite Dangerous player status.</returns>
         public Task<Status> GetStatusAsync();
 
-        public T GetService<T>();
+        public IServiceProvider Services { get; }
     }
 }

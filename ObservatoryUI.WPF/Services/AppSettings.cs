@@ -14,6 +14,7 @@ namespace ObservatoryUI.WPF.Services
 {
     public class AppSettingsData
     {
+        public string AppTheme { get; set; } = "FluentDark";
         public string JournalFolder { get; set; } = "";
 
         public bool AllowUnsigned { get; set; } = true;
@@ -95,16 +96,25 @@ namespace ObservatoryUI.WPF.Services
 
         public void LoadPluginSettings(IObservatoryPlugin plugin)
         {
-            string key = $"Plugin-{plugin.GetType().FullName}";
-            if (PluginSettings.TryGetValue(key, out var settings))
-                plugin.Settings = settings;
+            string key = plugin.GetType().FullName!;
+
+            // Convert the settings back to JSON so we can deserialize as the correct object type
+            if (PluginSettings.TryGetValue(key, out var settings) && settings != null && plugin.Settings != null)
+            {
+                string json = JsonSerializer.Serialize(settings, SerializerOptions);
+                var instance = JsonSerializer.Deserialize(json, plugin.Settings.GetType(), SerializerOptions);
+                plugin.Settings = instance;
+            }
         }
 
         public void SavePluginSettings(IObservatoryPlugin plugin)
         {
-            string key = $"Plugin-{plugin.GetType().FullName}";
-            PluginSettings[key] = plugin.Settings;
-            SaveSettings();
+            if (plugin.Settings != null)
+            {
+                string key = plugin.GetType().FullName!;
+                PluginSettings[key] = plugin.Settings;
+                SaveSettings();
+            }
         }
     }
 }

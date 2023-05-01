@@ -7,21 +7,24 @@ using System.Threading.Tasks;
 using Observatory.Framework;
 using Observatory.Framework.Interfaces;
 
-namespace ObservatoryUI.WPF.Services
+namespace Observatory.Core.Services
 {
+    internal class VoiceNotifierSettings
+    {
+
+    }
+
     internal class InbuiltVoiceNotifier : IInbuiltNotifierAsync
     {
         public string Name => "Inbuilt Voice Notifier";
 
-        public string Version => Assembly.GetExecutingAssembly().GetName().Version.ToString();
+        public string ShortName => "Voice Notifier";
 
-        public PluginUI PluginUI => null;
+        public string Version => GetType().Assembly.GetName().Version!.ToString();
 
-        public object Settings
-        {
-            get => null;
-            set { }
-        }
+        public PluginUI PluginUI => null!;
+
+        public object Settings { get; set; } = new VoiceNotifierSettings();
 
         public NotificationRendering Filter { get; } = NotificationRendering.NativeVisual;
 

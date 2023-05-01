@@ -34,6 +34,7 @@ namespace Observatory.Framework.Interfaces
 
     public interface IAppSettings
     {
+        string AppTheme { get; set; }
         string JournalFolder { get; set; }
         bool AllowUnsigned { get; set; }
         public string CoreVersion { get;  }

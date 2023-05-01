@@ -7,21 +7,24 @@ using System.Threading.Tasks;
 using Observatory.Framework;
 using Observatory.Framework.Interfaces;
 
-namespace ObservatoryUI.WPF.Services
+namespace Observatory.Core.Services
 {
+    internal class VisualNotifierSettings
+    {
+
+    }
+
     internal class InbuiltVisualNotifier : IInbuiltNotifierAsync
     {
         public string Name => "Inbuilt Visual Notifier";
 
-        public string Version => Assembly.GetExecutingAssembly().GetName().Version.ToString();
+        public string ShortName => "Visual Notifier";
 
-        public PluginUI PluginUI => null;
+        public string Version => Assembly.GetExecutingAssembly().GetName().Version!.ToString();
 
-        public object Settings
-        {
-            get => null;
-            set { }
-        }
+        public PluginUI PluginUI => null!;
+
+        public object Settings { get; set; } = new VisualNotifierSettings();
 
         public NotificationRendering Filter { get; } = NotificationRendering.NativeVisual;
 

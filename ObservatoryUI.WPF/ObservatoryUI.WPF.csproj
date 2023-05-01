@@ -9,9 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Emoji.Wpf" Version="0.3.4" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0-preview.3.23174.8" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0-preview.3.23174.8" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0-preview.3.23174.8" />
+    <PackageReference Include="Syncfusion.Licensing" Version="21.1.41" />
+    <PackageReference Include="Syncfusion.SfGrid.WPF" Version="21.1.41" />
     <PackageReference Include="Syncfusion.SfSkinManager.WPF" Version="21.1.41" />
     <PackageReference Include="Syncfusion.Shared.WPF" Version="21.1.41" />
     <PackageReference Include="Syncfusion.Themes.FluentDark.WPF" Version="21.1.41" />
@@ -21,12 +24,15 @@
     <PackageReference Include="Syncfusion.Themes.Windows11Dark.WPF" Version="21.1.41" />
     <PackageReference Include="Syncfusion.Themes.Windows11Light.WPF" Version="21.1.41" />
     <PackageReference Include="Syncfusion.Tools.WPF" Version="21.1.41" />
-    <PackageReference Include="syncfusion.ui.wpf.net" Version="21.1.41" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ObservatoryBotanist\ObservatoryBotanist.csproj" />
+    <ProjectReference Include="..\ObservatoryBridge\ObservatoryBridge.csproj" />
     <ProjectReference Include="..\ObservatoryCore\ObservatoryCore.csproj" />
+    <ProjectReference Include="..\ObservatoryExplorer\ObservatoryExplorer.csproj" />
     <ProjectReference Include="..\ObservatoryFramework\ObservatoryFramework.csproj" />
+    <ProjectReference Include="..\ObservatoryHerald\ObservatoryHerald.csproj" />
   </ItemGroup>
 
 </Project>

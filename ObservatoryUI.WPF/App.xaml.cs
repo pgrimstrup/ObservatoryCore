@@ -9,6 +9,8 @@ using ObservatoryUI.WPF.Services;
 using Syncfusion.SfSkinManager;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Debug;
+using ObservatoryUI.WPF.Views;
+using System.Net.Http;
 
 namespace ObservatoryUI.WPF
 {
@@ -47,6 +49,7 @@ namespace ObservatoryUI.WPF
 
             // Register pages
             builder.AddSingleton<MainWindow>();
+            builder.AddTransient<PluginView>();
 
             // Register services
             builder.AddSingleton<IObservatoryCoreAsync, ObservatoryCore>();
@@ -55,6 +58,7 @@ namespace ObservatoryUI.WPF
             builder.AddSingleton<PluginManager>();
             builder.AddSingleton<ILogMonitor, LogMonitor>();
             builder.AddSingleton<IAppSettings, AppSettings>();
+            builder.AddSingleton<HttpClient>();
 
             builder.AddTransient<IDebugPlugins, DebugPlugins>();
             builder.AddTransient<IMainFormDispatcher, AppDispatcher>();
