@@ -9,6 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Services\InbuiltVisualNotifier.cs" />
+    <Compile Remove="Services\InbuiltVoiceNotifier.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Emoji.Wpf" Version="0.3.4" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0-preview.3.23174.8" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0-preview.3.23174.8" />

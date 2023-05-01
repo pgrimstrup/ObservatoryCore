@@ -36,6 +36,11 @@ namespace ObservatoryUI.WPF.Services
 
         public bool TryPrimeSystemContextOnStartMonitor { get; set; } = true;
 
+        public int VoiceVolume { get; set; } = 75;
+        public int VoiceRate { get; set; }
+        public string VoiceName { get; set; }
+
+
         public Dictionary<string, object> PluginSettings { get; set; } = new Dictionary<string, object>();
 
         public AppSettingsData()

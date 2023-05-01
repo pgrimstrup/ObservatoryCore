@@ -355,25 +355,25 @@ namespace Observatory.Bridge
 
             switch (journal.Reason)
             {
-                case Observatory.Framework.Files.ParameterTypes.Reason.TooLarge:
+                case Reason.TooLarge:
                     log.DetailSsml.Append("Our ship is too large for their landing pads, Commander.");
                     break;
-                case Observatory.Framework.Files.ParameterTypes.Reason.Offences:
+                case Reason.Offences:
                     log.DetailSsml.Append("Apparently we have outstanding offences against them, Commander. We might want to rectify that first.");
                     break;
-                case Observatory.Framework.Files.ParameterTypes.Reason.DockOffline:
+                case Reason.DockOffline:
                     log.DetailSsml.Append("Their docking system is offline, Commander. We may have to do this one manually.");
                     break;
-                case Observatory.Framework.Files.ParameterTypes.Reason.ActiveFighter:
+                case Reason.ActiveFighter:
                     log.DetailSsml.Append("We have an active fighter in flight, Commander. We better bring them back on board first.");
                     break;
-                case Observatory.Framework.Files.ParameterTypes.Reason.Distance:
+                case Reason.Distance:
                     log.DetailSsml.Append("We made the request a bit early, Commander. Let's close to within 7.5 kilometers and try to resubmit.");
                     break;
-                case Observatory.Framework.Files.ParameterTypes.Reason.NoSpace:
+                case Reason.NoSpace:
                     log.DetailSsml.Append("Sorry, Commander. No room at the inn. All landing pads are occupied.");
                     break;
-                case Observatory.Framework.Files.ParameterTypes.Reason.RestrictedAccess:
+                case Reason.RestrictedAccess:
                     log.DetailSsml.Append("Looks like access is restricted, Commander.");
                     break;
                 default:

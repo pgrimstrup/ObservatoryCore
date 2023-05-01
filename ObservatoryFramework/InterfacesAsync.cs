@@ -64,16 +64,27 @@ namespace Observatory.Framework.Interfaces
         /// </summary>
         /// <param name="notificationEventArgs">Details of the notification as sent from the originating worker plugin.</param>
         public Task OnNotificationEventAsync(NotificationArgs notificationEventArgs);
-    }
 
-    public interface IInbuiltNotifierAsync : IObservatoryNotifierAsync
-    {
-        public NotificationRendering Filter { get; }
-
+        /// <summary>
+        /// Method called to other plugins to allow them to update the specified notification
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="notificationEventArgs"></param>
+        /// <returns></returns>
         public Task OnNotificationEventAsync(Guid id, NotificationArgs notificationEventArgs);
 
         public Task OnNotificationCancelledAsync(Guid id);
+
     }
+
+    //public interface IInbuiltNotifierAsync : IObservatoryNotifierAsync
+    //{
+    //    public NotificationRendering Filter { get; }
+
+    //    public Task OnNotificationEventAsync(Guid id, NotificationArgs notificationEventArgs);
+
+    //    public Task OnNotificationCancelledAsync(Guid id);
+    //}
 
 
     /// <summary>

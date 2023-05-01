@@ -17,15 +17,26 @@ namespace Observatory
         private readonly IServiceProvider _serviceProvider;
         private readonly IMainFormDispatcher _dispatcher;
         private readonly IAppSettings _settings;
+        private readonly IVoiceNotificationQueue _voiceQueue;
+        private readonly IVisualNotificationQueue _popupQueue;
         private bool _pluginsInitialized;
 
 
-        public ObservatoryCore(IServiceProvider services, ILogger<ObservatoryCore> logger, ILogMonitor logMonitor, IMainFormDispatcher dispatcher, IAppSettings settings)
+        public ObservatoryCore(
+            IServiceProvider services, 
+            ILogger<ObservatoryCore> logger, 
+            ILogMonitor logMonitor, 
+            IMainFormDispatcher dispatcher, 
+            IVoiceNotificationQueue voiceQueue,
+            IVisualNotificationQueue popupQueue,
+            IAppSettings settings)
         {
             _serviceProvider = services;
             _logger = logger;
             _logMonitor = logMonitor;
             _dispatcher = dispatcher;
+            _voiceQueue = voiceQueue;
+            _popupQueue = popupQueue;
             _settings = settings;
         }
 
@@ -62,27 +73,18 @@ namespace Observatory
 
         public Guid SendNotification(string title, string text)
         {
-            if (!_pluginsInitialized)
-                return Guid.Empty;
-
-            var args = new NotificationArgs { Title = title, Detail = text };
+            var args = new NotificationArgs { Title = title, Detail = text, Rendering = NotificationRendering.All };
             return Task.Run(() => SendNotificationAsync(args)).GetAwaiter().GetResult();
         }
 
         public async Task<Guid> SendNotificationAsync(string title, string text)
         {
-            if (!_pluginsInitialized)
-                return Guid.Empty;
-
             var args = new NotificationArgs { Title = title, Detail = text };
             return await SendNotificationAsync(args);
         }
 
         public Guid SendNotification(NotificationArgs args)
         {
-            if (!_pluginsInitialized)
-                return Guid.Empty;
-
             return Task.Run(() => SendNotificationAsync(args)).GetAwaiter().GetResult();
         }
 
@@ -91,32 +93,56 @@ namespace Observatory
             if (!_pluginsInitialized)
                 return Guid.Empty;
 
+            // Queue the message to the internal VoiceQueue 
             Guid id = Guid.NewGuid();
-            await Parallel.ForEachAsync(_pluginManager.ActivePlugins, async (plugin, token) => 
+            if((args.Rendering & NotificationRendering.NativeVocal) != 0)
             {
-                try
+                string title = (args.Suppression & NotificationSuppression.Title) == 0 ? GetSsml(args.Title, args.TitleSsml) : "";
+                string detail = (args.Suppression & NotificationSuppression.Title) == 0 ? GetSsml(args.Detail, args.DetailSsml) : "";
+                _voiceQueue.Add(new VoiceMessage { Id = id, Title = title, Detail = detail });
+            }
+
+            // Queue the message to the internal PopupQueue
+            if ((args.Rendering & NotificationRendering.NativeVisual) != 0)
+            {
+                string title = "";
+                string detail = "";
+
+                if ((args.Suppression & NotificationSuppression.Title) == 0 && !String.IsNullOrEmpty(args.TitleSsml))
+                    title = args.Title.TrimEnd(' ', '.');
+
+                if ((args.Suppression & NotificationSuppression.Detail) == 0 && !String.IsNullOrEmpty(args.DetailSsml))
+                    detail = args.Detail.TrimEnd(' ', '.');
+
+                if (!String.IsNullOrEmpty(title) || !String.IsNullOrEmpty(detail))
+                    _popupQueue.Add(new PopupMessage { Id = id, Title = title, Detail = detail, Timeout = args.Timeout });
+            }
+
+            if ((args.Rendering & NotificationRendering.PluginNotifier) != 0)
+            {
+                // Notify all plugins of the event
+                await Parallel.ForEachAsync(_pluginManager.ActivePlugins, async (plugin, token) =>
                 {
-                    if (plugin is IInbuiltNotifierAsync inbuilt)
+                    try
                     {
-                        if ((inbuilt.Filter & args.Rendering) != 0)
-                            await inbuilt.OnNotificationEventAsync(id, args);
+                        if (plugin is IObservatoryNotifierAsync notifierAsync)
+                        {
+                            await notifierAsync.OnNotificationEventAsync(args);
+                        }
+                        else if (plugin is IObservatoryNotifier notifier)
+                        {
+                            notifier.OnNotificationEvent(args);
+                        }
                     }
-                    else if (plugin is IObservatoryNotifierAsync notifierAsync)
+                    catch (Exception ex)
                     {
-                        await notifierAsync.OnNotificationEventAsync(args);
+                        _logger.LogError(ex, $"Plugin {plugin.Name} exception while sending notification");
                     }
-                    else if (plugin is IObservatoryNotifier notifier)
-                    {
-                        notifier.OnNotificationEvent(args);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"Plugin {plugin.Name} exception while sending notification");
-                }
-            });
+                });
+            }
 
             return id;
+
         }
 
         public void UpdateNotification(Guid id, NotificationArgs args)
@@ -132,15 +158,66 @@ namespace Observatory
             if (!_pluginsInitialized)
                 return;
 
-            await Parallel.ForEachAsync(_pluginManager.ActivePlugins, async (plugin, token) => 
+            if ((args.Rendering & NotificationRendering.NativeVocal) != 0)
             {
+                string title = (args.Suppression & NotificationSuppression.Title) == 0 ? GetSsml(args.Title, args.TitleSsml) : "";
+                string detail = (args.Suppression & NotificationSuppression.Title) == 0 ? GetSsml(args.Detail, args.DetailSsml) : "";
+                _voiceQueue.Update(new VoiceMessage { Id = id, Title = title, Detail = detail });
+            }
+
+            if ((args.Rendering & NotificationRendering.NativeVisual) != 0)
+            {
+                string title = "";
+                string detail = "";
+
+                if ((args.Suppression & NotificationSuppression.Title) == 0 && !String.IsNullOrEmpty(args.TitleSsml))
+                    title = args.Title.TrimEnd(' ', '.');
+
+                if ((args.Suppression & NotificationSuppression.Detail) == 0 && !String.IsNullOrEmpty(args.DetailSsml))
+                    detail = args.Detail.TrimEnd(' ', '.');
+
+                if (!String.IsNullOrEmpty(title) || !String.IsNullOrEmpty(detail))
+                    _popupQueue.Update(new PopupMessage { Id = id, Title = title, Detail = detail, Timeout = args.Timeout });
+            }
+
+            // Send the update message to all plugins that support the new Async interfaces
+            if ((args.Rendering & NotificationRendering.PluginNotifier) != 0)
+            {
+                await Parallel.ForEachAsync(_pluginManager.ActivePlugins, async (plugin, token) => {
+                    try
+                    {
+                        // Updates are only sent to IObservatoryNotifierAsync
+                        if (plugin is IObservatoryNotifierAsync notifier)
+                        {
+                             await notifier.OnNotificationEventAsync(id, args);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"Plugin {plugin.Name} exception while sending notification");
+                    }
+                });
+            }
+        }
+
+
+        public void CancelNotification(Guid id)
+        {
+            Task.Run(() => CancelNotificationAsync(id)).GetAwaiter().GetResult();
+        }
+
+        public async Task CancelNotificationAsync(Guid id)
+        {
+            _voiceQueue.Cancel(id);
+            _popupQueue.Cancel(id);
+
+            await Parallel.ForEachAsync(_pluginManager.ActivePlugins, async (plugin, token) => {
                 try
                 {
-                    // Updates are only sent to InbuiltNotifiers 
-                    if (plugin is IInbuiltNotifierAsync inbuilt)
+                    // Cancellations are only sent to IObservatoryNotifierAsync
+                    if (plugin is IObservatoryNotifierAsync notifier)
                     {
-                        if ((inbuilt.Filter & args.Rendering) != 0)
-                            await inbuilt.OnNotificationEventAsync(id, args);
+                        await notifier.OnNotificationCancelledAsync(id);
                     }
                 }
                 catch (Exception ex)
@@ -150,25 +227,21 @@ namespace Observatory
             });
         }
 
-        public void CancelNotification(Guid id)
+        private string GetSsml(string text, string ssml)
         {
-            Task.Run(() => CancelNotificationAsync(id)).GetAwaiter().GetResult();
+            if (String.IsNullOrEmpty(ssml) && String.IsNullOrEmpty(text))
+                return null;
+
+            if (String.IsNullOrEmpty(ssml))
+            {
+                var sb = new SsmlBuilder();
+                sb.Append(text);
+                ssml = sb.ToSsml();
+            }
+
+            return ssml.TrimEnd(' ', '.');
         }
 
-        public async Task CancelNotificationAsync(Guid id)
-        {
-            await Parallel.ForEachAsync(_pluginManager.ActivePlugins, async (plugin, token) => 
-            {
-                try
-                {
-                    await (plugin as IInbuiltNotifierAsync)?.OnNotificationCancelledAsync(id);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"Plugin {plugin.Name} exception while cancelling notification");
-                }
-            });
-        }
 
         public Action<Exception, string> GetPluginErrorLogger(IObservatoryPlugin plugin)
         {
@@ -258,6 +331,8 @@ namespace Observatory
         internal void Shutdown()
         {
             _pluginManager.Shutdown();
+            _voiceQueue.Shutdown();
+            _popupQueue.Shutdown();
         }
 
         private static bool FirstRowIsAllNull(IObservatoryWorker worker)

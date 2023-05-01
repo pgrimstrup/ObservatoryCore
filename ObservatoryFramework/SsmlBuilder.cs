@@ -7,11 +7,11 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
 
-namespace Observatory.Bridge
+namespace Observatory.Framework
 {
     public enum EmphasisType { Strong, Moderate, Reduced }
 
-    internal class SsmlBuilder
+    public class SsmlBuilder
     {
         readonly List<string> _textFragments = new List<string>();
         readonly List<string> _ssmlFragments = new List<string>();

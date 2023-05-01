@@ -45,10 +45,53 @@ namespace Observatory.Framework.Interfaces
         public string ExportStyle { get; set; }
         public bool TryPrimeSystemContextOnStartMonitor { get; set; }
 
+        public int VoiceVolume { get; set; }
+        public int VoiceRate { get; set; }
+        public string VoiceName { get; set; }
+
         public void LoadPluginSettings(IObservatoryPlugin plugin);
         public void SavePluginSettings(IObservatoryPlugin plugin);
 
         public void SaveSettings();
+    }
+
+    public interface IVoiceNotificationQueue
+    {
+        void Add(VoiceMessage msg);
+        void Update(VoiceMessage msg);
+        void Cancel(Guid id);
+
+        void Shutdown();
+    }
+
+    public interface IVisualNotificationQueue
+    {
+        void Add(PopupMessage msg);
+        void Update(PopupMessage msg);
+        void Cancel(Guid id);
+
+        void Shutdown();
+    }
+
+    public class VoiceMessage
+    {
+        public Guid Id;
+        public string Title;
+        public string Detail;
+        public bool Cancelled;
+    }
+
+    public class PopupMessage
+    {
+        public Guid Id;
+        public string Title;
+        public string Detail;
+        public int Timeout;
+        public int X;
+        public int Y;
+
+        public DateTime? TimeShown;
+        public DateTime? AutoCloseTime;
     }
 
     public class WindowBounds

@@ -7,7 +7,7 @@
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
         mc:Ignorable="d"
         Title="Elite Observatory" Height="450" Width="800" ResizeMode="CanResizeWithGrip" 
-        Loaded="OnLoaded">
+        Loaded="OnLoaded" Activated="OnActivated">
 	<Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"></RowDefinition>

@@ -19,6 +19,8 @@ namespace ObservatoryUI.WPF
         readonly IObservatoryCoreAsync _core;
         readonly IAppSettings _settings;
         readonly string _dockStateFile;
+
+        bool _firstActivation = true;
         
         public ObservableCollection<PluginViewModel> PluginViews { get; } = new ObservableCollection<PluginViewModel>();
 
@@ -92,8 +94,8 @@ namespace ObservatoryUI.WPF
 
         private void OnThemeClick(object menuItem, RoutedEventArgs e)
         {
-            var button = menuItem as DropDownMenuItem;
-            var theme = (string)button.CommandParameter;
+            var button = (DropDownMenuItem)menuItem;
+            var theme = (string)button!.CommandParameter;
             SfSkinManager.SetTheme(this, new Theme(theme));
 
             _settings.AppTheme = theme;
@@ -102,18 +104,28 @@ namespace ObservatoryUI.WPF
 
         private void OnThemeMenuOpenedChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
         {
-            DropDownButton button = sender as DropDownButton;
+            DropDownButton button = (DropDownButton)sender;
             foreach(DropDownMenuItem item in button.Items.OfType<DropDownMenuItem>())
             {
                 item.IsChecked = ((string)item.CommandParameter) == _settings.AppTheme;
             }
-            
         }
 
         private void OnResetLayoutClick(object sender, RoutedEventArgs e)
         {
             Docking.DeleteDockState();
             Docking.LoadDockState();
+        }
+
+        private async void OnActivated(object sender, EventArgs e)
+        {
+            if (_firstActivation)
+            {
+                await Task.Delay(1000);
+                _core.SendNotification("", "Welcome, Commander. Bridge crew are standing by and awaiting your instructions.");
+            }
+
+            _firstActivation = false;
         }
     }
 }

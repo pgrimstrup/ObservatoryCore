@@ -119,6 +119,18 @@ namespace Observatory.Herald
             await Task.CompletedTask;
         }
 
+        public async Task OnNotificationEventAsync(Guid id, NotificationArgs notificationEventArgs)
+        {
+
+            await Task.CompletedTask;
+        }
+
+        public async Task OnNotificationCancelledAsync(Guid id)
+        {
+
+            await Task.CompletedTask;
+        }
+
         private string GetAzureNameFromSetting(string settingName)
         {
             if (_heraldSettings.Voices.TryGetValue(settingName, out var name))
