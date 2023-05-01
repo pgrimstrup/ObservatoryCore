@@ -503,7 +503,6 @@ namespace Observatory.Bridge
             CurrentSystem.ScannedBodies.Add(journal.BodyName, journal);
             CurrentSystem.BodySignals.TryGetValue(journal.BodyName, out var signals);
 
-
             if (!String.IsNullOrEmpty(journal.StarType))
             {
                 var log = new BridgeLog(this,journal);
