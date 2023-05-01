@@ -16,7 +16,9 @@ namespace Observatory.Bridge
         public static bool IsHighMetalContent(this string bodyType) => bodyType.Contains("High Metal Content", StringComparison.OrdinalIgnoreCase);
         public static bool IsAmmoniaWorld(this string bodyType) => bodyType.Contains("Ammonia", StringComparison.OrdinalIgnoreCase);
         public static bool IsMetalRich(this string bodyType) => bodyType.Contains("Metal Rich", StringComparison.OrdinalIgnoreCase);
+        public static bool IsIcyBody(this string bodyType) => bodyType.Contains("Icy Body", StringComparison.OrdinalIgnoreCase);
         public static bool IsGasGiant(this string bodyType, string surdarskyClass) => bodyType.Contains($"Class {surdarskyClass} Gas Giant", StringComparison.OrdinalIgnoreCase);
+        public static bool IsGasGiant(this string bodyType) => bodyType.Contains($"Gas Giant", StringComparison.OrdinalIgnoreCase);
 
         public static string ReplaceRomanNumerals(this string text)
         {

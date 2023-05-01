@@ -27,6 +27,7 @@
                         <syncfusion:DropDownMenuItem Header="Windows 11 Dark" Click="OnThemeClick" CommandParameter="Windows11Dark"></syncfusion:DropDownMenuItem>
                         <syncfusion:DropDownMenuItem Header="Windows 11 Light" Click="OnThemeClick" CommandParameter="Windows11Light"></syncfusion:DropDownMenuItem>
                     </syncfusion:DropDownButton>
+                    <syncfusion:RibbonButton SizeForm="Large" Label="Reset Layout" Click="OnResetLayoutClick"></syncfusion:RibbonButton>
                 </syncfusion:RibbonBar>
             </syncfusion:RibbonTab>
             <syncfusion:RibbonTab Caption="Support">
@@ -38,10 +39,10 @@
                 </syncfusion:RibbonBar>
             </syncfusion:RibbonTab>
         </syncfusion:Ribbon>
-        
-		<syncfusion:DockingManager x:Name="Docking" Grid.Row="1" Margin="4" UseDocumentContainer="True" UseNativeFloatWindow="True" ItemsSource="{Binding PluginViews}" >
-		</syncfusion:DockingManager>
 
+        <syncfusion:DocumentContainer x:Name="Docking" Grid.Row="1" Margin="4" Mode="TDI" ShowDragAdorner="True">
+        </syncfusion:DocumentContainer>
+        
 		<StatusBar Grid.Row="2"/>
 
 	</Grid>

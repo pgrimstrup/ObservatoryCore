@@ -20,7 +20,7 @@ namespace ObservatoryUI.WPF
         readonly IAppSettings _settings;
         readonly string _dockStateFile;
         
-        public ObservableCollection<DockItem> PluginViews { get; } = new ObservableCollection<DockItem>();
+        public ObservableCollection<PluginViewModel> PluginViews { get; } = new ObservableCollection<PluginViewModel>();
 
         public MainWindow(IObservatoryCoreAsync core, IAppSettings settings)
         {
@@ -55,6 +55,14 @@ namespace ObservatoryUI.WPF
         protected void OnLoaded(object sender,  RoutedEventArgs e)
         {
             Ribbon.BackStageButton.Visibility = Visibility.Collapsed;
+
+            foreach (var plugin in PluginViews)
+            {
+                DocumentContainer.SetHeader(plugin.View, plugin.Plugin.ShortName);
+                DocumentContainer.SetCanClose(plugin.View, false);
+                Docking.Items.Add(plugin.View);
+            }
+
             LoadDockingState();
         }
 
@@ -62,24 +70,11 @@ namespace ObservatoryUI.WPF
         {
             if (File.Exists(_dockStateFile))
             {
-                var items = PluginViews.ToArray();
-                foreach(var item in items)
+                Docking.LoadDockState(_dockStateFile);
+                foreach (var plugin in PluginViews)
                 {
-                    item.CanAutoHide = true;
-                    item.CanClose = true;
-                }
-
-                if (!Docking.LoadDockState(_dockStateFile))
-                {
-                    Docking.ResetState();
-                }
-
-                foreach (var item in items)
-                {
-                    if (item.State == DockState.Hidden)
-                        item.State = DockState.Document;
-                    item.CanAutoHide = false;
-                    item.CanClose = false;
+                    DocumentContainer.SetHeader(plugin.View, plugin.Plugin.ShortName);
+                    DocumentContainer.SetCanClose(plugin.View, false);
                 }
             }
         }
@@ -113,6 +108,12 @@ namespace ObservatoryUI.WPF
                 item.IsChecked = ((string)item.CommandParameter) == _settings.AppTheme;
             }
             
+        }
+
+        private void OnResetLayoutClick(object sender, RoutedEventArgs e)
+        {
+            Docking.DeleteDockState();
+            Docking.LoadDockState();
         }
     }
 }

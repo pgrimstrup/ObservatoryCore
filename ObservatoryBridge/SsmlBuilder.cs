@@ -98,7 +98,7 @@ namespace Observatory.Bridge
         }
         public SsmlBuilder AppendNumber(long value)
         {
-            _textFragments.Append($"{value:n0} ");
+            _textFragments.Add($"{value:n0} ");
 
             if (value > 1500000000)
                 _ssmlFragments.Add($"<say-as interpret-as=\"cardinal\" format=\".\">{value / 1000000000.0:n1}</say-as> billion");

@@ -255,6 +255,7 @@ namespace Observatory.Bridge
             var log = new BridgeLog(this, journal);
             log.TitleSsml.Append("Promotion");
 
+            log.DetailSsml.AppendUnspoken(Emojis.Promotion);
             log.DetailSsml.Append("Congratulations, Commander. You have been promoted to ");
             if (promotions.Count <= 2)
                 log.DetailSsml.Append(String.Join(" and ", promotions) + ".");
@@ -268,6 +269,8 @@ namespace Observatory.Bridge
         {
             var log = new BridgeLog(this, journal);
             log.TitleSsml.Append("Fuel Scooping");
+
+            log.DetailSsml.AppendUnspoken(Emojis.FuelScoop);
             log.DetailSsml
                 .Append($"Scooped")
                 .AppendNumber(Math.Round(journal.Scooped, 2))
@@ -287,6 +290,7 @@ namespace Observatory.Bridge
             var log = new BridgeLog(this, journal);
             log.TitleSsml.Append("Flight Operations");
 
+            log.DetailSsml.AppendUnspoken(Emojis.Approaching);
             log.DetailSsml.Append($"On approach to body")
                 .AppendBodyName(journal.Body);
 
@@ -298,6 +302,7 @@ namespace Observatory.Bridge
             var log = new BridgeLog(this,journal);
             log.TitleSsml.Append("Flight Operations");
 
+            log.DetailSsml.AppendUnspoken(Emojis.Departing);
             log.DetailSsml.Append($"Departing body")
                 .AppendBodyName(GetBodyName(journal.Body));
 
@@ -308,6 +313,7 @@ namespace Observatory.Bridge
         {
             var log = new BridgeLog(this, journal);
             log.TitleSsml.Append("Flight Operations");
+            log.DetailSsml.AppendUnspoken(Emojis.Touchdown);
             log.DetailSsml
                 .Append($"Touchdown on body")
                 .AppendBodyName(GetBodyName(journal.Body))
@@ -321,6 +327,7 @@ namespace Observatory.Bridge
         {
             var log = new BridgeLog(this,journal);
             log.TitleSsml.Append("Flight Operations");
+            log.DetailSsml.AppendUnspoken(Emojis.Liftoff);
             log.DetailSsml
                 .Append($"Liftoff complete from body")
                 .AppendBodyName(GetBodyName(journal.Body));
@@ -545,6 +552,10 @@ namespace Observatory.Bridge
                     log.DetailSsml.AppendUnspoken(Emojis.WaterWorld);
                 else if (journal.PlanetClass.IsHighMetalContent())
                     log.DetailSsml.AppendUnspoken(Emojis.HighMetalContent);
+                else if (journal.PlanetClass.IsIcyBody())
+                    log.DetailSsml.AppendUnspoken(Emojis.IcyBody);
+                else if (journal.PlanetClass.IsGasGiant())
+                    log.DetailSsml.AppendUnspoken(Emojis.GasGiant);
                 else if (journal.PlanetClass.IsAmmoniaWorld())
                     log.DetailSsml.AppendUnspoken(Emojis.Ammonia);
                 else
@@ -654,7 +665,8 @@ namespace Observatory.Bridge
             log.IsTitleSpoken = true;
             log.TitleSsml.Append("Body").AppendBodyName(GetBodyName(journal.BodyName));
 
-            if (journal.ProbesUsed < journal.EfficiencyTarget)
+            log.DetailSsml.AppendUnspoken(Emojis.Probe);
+            if (journal.ProbesUsed <= journal.EfficiencyTarget)
                 log.DetailSsml.Append($"Surface Scan complete, with efficiency bonus, using only {journal.ProbesUsed} probes, commander.");
             else
                 log.DetailSsml.Append($"Surface Scan complete using {journal.ProbesUsed} probes, commander.");

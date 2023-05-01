@@ -10,7 +10,7 @@
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <DataTemplate x:Key="emojiCellTemplate">
-            <emoji:TextBlock Text="{Binding Text}" />
+            <emoji:TextBlock Text="{Binding Text}" FontWeight="Normal" VerticalAlignment="Center" Padding="4,0" />
         </DataTemplate>
         <syncfusion:SortDirectionToVisibilityConverter x:Key="sortDirectionToVisibilityConverter"/>
         <syncfusion:SortDirectionToWidthConverter x:Key="sortDirectionToWidthConverter"/>
@@ -22,7 +22,7 @@
             <Setter Property="Padding" Value="5,3,5,3"/>
             <Setter Property="Foreground" Value="Gray"/>
             <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontWeight" Value="Normal"/>
             <Setter Property="IsTabStop" Value="False"/>
             <Setter Property="syncfusion:VisualContainer.WantsMouseInput" Value="True"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -92,9 +92,7 @@
                 <Border Background="{TemplateBinding CellSelectionBrush}" SnapsToDevicePixels="True" Visibility="{TemplateBinding SelectionBorderVisibility}"/>
                 <Border x:Name="PART_FooterCellBorder" Background="Transparent" BorderBrush="{TemplateBinding BorderBrush}"/>
                 <Border x:Name="PART_FrozenCellBorder" Background="Transparent" BorderBrush="{TemplateBinding BorderBrush}"/>
-                <Border x:Name="PART_GridCellBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="True">
                     <ContentPresenter Margin="{TemplateBinding Padding}" Opacity="{TemplateBinding AnimationOpacity}" ContentTemplate="{StaticResource emojiCellTemplate}"/>
-                </Border>
                 <Border Background="Transparent" BorderBrush="{TemplateBinding CurrentCellBorderBrush}" BorderThickness="{TemplateBinding CurrentCellBorderThickness}" IsHitTestVisible="False" Margin="0,0,1,1" SnapsToDevicePixels="True" Visibility="{TemplateBinding CurrentCellBorderVisibility}"/>
                 <Border x:Name="PART_InValidCellBorder" HorizontalAlignment="Right" Height="10" SnapsToDevicePixels="True" VerticalAlignment="Top" Visibility="Collapsed" Width="10">
                     <Path Data="F0 M 0.5,0.5 L 12.652698,0.5 12.652698,12.068006 Z" Fill="Red" SnapsToDevicePixels="True" Stretch="Fill"/>
