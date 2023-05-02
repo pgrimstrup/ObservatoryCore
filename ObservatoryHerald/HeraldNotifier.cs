@@ -23,7 +23,7 @@ namespace Observatory.Herald
             get => new HeraldSettings()
             {
                 SelectedVoice = "American - Christopher",
-                SelectedRate = "Default",
+                SelectedRate = "1.0",
                 Volume = 75,
                 Enabled = false,
                 ApiEndpoint = "https://api.observatory.xjph.net/AzureVoice",
@@ -83,9 +83,9 @@ namespace Observatory.Herald
                         Title = "Herald voice testing",
                         Detail = $"This is {_heraldSettings.SelectedVoice.Split(" - ")[1]}, your Herald Vocalizer for spoken notifications."
                     },
-                    GetAzureNameFromSetting(_heraldSettings.SelectedVoice),
+                    _heraldSettings.SelectedVoice,
                     GetAzureStyleNameFromSetting(_heraldSettings.SelectedVoice),
-                    _heraldSettings.Rate[_heraldSettings.SelectedRate].ToString(),
+                    _heraldSettings.SelectedRate,
                     _heraldSettings.Volume);
             };
             await Task.CompletedTask;
@@ -95,6 +95,23 @@ namespace Observatory.Herald
         {
             _heraldQueue.Cancel();
             await Task.CompletedTask;
+        }
+
+        public Dictionary<string, object> GetVoices()
+        {
+            return null;
+        }
+
+        public Dictionary<string, object> GetVoiceRates()
+        {
+            return new Dictionary<string, object>
+            {
+                {"Slowest", "0.5"},
+                {"Slower", "0.75"},
+                {"Default", "1.0"},
+                {"Faster", "1.25"},
+                {"Fastest", "1.5"}
+            };
         }
 
         private void TestVoice()
@@ -111,9 +128,9 @@ namespace Observatory.Herald
             if (_heraldSettings.Enabled)
                 _heraldQueue.Enqueue(
                     notificationEventArgs,
-                    GetAzureNameFromSetting(_heraldSettings.SelectedVoice),
+                    _heraldSettings.SelectedVoice,
                     GetAzureStyleNameFromSetting(_heraldSettings.SelectedVoice),
-                    _heraldSettings.Rate[_heraldSettings.SelectedRate].ToString(),
+                    _heraldSettings.SelectedRate,
                     _heraldSettings.Volume);
 
             await Task.CompletedTask;
@@ -129,13 +146,6 @@ namespace Observatory.Herald
         {
 
             await Task.CompletedTask;
-        }
-
-        private string GetAzureNameFromSetting(string settingName)
-        {
-            if (_heraldSettings.Voices.TryGetValue(settingName, out var name))
-                return name.ToString();
-            return settingName;
         }
 
         private string GetAzureStyleNameFromSetting(string settingName)

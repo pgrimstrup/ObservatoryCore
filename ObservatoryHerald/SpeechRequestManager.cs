@@ -42,7 +42,6 @@ namespace Observatory.Herald
             }
 
             initialVoice = settings.SelectedVoice;
-            settings.GetVoices = PopulateVoiceSettingOptions;
         }
 
         internal async Task<string> GetAudioFileFromSsml(string ssml, string voice, string style, string rate)

@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
+using Observatory.Framework;
 using Observatory.Framework.Interfaces;
 using ObservatoryUI.WPF.ViewModels;
 using ObservatoryUI.WPF.Views;
@@ -20,8 +21,6 @@ namespace ObservatoryUI.WPF
         readonly IAppSettings _settings;
         readonly string _dockStateFile;
 
-        bool _firstActivation = true;
-        
         public ObservableCollection<PluginViewModel> PluginViews { get; } = new ObservableCollection<PluginViewModel>();
 
         public MainWindow(IObservatoryCoreAsync core, IAppSettings settings)
@@ -66,6 +65,31 @@ namespace ObservatoryUI.WPF
             }
 
             LoadDockingState();
+
+            var args = new NotificationArgs {
+                Detail = "Welcome, Commander. Bridge crew are standing by and awaiting your instructions."
+            };
+
+            if (_settings.InbuiltVoiceEnabled)
+            {
+                // Fire and forget to the inbuilt voice notifier
+                Task.Delay(1000)
+                    .ContinueWith(task => {
+                        args.Suppression = NotificationSuppression.Title;
+                        args.Rendering = NotificationRendering.NativeVocal;
+                        _core.SendNotification(args);
+                    });
+            }
+            else
+            {
+                // Fire and forget to plugin notifiers
+                Task.Delay(1000)
+                    .ContinueWith(task => {
+                        args.Suppression = NotificationSuppression.Title;
+                        args.Rendering = NotificationRendering.PluginNotifier;
+                        _core.SendNotification(args);
+                    });
+            }
         }
 
         private void LoadDockingState()
@@ -117,15 +141,12 @@ namespace ObservatoryUI.WPF
             Docking.LoadDockState();
         }
 
-        private async void OnActivated(object sender, EventArgs e)
-        {
-            if (_firstActivation)
-            {
-                await Task.Delay(1000);
-                _core.SendNotification("", "Welcome, Commander. Bridge crew are standing by and awaiting your instructions.");
-            }
 
-            _firstActivation = false;
+        private void OnSettingsClick(object sender, RoutedEventArgs e)
+        {
+            var window = _core.Services.GetRequiredService<SettingsWindow>();
+            window.Owner = this;
+            window.ShowDialog();
         }
     }
 }

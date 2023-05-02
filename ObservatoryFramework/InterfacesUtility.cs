@@ -43,11 +43,14 @@ namespace Observatory.Framework.Interfaces
         public string ExportFolder { get; set; }
         public bool StartReadAll { get; set; }
         public string ExportStyle { get; set; }
-        public bool TryPrimeSystemContextOnStartMonitor { get; set; }
 
+        public bool InbuiltVoiceEnabled { get; set; }
         public int VoiceVolume { get; set; }
         public int VoiceRate { get; set; }
         public string VoiceName { get; set; }
+        public bool VoiceWelcomeMessage { get; set; }
+
+        public bool InbuiltPopupsEnabled { get; set; }
 
         public void LoadPluginSettings(IObservatoryPlugin plugin);
         public void SavePluginSettings(IObservatoryPlugin plugin);
@@ -78,6 +81,9 @@ namespace Observatory.Framework.Interfaces
         public Guid Id;
         public string Title;
         public string Detail;
+        public string VoiceName;
+        public int VoiceRate;
+        public int VoiceVolume;
         public bool Cancelled;
     }
 

@@ -50,6 +50,7 @@ namespace ObservatoryUI.WPF
             // Register pages
             builder.AddSingleton<MainWindow>();
             builder.AddTransient<PluginView>();
+            builder.AddTransient<SettingsWindow>();
 
             // Register services
             builder.AddSingleton<IObservatoryCoreAsync, ObservatoryCore>();

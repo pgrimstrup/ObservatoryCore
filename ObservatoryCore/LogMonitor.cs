@@ -43,7 +43,10 @@ namespace Observatory
             {
                 // Only pre-read on first start monitor. Beyond that it's simply pause/resume.
                 firstStartMonitor = false;
-                PrereadJournals();
+                if (_settings.StartReadAll)
+                    ReadAllJournals(_settings.JournalFolder);
+                else
+                    PrereadJournals(_settings.JournalFolder);
             }
             journalWatcher.EnableRaisingEvents = true;
             statusWatcher.EnableRaisingEvents = true;
@@ -76,11 +79,6 @@ namespace Observatory
             return LogMonitorStateChangedEventArgs.IsBatchRead(currentState);
         }
 
-        public void ReadAllJournals()
-        {
-            ReadAllJournals(string.Empty);
-        }
-
         public void ReadAllJournals(string path)
         {
             // Prevent pre-reading when starting monitoring after reading all.
@@ -100,11 +98,8 @@ namespace Observatory
             SetLogMonitorState(currentState & ~LogMonitorState.Batch);
         }
 
-        public void PrereadJournals()
+        public void PrereadJournals(string path)
         {
-            if (!_settings.TryPrimeSystemContextOnStartMonitor || _settings.StartReadAll) 
-                return;
-
             SetLogMonitorState(currentState | LogMonitorState.PreRead);
 
             DirectoryInfo logDirectory = GetJournalFolder(_settings.JournalFolder);
@@ -235,12 +230,12 @@ namespace Observatory
         {
             DirectoryInfo logDirectory;
 
-            if (path.Length == 0 && _settings.JournalFolder != null && _settings.JournalFolder.Trim().Length > 0)
+            if (String.IsNullOrWhiteSpace(path))
             {
                 path = _settings.JournalFolder;
             }
 
-            if (path.Length > 0)
+            if (!String.IsNullOrWhiteSpace(path))
             {
                 if (Directory.Exists(path))
                 {
@@ -258,7 +253,7 @@ namespace Observatory
                 string defaultJournalPath = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
                     ? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) 
                     + "/.steam/debian-installation/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous"
-                    : GetSavedGamesPath() + @"\Frontier Developments\Elite Dangerous";
+                    : Path.Combine(GetSavedGamesPath(), @"Frontier Developments\Elite Dangerous");
 
                 logDirectory =
                     Directory.Exists(defaultJournalPath)
@@ -270,9 +265,9 @@ namespace Observatory
                 throw new NotImplementedException("Current OS Platform Not Supported.");
             }
 
-            if (_settings.JournalFolder != path)
+            if (String.IsNullOrWhiteSpace(path))
             {
-                _settings.JournalFolder = path;
+                _settings.JournalFolder = logDirectory.FullName;
                 _settings.SaveSettings();
             }
 

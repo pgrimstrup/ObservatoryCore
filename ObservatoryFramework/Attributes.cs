@@ -33,6 +33,7 @@ namespace Observatory.Framework
         }
     }
 
+
     /// <summary>
     /// Indicates that the property should not be displayed to the user in the UI.
     /// </summary>
@@ -72,6 +73,23 @@ namespace Observatory.Framework
             get => property;
             set => property = value;
         }
+    }
+
+    /// <summary>
+    /// Instead of the SettingBackingValueAttribute, a method name on the Plugin can be provided that
+    /// will return the Dictionary of values to be used to populate the drop down list. The
+    /// Setting field is used to store the selected value. This attribute will always convert the 
+    /// setting to a ComboBox selection. 
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
+    public class SettingGetItemsMethodAttribute : Attribute
+    {
+        public SettingGetItemsMethodAttribute(string methodName)
+        {
+            this.MethodName = methodName;
+        }
+
+        public string MethodName { get; set; }
     }
 
     /// <summary>

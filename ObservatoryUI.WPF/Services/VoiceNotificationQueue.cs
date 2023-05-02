@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media.Media3D;
 using System.Xml;
+using Microsoft.Extensions.Logging;
 using Observatory.Framework.Interfaces;
 
 namespace ObservatoryUI.WPF.Services
@@ -16,16 +17,15 @@ namespace ObservatoryUI.WPF.Services
 
     public class VoiceNotificationQueue : IVoiceNotificationQueue
     {
+        ILogger _logger;
         BlockingCollection<VoiceMessage> _queue = new BlockingCollection<VoiceMessage>();
         VoiceMessage? _current = null;
         Thread _thread;
         CancellationTokenSource _cancel = new CancellationTokenSource();
-        IAppSettings _settings;
 
-        public VoiceNotificationQueue(IAppSettings settings)
+        public VoiceNotificationQueue(ILogger<VoiceNotificationQueue> logger)
         {
-            _settings = settings;
-
+            _logger = logger;
             _thread = new Thread(Run);
             _thread.IsBackground = true;
             _thread.Start();
@@ -80,10 +80,9 @@ namespace ObservatoryUI.WPF.Services
 
                     try
                     {
-                        string voice = _settings.VoiceName ?? speech.GetInstalledVoices().First().VoiceInfo.Name;
-
-                        speech.Volume = _settings.VoiceVolume;
-                        speech.Rate = _settings.VoiceRate;
+                        string voice = msg.VoiceName ?? speech.GetInstalledVoices().First().VoiceInfo.Name;
+                        speech.Volume = msg.VoiceVolume;
+                        speech.Rate = msg.VoiceRate;
                         speech.SelectVoice(voice);
 
                         Speak(speech, msg, UpdateSsmlVoice(msg.Title, voice), cancel);
@@ -92,7 +91,7 @@ namespace ObservatoryUI.WPF.Services
                     }
                     catch (Exception ex)
                     {
-
+                        _logger.LogError(ex, "When processing a voice message");
                     }
                     finally
                     {
@@ -106,12 +105,15 @@ namespace ObservatoryUI.WPF.Services
         {
             if (!String.IsNullOrEmpty(ssml))
             {
+                _logger.LogDebug($"Inbuilt Voice Notification: {ssml}");
                 Prompt p = speech.SpeakSsmlAsync(ssml);
                 while (!p.IsCompleted && !cancel.IsCancellationRequested && !msg.Cancelled)
                     cancel.WaitHandle.WaitOne(50);
 
                 if (!p.IsCompleted)
                     speech.SpeakAsyncCancel(p);
+
+                _logger.LogDebug("Inbuilt Voice Notification: completed ok.");
             }
         }
 
@@ -119,6 +121,9 @@ namespace ObservatoryUI.WPF.Services
         {
             try
             {
+                if (String.IsNullOrEmpty(ssml))
+                    return "";
+
                 XmlDocument ssmlDoc = new();
                 ssmlDoc.LoadXml(ssml);
 
@@ -132,8 +137,9 @@ namespace ObservatoryUI.WPF.Services
 
                 return ssmlDoc.OuterXml;
             }
-            catch
+            catch(Exception ex)
             {
+                _logger.LogError(ex, "When updating the SSML Voice attribute");
                 return ssml;
             }
         }

@@ -42,6 +42,8 @@ namespace Observatory
 
         public IServiceProvider Services => _serviceProvider;
 
+        public IEnumerable<IObservatoryPlugin> ActivePlugins => _pluginManager.ActivePlugins;
+
         public IEnumerable<IObservatoryPlugin> Initialize()
         {
             if (_pluginsInitialized)
@@ -98,8 +100,15 @@ namespace Observatory
             if((args.Rendering & NotificationRendering.NativeVocal) != 0)
             {
                 string title = (args.Suppression & NotificationSuppression.Title) == 0 ? GetSsml(args.Title, args.TitleSsml) : "";
-                string detail = (args.Suppression & NotificationSuppression.Title) == 0 ? GetSsml(args.Detail, args.DetailSsml) : "";
-                _voiceQueue.Add(new VoiceMessage { Id = id, Title = title, Detail = detail });
+                string detail = (args.Suppression & NotificationSuppression.Detail) == 0 ? GetSsml(args.Detail, args.DetailSsml) : "";
+                _voiceQueue.Add(new VoiceMessage { 
+                    Id = id, 
+                    Title = title, 
+                    Detail = detail,
+                    VoiceName = args.VoiceName ?? _settings.VoiceName,
+                    VoiceRate = args.VoiceRate ?? _settings.VoiceRate,
+                    VoiceVolume = args.VoiceVolume ?? _settings.VoiceVolume
+                });
             }
 
             // Queue the message to the internal PopupQueue

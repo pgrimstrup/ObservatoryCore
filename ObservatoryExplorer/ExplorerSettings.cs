@@ -91,7 +91,11 @@ namespace Observatory.Explorer
 
         [SettingDisplayNameAttribute("Custom Criteria File")]
         [System.Text.Json.Serialization.JsonIgnore]
-        public System.IO.FileInfo CustomCriteria {get => new System.IO.FileInfo(CustomCriteriaFile); set => CustomCriteriaFile = value.FullName;}
+        public System.IO.FileInfo CustomCriteria 
+        {
+            get => new System.IO.FileInfo(CustomCriteriaFile); 
+            set => CustomCriteriaFile = value.FullName;
+        }
 
         [SettingIgnoreAttribute]
         public string CustomCriteriaFile { get; set; }

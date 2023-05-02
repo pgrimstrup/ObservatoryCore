@@ -21,7 +21,6 @@
     <PackageReference Include="Syncfusion.Licensing" Version="21.1.41" />
     <PackageReference Include="Syncfusion.SfGrid.WPF" Version="21.1.41" />
     <PackageReference Include="Syncfusion.SfSkinManager.WPF" Version="21.1.41" />
-    <PackageReference Include="Syncfusion.Shared.WPF" Version="21.1.41" />
     <PackageReference Include="Syncfusion.Themes.FluentDark.WPF" Version="21.1.41" />
     <PackageReference Include="Syncfusion.Themes.FluentLight.WPF" Version="21.1.41" />
     <PackageReference Include="Syncfusion.Themes.MaterialDark.WPF" Version="21.1.41" />
@@ -29,6 +28,7 @@
     <PackageReference Include="Syncfusion.Themes.Windows11Dark.WPF" Version="21.1.41" />
     <PackageReference Include="Syncfusion.Themes.Windows11Light.WPF" Version="21.1.41" />
     <PackageReference Include="Syncfusion.Tools.WPF" Version="21.1.41" />
+    <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>

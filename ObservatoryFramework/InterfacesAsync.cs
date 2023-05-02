@@ -129,5 +129,7 @@ namespace Observatory.Framework.Interfaces
         public Task<Status> GetStatusAsync();
 
         public IServiceProvider Services { get; }
+
+        public IEnumerable<IObservatoryPlugin> ActivePlugins { get; }
     }
 }

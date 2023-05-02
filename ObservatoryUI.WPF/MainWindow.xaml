@@ -7,7 +7,7 @@
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
         mc:Ignorable="d"
         Title="Elite Observatory" Height="450" Width="800" ResizeMode="CanResizeWithGrip" 
-        Loaded="OnLoaded" Activated="OnActivated">
+        Loaded="OnLoaded">
 	<Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"></RowDefinition>
@@ -18,7 +18,7 @@
         <syncfusion:Ribbon x:Name="Ribbon" EnableSimplifiedLayoutMode="True" LayoutMode="Simplified">
             <syncfusion:RibbonTab Caption="Home" IsChecked="True">
                 <syncfusion:RibbonBar Header="" ShowInMoreCommands="False" IsLauncherButtonVisible="False">
-                    <syncfusion:RibbonButton SizeForm="Large" Label="Settings"></syncfusion:RibbonButton>
+                    <syncfusion:RibbonButton SizeForm="Large" Label="Settings" Click="OnSettingsClick"></syncfusion:RibbonButton>
                     <syncfusion:DropDownButton SizeForm="Large" Label="Theme" IsDropDownOpenChanged="OnThemeMenuOpenedChanged">
                         <syncfusion:DropDownMenuItem Header="Fluent Dark" Click="OnThemeClick" CommandParameter="FluentDark"></syncfusion:DropDownMenuItem>
                         <syncfusion:DropDownMenuItem Header="Fluent Light" Click="OnThemeClick" CommandParameter="FluentLight"></syncfusion:DropDownMenuItem>

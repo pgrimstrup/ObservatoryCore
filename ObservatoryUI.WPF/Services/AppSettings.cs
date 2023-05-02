@@ -9,6 +9,7 @@ using Observatory;
 using System.IO;
 using System.Reflection;
 using System.Diagnostics;
+using Observatory.Framework;
 
 namespace ObservatoryUI.WPF.Services
 {
@@ -18,11 +19,6 @@ namespace ObservatoryUI.WPF.Services
         public string JournalFolder { get; set; } = "";
 
         public bool AllowUnsigned { get; set; } = true;
-
-        public string CoreVersion
-        {
-            get => typeof(ObservatoryCore).Assembly.GetName().Version?.ToString() ?? "0.0.0";
-        }
 
         public WindowBounds MainWindowBounds { get; set; } = new WindowBounds();
 
@@ -34,14 +30,16 @@ namespace ObservatoryUI.WPF.Services
 
         public string ExportStyle { get; set; } = "";
 
-        public bool TryPrimeSystemContextOnStartMonitor { get; set; } = true;
-
+        public bool InbuiltVoiceEnabled { get; set; } = true;
         public int VoiceVolume { get; set; } = 75;
         public int VoiceRate { get; set; }
         public string VoiceName { get; set; }
+        public bool VoiceWelcomeMessage { get; set; } = true;
+
+        public bool InbuiltPopupsEnabled {  get; set; } = true;
 
 
-        public Dictionary<string, object> PluginSettings { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, object> PluginSettings { get; } = new Dictionary<string, object>();
 
         public AppSettingsData()
         {
@@ -50,18 +48,11 @@ namespace ObservatoryUI.WPF.Services
 
     public class AppSettings : AppSettingsData, IAppSettings
     {
-        static Dictionary<string, PropertyInfo> Properties;
         static string FileName = "user.settings";
-        static JsonSerializerOptions SerializerOptions;
 
-        static AppSettings()
+        public string CoreVersion
         {
-            Properties = typeof(AppSettings).GetProperties().Where(p => p.CanRead && p.CanWrite).ToDictionary(p => p.Name);
-            SerializerOptions = new JsonSerializerOptions();
-            SerializerOptions.WriteIndented = true;
-            SerializerOptions.IgnoreReadOnlyProperties = true;
-            SerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never;
-            SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+            get => typeof(ObservatoryCore).Assembly.GetName().Version?.ToString() ?? "0.0.0";
         }
 
         public AppSettings()
@@ -77,12 +68,14 @@ namespace ObservatoryUI.WPF.Services
             {
                 try
                 {
-                    // Load the user settings and copy all properties across the this instance
+                    // Load the user settings and copy all properties across the this instance.
+                    // Note that after loading, the PluginSettings contains a list of JsonElements
                     var json = File.ReadAllText(path);
-                    AppSettingsData? data = JsonSerializer.Deserialize<AppSettingsData>(json, SerializerOptions);
-                    foreach(var prop in Properties.Values)
+                    AppSettingsData? data = JsonSerializer.Deserialize<AppSettingsData>(json, CoreExtensions.SerializerOptions);
+                    foreach(var prop in typeof(AppSettingsData).GetProperties())
                     {
-                        prop.SetValue(this, prop.GetValue(data));
+                        if(prop.CanRead && prop.CanWrite)
+                            prop.SetValue(this, prop.GetValue(data));
                     }
                 }
                 catch (Exception ex)
@@ -95,7 +88,7 @@ namespace ObservatoryUI.WPF.Services
         public void SaveSettings()
         {
             string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Elite Observatory", FileName);
-            string json = JsonSerializer.Serialize(this, SerializerOptions);
+            string json = JsonSerializer.Serialize(this, CoreExtensions.SerializerOptions);
             File.WriteAllText(path, json);
         }
 
@@ -106,9 +99,7 @@ namespace ObservatoryUI.WPF.Services
             // Convert the settings back to JSON so we can deserialize as the correct object type
             if (PluginSettings.TryGetValue(key, out var settings) && settings != null && plugin.Settings != null)
             {
-                string json = JsonSerializer.Serialize(settings, SerializerOptions);
-                var instance = JsonSerializer.Deserialize(json, plugin.Settings.GetType(), SerializerOptions);
-                plugin.Settings = instance;
+                plugin.Settings = settings.CopyAs(plugin.Settings.GetType());
             }
         }
 
@@ -118,7 +109,6 @@ namespace ObservatoryUI.WPF.Services
             {
                 string key = plugin.GetType().FullName!;
                 PluginSettings[key] = plugin.Settings;
-                SaveSettings();
             }
         }
     }
