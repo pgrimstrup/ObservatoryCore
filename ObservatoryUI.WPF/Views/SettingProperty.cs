@@ -10,6 +10,7 @@ using Observatory.Framework;
 using System.IO;
 using System.Collections.ObjectModel;
 using Observatory.Framework.Interfaces;
+using System.Diagnostics;
 
 namespace ObservatoryUI.WPF.Views
 {
@@ -103,13 +104,38 @@ namespace ObservatoryUI.WPF.Views
                     if (method != null && method.ReturnType == typeof(Dictionary<string, object>))
                     {
                         this.Items = new();
-                        var items = (Dictionary<string, object>?)method.Invoke(plugin, null);
-                        if (items != null)
+                        try
                         {
-                            foreach (var item in items)
-                                Items.Add(new ComboData { Name = item.Key, Value = item.Value });
+                            var items = (Dictionary<string, object>?)method.Invoke(plugin, null);
+                            if (items != null)
+                            {
+                                foreach (var item in items)
+                                    Items.Add(new ComboData { Name = item.Key, Value = item.Value });
+                            }
                         }
-
+                        catch(Exception ex)
+                        {
+                            Debug.WriteLine(ex);
+                        }
+                    }
+                    if (method != null && method.ReturnType == typeof(Task<Dictionary<string, object>>))
+                    {
+                        this.Items = new();
+                        try
+                        {
+                            var task = method.Invoke(plugin, null) as Task<Dictionary<string, object>?>;
+                            if (task != null)
+                            {
+                                var items = task.Result;
+                                if (items != null)
+                                    foreach (var item in items)
+                                        Items.Add(new ComboData { Name = item.Key, Value = item.Value });
+                            }
+                        }
+                        catch(Exception ex)
+                        {
+                            Debug.WriteLine(ex);
+                        }
                     }
                 }
             }

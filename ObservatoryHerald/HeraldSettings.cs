@@ -15,7 +15,7 @@ namespace Observatory.Herald
         public string ApiEndpoint { get; set; }
 
         [SettingDisplayName("Voice")]
-        [SettingGetItemsMethod(nameof(HeraldNotifier.GetVoices))]
+        [SettingGetItemsMethod(nameof(HeraldNotifier.GetVoiceNames))]
         public string SelectedVoice { get; set; }
 
         [SettingDisplayName("Voice Rate")]

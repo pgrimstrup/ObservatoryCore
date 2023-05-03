@@ -16,6 +16,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="TextToSpeech\AzureCloud.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Update="ObservatoryAPI.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>

@@ -9,9 +9,11 @@ namespace Observatory.Herald
 {
     public class HeraldNotifier : IObservatoryNotifierAsync
     {
-        IObservatoryCoreAsync _core;
+        private IObservatoryCoreAsync _core;
+        private ILogger _logger;
         private HeraldSettings _heraldSettings;
         private HeraldQueue _heraldQueue;
+        private SpeechRequestManager _speech;
 
         public HeraldNotifier()
         {
@@ -63,20 +65,16 @@ namespace Observatory.Herald
 
         public void Load(IObservatoryCore core)
         {
-            Task.Run(() => LoadAsync(core as IObservatoryCoreAsync)).GetAwaiter().GetResult();
-        }
+            _core = (IObservatoryCoreAsync)core;
 
-        public async Task LoadAsync(IObservatoryCoreAsync core)
-        {
-            _core = core;
-            var logger = _core.Services.GetRequiredService<ILogger<HeraldNotifier>>();
-            var speechManager = new SpeechRequestManager(
+            _logger = _core.Services.GetRequiredService<ILogger<HeraldNotifier>>();
+            _speech = new SpeechRequestManager(
                 _heraldSettings,
                 _core.HttpClient,
                 Path.Combine(_core.GetPluginsFolder(), "HeraldCache"),
-                logger);
+                _logger);
 
-            _heraldQueue = new HeraldQueue(speechManager, logger);
+            _heraldQueue = new HeraldQueue(_speech, _logger);
             _heraldSettings.Test = () => {
                 _heraldQueue.Enqueue(
                     new NotificationArgs() {
@@ -88,6 +86,11 @@ namespace Observatory.Herald
                     _heraldSettings.SelectedRate,
                     _heraldSettings.Volume);
             };
+        }
+
+        public async Task LoadAsync(IObservatoryCoreAsync core)
+        {
+            Load(core);
             await Task.CompletedTask;
         }
 
@@ -97,9 +100,10 @@ namespace Observatory.Herald
             await Task.CompletedTask;
         }
 
-        public Dictionary<string, object> GetVoices()
+        public Dictionary<string, object> GetVoiceNames()
         {
-            return null;
+            var voices = Task.Run(_speech.GetVoices).GetAwaiter().GetResult();
+            return voices.ToDictionary(v => v.Description, v => (object)v.Name);
         }
 
         public Dictionary<string, object> GetVoiceRates()

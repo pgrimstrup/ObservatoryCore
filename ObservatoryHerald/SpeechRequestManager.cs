@@ -21,15 +21,18 @@ namespace Observatory.Herald
         private int cacheSize;
         private ILogger ErrorLogger;
         private ConcurrentDictionary<string, CacheData> cacheIndex;
-        private Dictionary<string, object> voices;
+        private List<IVoice> voices;
         private string initialVoice;
 
-        AzureCloud Speech;
+        ITextToSpeechService _speech;
+
+        string CacheIndexFile => Path.Combine(cacheLocation.FullName, "CacheIndex.json");
+
 
         internal SpeechRequestManager(
             HeraldSettings settings, HttpClient httpClient, string cacheFolder, ILogger errorLogger)
         {
-            Speech = new AzureCloud(httpClient, ObservatoryAPI.ApiKey, settings.ApiEndpoint);
+            _speech = new GoogleCloud(httpClient);
 
             cacheSize = Math.Max(settings.CacheSize, 1);
             cacheLocation = new DirectoryInfo(cacheFolder);
@@ -39,26 +42,19 @@ namespace Observatory.Herald
             ReadCache();
             ErrorLogger = errorLogger;
 
-            if (!Directory.Exists(cacheLocation.FullName))
-            {
-                Directory.CreateDirectory(cacheLocation.FullName);
-            }
-
             initialVoice = settings.SelectedVoice;
         }
 
-        internal async Task<string> GetAudioFileFromSsml(string ssml, string voice, string style, string rate)
+        internal string GetAudioFileFromSsml(string ssml, string voice, string style, string rate)
         {
 
             ssml = AddVoiceToSsml(ssml, voice, style, rate);
 
             using var sha = SHA256.Create();
 
-            var ssmlHash = BitConverter.ToString(
-                sha.ComputeHash(Encoding.UTF8.GetBytes(ssml))
-                ).Replace("-", string.Empty);
+            var ssmlHash = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(ssml))).Replace("-", string.Empty);
 
-            var audioFilename = cacheLocation + ssmlHash + ".mp3";
+            var audioFilename = Path.Combine(cacheLocation.FullName, ssmlHash + ".mp3");
 
             FileInfo audioFileInfo = null;
             if (File.Exists(audioFilename))
@@ -76,7 +72,7 @@ namespace Observatory.Herald
             {
                 try
                 {
-                    audioFileInfo = await Speech.GetTextToSpeech(ssml, audioFilename);
+                    audioFileInfo = _speech.GetTextToSpeech(ssml, audioFilename);
                 }
                 catch(Exception ex)
                 {
@@ -123,21 +119,14 @@ namespace Observatory.Herald
             return ssmlDoc.OuterXml;
         }
 
-        internal  Dictionary<string, object> PopulateVoiceSettingOptions()
+        internal List<IVoice> GetVoices()
         {
             if (voices != null)
                 return voices;
 
             try
             {
-                var awaiter = Task.Run(Speech.GetVoicesAsync).GetAwaiter();
-                var speechVoices = awaiter.GetResult();
-
-                voices = new Dictionary<string, object>();
-                foreach(var voice in speechVoices)
-                {
-                    voices.Add(voice.Description, voice.Name);
-                }
+                voices = _speech.GetVoices().ToList();
                 return voices;
             }
             catch (Exception ex)
@@ -145,8 +134,8 @@ namespace Observatory.Herald
                 ErrorLogger.LogError(ex, "When retrieving a list of available voices from the server");
 
                 // Return the last known voice
-                var result = new Dictionary<string, object>();
-                result.Add(initialVoice, initialVoice);
+                var result = new List<IVoice>();
+                result.Add(new Voice(initialVoice));
                 return result;
             }
         }
@@ -154,11 +143,10 @@ namespace Observatory.Herald
 
         private void ReadCache()
         {
-            string cacheIndexFile = cacheLocation + "CacheIndex.json";
 
-            if (File.Exists(cacheIndexFile))
+            if (File.Exists(CacheIndexFile))
             {
-                var indexFileContent = File.ReadAllText(cacheIndexFile);
+                var indexFileContent = File.ReadAllText(CacheIndexFile);
                 try
                 {
                     cacheIndex = JsonSerializer.Deserialize<ConcurrentDictionary<string, CacheData>>(indexFileContent);
@@ -176,7 +164,8 @@ namespace Observatory.Herald
             }
 
             // Re-index orphaned files in event of corrupted or lost index.
-            var cacheFiles = cacheLocation.GetFiles("*.mp3");
+            var cacheFiles = cacheLocation.GetFiles("*.mp3")
+                .Union(cacheLocation.GetFiles("*.wav"));
             foreach (var file in cacheFiles.Where(file => !cacheIndex.ContainsKey(file.Name)))
             {
                 cacheIndex.TryAdd(file.Name, new(file.CreationTime, 0));
@@ -185,13 +174,11 @@ namespace Observatory.Herald
 
         private void UpdateAndPruneCache(FileInfo currentFile)
         {
-            var cacheFiles = cacheLocation.GetFiles("*.mp3");
+            var cacheFiles = cacheLocation.GetFiles("*.mp3")
+                .Union(cacheLocation.GetFiles("*.wav"));
             if (cacheIndex.ContainsKey(currentFile.Name))
             {
-                cacheIndex[currentFile.Name] = new(
-                    cacheIndex[currentFile.Name].Created,
-                    cacheIndex[currentFile.Name].HitCount + 1
-                    );
+                cacheIndex[currentFile.Name].HitCount++;
             }
             else
             {
@@ -217,25 +204,19 @@ namespace Observatory.Herald
 
         internal async void CommitCache()
         {
-            string cacheIndexFile = cacheLocation + "CacheIndex.json";
-
             System.Diagnostics.Stopwatch stopwatch = new();
             stopwatch.Start();
 
             // Race condition isn't a concern anymore, but should check this anyway to be safe.
             // (Maybe someone is poking at the file with notepad?)
-            while (!IsFileWritable(cacheIndexFile) && stopwatch.ElapsedMilliseconds < 1000)
+            while (!IsFileWritable(CacheIndexFile) && stopwatch.ElapsedMilliseconds < 1000)
                 await Task.Delay(100); // Task.Factory.StartNew(() => System.Threading.Thread.Sleep(100));
 
             // 1000ms should be more than enough for a conflicting title or detail to complete,
             // if we're still waiting something else is locking the file, just give up.
             if (stopwatch.ElapsedMilliseconds < 1000)
             {
-                File.WriteAllText(cacheIndexFile, JsonSerializer.Serialize(cacheIndex));
-
-                // Purge cache from earlier versions, if still present.
-                var legacyCache = cacheLocation.GetFiles("*.wav");
-                Array.ForEach(legacyCache, file => File.Delete(file.FullName));
+                File.WriteAllText(CacheIndexFile, JsonSerializer.Serialize(cacheIndex));
             }
 
             stopwatch.Stop();
