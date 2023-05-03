@@ -57,13 +57,8 @@ namespace Observatory.Bridge
             }
             catch (Exception ex)
             {
-                ex.LogException();
+                _core.GetPluginErrorLogger(this).Invoke(ex, "While loading Bridge plugin");
             }
-        }
-
-        public void Unload()
-        {
-
         }
 
         public void JournalEvent<TJournal>(TJournal journal) where TJournal : JournalBase
@@ -76,17 +71,13 @@ namespace Observatory.Bridge
                 var methodName = $"Do{journal.GetType().Name}";
                 var method = GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public);
                 if (method == null)
-                {
-                    ErrorLog.LogInfo($"INFO: JournalEvent: {journal.Event}, JournalType: {journal.GetType().Name}, Method {methodName} not found.");
                     return;
-                }
 
-                ErrorLog.LogInfo($"DBUG: JournalEvent: {journal.Event}, JournalType: {journal.GetType().Name}, Method {methodName} found.");
                 method.Invoke(this, new object[] { journal });
             }
             catch (Exception ex)
             {
-                ex.LogException();
+                _core.GetPluginErrorLogger(this).Invoke(ex, "When JournalEvent received");
             }
         }
 
@@ -156,7 +147,6 @@ namespace Observatory.Bridge
                     e.Suppression |= NotificationSuppression.Detail;
                 }
 
-                ErrorLog.LogInfo($"SSML Rendering:\r\n    Title({log.IsTitleSpoken}) = {e.TitleSsml}\r\n    Detail = {e.DetailSsml}");
                 _core.SendNotification(e);
             }
         }

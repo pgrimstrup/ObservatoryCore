@@ -7,7 +7,7 @@
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
         mc:Ignorable="d"
         Title="Elite Observatory" Height="450" Width="800" ResizeMode="CanResizeWithGrip" 
-        Loaded="OnLoaded">
+        Loaded="OnLoadedAsync">
 	<Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"></RowDefinition>
@@ -40,7 +40,7 @@
             </syncfusion:RibbonTab>
         </syncfusion:Ribbon>
 
-        <syncfusion:DocumentContainer x:Name="Docking" Grid.Row="1" Margin="4" Mode="TDI" ShowDragAdorner="True">
+        <syncfusion:DocumentContainer x:Name="Documents" Grid.Row="1" Margin="4" Mode="TDI" ShowDragAdorner="True" AddTabDocumentAtLast="True">
         </syncfusion:DocumentContainer>
         
 		<StatusBar Grid.Row="2"/>

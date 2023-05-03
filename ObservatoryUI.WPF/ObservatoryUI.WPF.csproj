@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <Title>Elite Observatory</Title>
+    <Product>Elite Observatory</Product>
   </PropertyGroup>
 
   <ItemGroup>

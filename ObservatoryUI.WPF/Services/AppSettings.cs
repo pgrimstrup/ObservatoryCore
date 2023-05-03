@@ -13,7 +13,7 @@ using Observatory.Framework;
 
 namespace ObservatoryUI.WPF.Services
 {
-    public class AppSettingsData
+    public class AppSettings: IAppSettings
     {
         public string AppTheme { get; set; } = "FluentDark";
         public string JournalFolder { get; set; } = "";
@@ -38,78 +38,90 @@ namespace ObservatoryUI.WPF.Services
 
         public bool InbuiltPopupsEnabled {  get; set; } = true;
 
-
-        public Dictionary<string, object> PluginSettings { get; } = new Dictionary<string, object>();
-
-        public AppSettingsData()
-        {
-        }
-    }
-
-    public class AppSettings : AppSettingsData, IAppSettings
-    {
-        static string FileName = "user.settings";
-
         public string CoreVersion
         {
             get => typeof(ObservatoryCore).Assembly.GetName().Version?.ToString() ?? "0.0.0";
         }
 
+        public string PluginStorageFolder
+        {
+            get => "";
+        }
+
         public AppSettings()
         {
-            LoadSettings();
         }
 
-
-        public void LoadSettings()
-        {
-            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Elite Observatory", FileName);
-            if (File.Exists(path))
-            {
-                try
-                {
-                    // Load the user settings and copy all properties across the this instance.
-                    // Note that after loading, the PluginSettings contains a list of JsonElements
-                    var json = File.ReadAllText(path);
-                    AppSettingsData? data = JsonSerializer.Deserialize<AppSettingsData>(json, CoreExtensions.SerializerOptions);
-                    foreach(var prop in typeof(AppSettingsData).GetProperties())
-                    {
-                        if(prop.CanRead && prop.CanWrite)
-                            prop.SetValue(this, prop.GetValue(data));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine(ex.Message);
-                }
-            }
-        }
-
-        public void SaveSettings()
-        {
-            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Elite Observatory", FileName);
-            string json = JsonSerializer.Serialize(this, CoreExtensions.SerializerOptions);
-            File.WriteAllText(path, json);
-        }
-
-        public void LoadPluginSettings(IObservatoryPlugin plugin)
-        {
-            string key = plugin.GetType().FullName!;
-
-            // Convert the settings back to JSON so we can deserialize as the correct object type
-            if (PluginSettings.TryGetValue(key, out var settings) && settings != null && plugin.Settings != null)
-            {
-                plugin.Settings = settings.CopyAs(plugin.Settings.GetType());
-            }
-        }
-
-        public void SavePluginSettings(IObservatoryPlugin plugin)
-        {
-            if (plugin.Settings != null)
-            {
-                string key = plugin.GetType().FullName!;
-                PluginSettings[key] = plugin.Settings;
-            }
-        }
     }
+
+    //public class AppSettings : AppSettingsData
+    //{
+    //    static string FileName = "user.settings";
+
+
+    //    public AppSettings()
+    //    {
+    //        LoadSettings();
+    //    }
+
+
+    //    public void LoadSettings()
+    //    {
+    //        string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Elite Observatory", FileName);
+    //        if (File.Exists(path))
+    //        {
+    //            try
+    //            {
+    //                // Load the user settings and copy all properties across the this instance.
+    //                // Note that after loading, the PluginSettings contains a list of JsonElements
+    //                var json = File.ReadAllText(path);
+    //                AppSettingsData? data = JsonSerializer.Deserialize<AppSettingsData>(json, CoreExtensions.SerializerOptions);
+    //                foreach(var prop in typeof(AppSettingsData).GetProperties())
+    //                {
+    //                    if(prop.CanRead && prop.CanWrite)
+    //                        prop.SetValue(this, prop.GetValue(data));
+    //                }
+    //            }
+    //            catch (Exception ex)
+    //            {
+    //                Debug.WriteLine(ex.Message);
+    //            }
+    //        }
+    //    }
+
+    //    public void SaveSettings()
+    //    {
+    //        string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Elite Observatory", FileName);
+    //        string json = JsonSerializer.Serialize(this, CoreExtensions.SerializerOptions);
+    //        File.WriteAllText(path, json);
+    //    }
+
+    //    public void GetPluginSettings(IObservatoryPlugin plugin)
+    //    {
+    //        string key = plugin.GetType().FullName!;
+
+    //        if (PluginSettings.TryGetValue(key, out var settings) && settings != null && plugin.Settings != null)
+    //        {
+    //            if (settings.GetType() == plugin.Settings.GetType())
+    //                // Settings are already stored as the correct type, so can be assigned directly
+    //                plugin.Settings = settings;
+    //            else
+    //            {
+    //                // Convert the settings to the correct object type
+    //                settings = settings.CopyAs(plugin.Settings.GetType());
+    //                PluginSettings[key] = settings;
+    //                plugin.Settings = settings;
+    //            }
+    //        }
+    //    }
+
+    //    public void AddPluginSettings(IObservatoryPlugin plugin)
+    //    {
+    //        if (plugin.Settings != null)
+    //        {
+    //            string key = plugin.GetType().FullName!;
+    //            PluginSettings[key] = plugin.Settings;
+    //        }
+    //    }
+    //}
 }

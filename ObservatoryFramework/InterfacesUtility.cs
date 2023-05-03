@@ -37,7 +37,6 @@ namespace Observatory.Framework.Interfaces
         string AppTheme { get; set; }
         string JournalFolder { get; set; }
         bool AllowUnsigned { get; set; }
-        public string CoreVersion { get;  }
         public WindowBounds MainWindowBounds { get; set; }
         public bool StartMonitor { get; set; }
         public string ExportFolder { get; set; }
@@ -52,10 +51,7 @@ namespace Observatory.Framework.Interfaces
 
         public bool InbuiltPopupsEnabled { get; set; }
 
-        public void LoadPluginSettings(IObservatoryPlugin plugin);
-        public void SavePluginSettings(IObservatoryPlugin plugin);
-
-        public void SaveSettings();
+        public string CoreVersion { get; }
     }
 
     public interface IVoiceNotificationQueue

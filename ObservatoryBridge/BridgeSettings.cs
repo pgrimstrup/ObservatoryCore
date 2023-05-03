@@ -11,32 +11,32 @@ namespace Observatory.Bridge
 {
     internal class BridgeSettings
     {
-        [SettingDisplayNameAttribute("Enable Bridge Crew")]
+        [SettingDisplayName("Enable Bridge Crew")]
         public bool BridgeEnabled { get; set; } = true;
 
-        [SettingDisplayNameAttribute("Use Herald Vocalizer Plugin")]
+        [SettingDisplayName("Use Herald Vocalizer Plugin")]
         public bool UseHeraldVocalizer { get; set; } = true;
 
-        [SettingDisplayNameAttribute("Use Internal Vocalizer Plugin")]
+        [SettingDisplayName("Use Internal Vocalizer Plugin")]
         public bool UseInternalVocalizer { get; set; } = false;
 
-        [SettingDisplayNameAttribute("Always Speak Titles")]
+        [SettingDisplayName("Always Speak Titles")]
         public bool AlwaysSpeakTitles { get; set; } = false;
 
-        [SettingDisplayNameAttribute("High Value Body Threshold")]
-        [SettingNumericBoundsAttribute(0, 1000000, 10000)]
+        [SettingDisplayName("High Value Body Threshold")]
+        [SettingNumericBounds(0, 1000000, 10000)]
         public int HighValueBody { get; set; } = 400000;
 
-        [SettingDisplayNameAttribute("Spoken Comma Delay")]
-        [SettingNumericBoundsAttribute(0, 5000, 10)]
+        [SettingDisplayName("Spoken Comma Delay")]
+        [SettingNumericBounds(0, 5000, 10)]
         public int SpokenCommaDelay { get; set; } = 250;
 
-        [SettingDisplayNameAttribute("Spoken Period Delay")]
-        [SettingNumericBoundsAttribute(0, 5000, 10)]
+        [SettingDisplayName("Spoken Period Delay")]
+        [SettingNumericBounds(0, 5000, 10)]
         public int SpokenPeriodDelay { get; set; } = 500;
 
         [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
-        [SettingDisplayNameAttribute("Test Vocalizer")]
+        [SettingDisplayName("Test Vocalizer")]
         public Action Test => () => {
             try
             {
@@ -73,7 +73,7 @@ namespace Observatory.Bridge
             }
             catch (Exception ex)
             {
-                ex.LogException();
+                
             }
         };
 

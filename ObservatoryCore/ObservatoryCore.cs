@@ -6,6 +6,7 @@ using Observatory.Framework.Interfaces;
 using Observatory.PluginManagement;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using System.Text.Json;
 
 namespace Observatory
 {
@@ -48,6 +49,8 @@ namespace Observatory
         {
             if (_pluginsInitialized)
                 throw new InvalidOperationException("IObserverCore.Initializes cannot be called more than once");
+
+            LoadCoreSettings();
 
             _logMonitor.JournalEntry += OnJournalEvent;
             _logMonitor.StatusUpdate += OnStatusUpdate;
@@ -319,21 +322,6 @@ namespace Observatory
             get => LogMonitorStateChangedEventArgs.IsBatchRead(_logMonitor.CurrentState);
         }
 
-        public string PluginStorageFolder
-        {
-            get
-            {
-                var context = new System.Diagnostics.StackFrame(1).GetMethod();
-
-                string folderLocation = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)
-                    + $"{Path.DirectorySeparatorChar}ObservatoryCore{Path.DirectorySeparatorChar}{context.DeclaringType.Assembly.GetName().Name}{Path.DirectorySeparatorChar}";
-
-                if (!Directory.Exists(folderLocation))
-                    Directory.CreateDirectory(folderLocation);
-
-                return folderLocation;
-            }
-        }
 
         public HttpClient HttpClient => Services.GetRequiredService<HttpClient>();
 
@@ -342,6 +330,8 @@ namespace Observatory
             _pluginManager.Shutdown();
             _voiceQueue.Shutdown();
             _popupQueue.Shutdown();
+
+            SaveCoreSettings();
         }
 
         private static bool FirstRowIsAllNull(IObservatoryWorker worker)
@@ -410,5 +400,57 @@ namespace Observatory
             return Task.FromResult(this.GetStatus());
         }
 
+        public string PluginStorageFolder => Path.Combine(GetPluginsFolder(), "data");
+
+        public string GetCoreFolder()
+        {
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "ED Observatory");
+        }
+
+        public string GetPluginsFolder()
+        {
+            return Path.Combine(GetCoreFolder(), "Plugins");
+        }
+
+        public void SavePluginSettings(IObservatoryPlugin plugin)
+        {
+            if (plugin.Settings != null)
+            {
+                string path = Path.Combine(GetCoreFolder(), $"{plugin.ShortName.ToLower()}.settings");
+                string json = JsonSerializer.Serialize(plugin.Settings, CoreExtensions.SerializerOptions);
+                File.WriteAllText(path, json);
+            }
+        }
+
+        public void LoadPluginSettings(IObservatoryPlugin plugin)
+        {
+            string path = Path.Combine(GetCoreFolder(), $"{plugin.ShortName.ToLower()}.settings");
+            if(File.Exists(path))
+            {
+                string json = File.ReadAllText(path);
+                var settings = JsonSerializer.Deserialize(json, plugin.Settings.GetType(), CoreExtensions.SerializerOptions);
+                if (settings != null)
+                    plugin.Settings = settings;
+            }
+        }
+
+        public void LoadCoreSettings()
+        {
+            string path = Path.Combine(GetCoreFolder(), "core.settings");
+            if (File.Exists(path))
+            {
+                string json = File.ReadAllText(path);
+                var loaded = JsonSerializer.Deserialize(json, _settings.GetType(), CoreExtensions.SerializerOptions);
+                foreach (var property in _settings.GetType().GetProperties().Where(p => p.CanRead && p.CanWrite))
+                    property.SetValue(_settings, property.GetValue(loaded));
+            }
+        }
+
+        public void SaveCoreSettings()
+        {
+            string path = Path.Combine(GetCoreFolder(), "core.settings");
+            string json = JsonSerializer.Serialize(_settings, CoreExtensions.SerializerOptions);
+            File.WriteAllText(path, json);
+        }
     }
 }

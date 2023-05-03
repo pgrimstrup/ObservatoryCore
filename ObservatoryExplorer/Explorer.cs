@@ -14,7 +14,7 @@ namespace Observatory.Explorer
 {
     internal class Explorer
     {
-        private IObservatoryCore ObservatoryCore;
+        private IObservatoryCoreAsync ObservatoryCore;
         private ObservableCollection<object> Results;
         private ExplorerWorker ExplorerWorker;
         private Dictionary<ulong, Dictionary<int, Scan>> SystemBodyHistory;
@@ -168,7 +168,7 @@ namespace Observatory.Explorer
         {
             if (!readAll)
             {
-                string criteriaFilePath = ExplorerWorker.settings.CustomCriteriaFile;
+                string criteriaFilePath = Path.Combine(ObservatoryCore.GetPluginsFolder(), ExplorerWorker.settings.CustomCriteriaFile);
                 
                 if (File.Exists(criteriaFilePath))
                 {

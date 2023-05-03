@@ -99,7 +99,6 @@ namespace Observatory.Bridge
             }
 
             sb.Append("</speak>");
-            ErrorLog.LogInfo("SSML: " + sb.ToString());
             return sb.ToString();
         }
 

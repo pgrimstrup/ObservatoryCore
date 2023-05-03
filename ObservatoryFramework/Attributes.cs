@@ -6,11 +6,15 @@ using System.Threading.Tasks;
 
 namespace Observatory.Framework
 {
+    // These Attribute classes are all named incorrectly. They do not have the "Attribute" suffix to their class name.
+    // They are kept to maintain backward compatibility with other plugins.
+    // THey will be flagged as obsolete and replaced with DataAnnotationAttributes.
+
     /// <summary>
     /// Specifies text to display as the name of the setting in the UI instead of the property name.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-    public class SettingDisplayNameAttribute : Attribute
+    public class SettingDisplayName : Attribute
     {
         private string name;
 
@@ -18,7 +22,7 @@ namespace Observatory.Framework
         /// Specifies text to display as the name of the setting in the UI instead of the property name.
         /// </summary>
         /// <param name="name">Name to display</param>
-        public SettingDisplayNameAttribute(string name)
+        public SettingDisplayName(string name)
         {
             this.name = name;
         }
@@ -38,41 +42,35 @@ namespace Observatory.Framework
     /// Indicates that the property should not be displayed to the user in the UI.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-    public class SettingIgnoreAttribute : Attribute
+    public class SettingIgnore: Attribute
     { }
 
     /// <summary>
     /// Indicates numeric properly should use a slider control instead of a numeric textbox with roller.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-    public class SettingNumericUseSliderAttribute : Attribute
+    public class SettingNumericUseSlider: Attribute
     { }
 
     /// <summary>
     /// Specify backing value used by Dictionary&lt;string, object&gt; to indicate selected option.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-    public class SettingBackingValueAttribute : Attribute
+    public class SettingBackingValue : Attribute
     {
-        private string property;
-
         /// <summary>
         /// Specify backing value used by Dictionary&lt;string, object&gt; to indicate selected option.
         /// </summary>
         /// <param name="property">Property name for backing value.</param>
-        public SettingBackingValueAttribute(string property)
+        public SettingBackingValue(string property)
         {
-            this.property = property;
+            this.BackingProperty = property;
         }
 
         /// <summary>
         /// Accessor to get/set backing value property name.
         /// </summary>
-        public string BackingProperty
-        {
-            get => property;
-            set => property = value;
-        }
+        public string BackingProperty { get; set; }
     }
 
     /// <summary>
@@ -82,9 +80,9 @@ namespace Observatory.Framework
     /// setting to a ComboBox selection. 
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-    public class SettingGetItemsMethodAttribute : Attribute
+    public class SettingGetItemsMethod: Attribute
     {
-        public SettingGetItemsMethodAttribute(string methodName)
+        public SettingGetItemsMethod(string methodName)
         {
             this.MethodName = methodName;
         }
@@ -96,7 +94,7 @@ namespace Observatory.Framework
     /// Specify bounds for numeric inputs.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-    public class SettingNumericBoundsAttribute : Attribute
+    public class SettingNumericBounds: Attribute
     {
         private double minimum;
         private double maximum;
@@ -108,7 +106,7 @@ namespace Observatory.Framework
         /// <param name="minimum">Minimum allowed value.</param>
         /// <param name="maximum">Maximum allowed value.</param>
         /// <param name="increment">Increment between allowed values in slider/roller inputs.</param>
-        public SettingNumericBoundsAttribute(double minimum, double maximum, double increment = 1.0)
+        public SettingNumericBounds(double minimum, double maximum, double increment = 1.0)
         {
             this.minimum = minimum;
             this.maximum = maximum;

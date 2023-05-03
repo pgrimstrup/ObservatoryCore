@@ -22,7 +22,7 @@ namespace ObservatoryUI.WPF
         readonly IAppSettings _settings;
         Lazy<IEnumerable<string>> _inbuiltVoiceNames;
 
-        public AppSettingsData Model { get; set; } = new AppSettingsData();
+        public AppSettings Model { get; set; } = new AppSettings();
         public string CoreVersion => _core.Version;
         public Dictionary<IObservatoryPlugin, object> ActivePlugins { get; set; }
 
@@ -36,11 +36,10 @@ namespace ObservatoryUI.WPF
             ActivePlugins = _core.ActivePlugins
                 .Where(p => p.Settings != null)
                 .OrderBy(p => p.ShortName)
-                .ToDictionary(k => k, v => v.Settings.CopyAs(v.Settings.GetType()));
-
+                .ToDictionary(k => k, v => v.Settings.Copy());
 
             // Copy all properties into the Model instance
-            foreach (var prop in typeof(AppSettingsData).GetProperties().Where(p => p.CanRead && p.CanWrite))
+            foreach (var prop in typeof(AppSettings).GetProperties().Where(p => p.CanRead && p.CanWrite))
                 prop.SetValue(Model, prop.GetValue(_settings));
 
 
@@ -85,17 +84,16 @@ namespace ObservatoryUI.WPF
         private void OkClicked(object sender, RoutedEventArgs e)
         {
             // Copy all properties back to the settings object and save 
-            foreach (var prop in typeof(AppSettingsData).GetProperties().Where(p => p.CanRead && p.CanWrite))
+            foreach (var prop in typeof(AppSettings).GetProperties().Where(p => p.CanRead && p.CanWrite))
                 prop.SetValue(_settings, prop.GetValue(Model));
+            _core.SaveCoreSettings();
 
-            // Simply assign the plugin settings to the plugin and add into the singleton settings instance
-            foreach(var plugin in ActivePlugins.Keys)
+            // Simply assign the plugin settings to the plugin and save 
+            foreach (var plugin in ActivePlugins.Keys)
             {
                 plugin.Settings = ActivePlugins[plugin];
-                _settings.SavePluginSettings(plugin);
+                _core.SavePluginSettings(plugin);
             }
-
-            _settings.SaveSettings();
 
             DialogResult = true;
         }

@@ -50,17 +50,17 @@ namespace ObservatoryUI.WPF.Views
             Settings = settings;
             ValueProperty = property;
 
-            var ignore = property.GetCustomAttribute<SettingIgnoreAttribute>();
+            var ignore = property.GetCustomAttribute<SettingIgnore>();
             Hidden = ignore != null;
 
-            var displayName = property.GetCustomAttribute<SettingDisplayNameAttribute>();
+            var displayName = property.GetCustomAttribute<SettingDisplayName>();
             DisplayName = displayName?.DisplayName ?? property.Name;
 
             MinimumValue = Int32.MinValue;
             MaximumValue = Int32.MaxValue;
             Increment = 1;
 
-            var bounds = ValueProperty.GetCustomAttribute<SettingNumericBoundsAttribute>();
+            var bounds = ValueProperty.GetCustomAttribute<SettingNumericBounds>();
             if (bounds != null)
             {
                 if (bounds.Maximum > bounds.Minimum)
@@ -74,7 +74,7 @@ namespace ObservatoryUI.WPF.Views
 
             if (ValueProperty.PropertyType == typeof(Dictionary<string, object>))
             {
-                var backingAttribute = property.GetCustomAttribute<SettingBackingValueAttribute>();
+                var backingAttribute = property.GetCustomAttribute<SettingBackingValue>();
                 if (backingAttribute != null)
                 {
                     var backing = settings.GetType().GetProperty(backingAttribute.BackingProperty);
@@ -96,7 +96,7 @@ namespace ObservatoryUI.WPF.Views
             }
             else
             {
-                var getItemAttribute = property.GetCustomAttribute<SettingGetItemsMethodAttribute>();
+                var getItemAttribute = property.GetCustomAttribute<SettingGetItemsMethod>();
                 if (getItemAttribute != null && !String.IsNullOrEmpty(getItemAttribute.MethodName))
                 {
                     var method = plugin.GetType().GetMethod(getItemAttribute.MethodName);
@@ -191,7 +191,7 @@ namespace ObservatoryUI.WPF.Views
                 setting.ValueProperty.PropertyType == typeof(double) ||
                 setting.ValueProperty.PropertyType == typeof(decimal))
             {
-                var useSlider = setting.ValueProperty.GetCustomAttribute<SettingNumericUseSliderAttribute>();
+                var useSlider = setting.ValueProperty.GetCustomAttribute<SettingNumericUseSlider>();
                 if (useSlider == null || setting.Increment == 0 || (setting.MaximumValue - setting.MinimumValue) / setting.Increment > 100)
                     return this.NumericTemplate;
                 else

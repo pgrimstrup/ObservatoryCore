@@ -21,6 +21,13 @@ namespace Observatory.Framework
             SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
         }
 
+        public static object Copy(this object source)
+        {
+            string json = JsonSerializer.Serialize(source, SerializerOptions);
+            var instance = JsonSerializer.Deserialize(json, source.GetType(), SerializerOptions);
+            return instance;
+        }
+
         public static object CopyAs(this object source, Type targetType)
         {
             string json = JsonSerializer.Serialize(source, SerializerOptions);

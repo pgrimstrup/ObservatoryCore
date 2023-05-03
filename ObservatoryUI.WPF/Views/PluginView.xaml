@@ -128,7 +128,7 @@
     </UserControl.Resources>
     <Grid>
         <syncfusion:SfDataGrid CellStyle="{DynamicResource customCellStyle}" HeaderStyle="{DynamicResource customHeaderStyle}" 
-                               x:Name="DataGrid" AutoGenerateColumns="True" AllowSorting="True" AllowFiltering="True" ColumnSizer="Auto"
+                               x:Name="DataGrid" AutoGenerateColumns="True" AllowSorting="False" AllowFiltering="True" ColumnSizer="SizeToHeader"
                                AlternationCount="2" ItemsSource="{Binding}" NavigationMode="Row" AutoGeneratingColumn="OnAutoGeneratingColumn">
         </syncfusion:SfDataGrid>
     </Grid>

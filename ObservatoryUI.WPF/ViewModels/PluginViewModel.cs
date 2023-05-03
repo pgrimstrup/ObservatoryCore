@@ -33,14 +33,9 @@ namespace ObservatoryUI.WPF.ViewModels
         {
             _plugin = plugin;
             _view = view;
-
-            _plugin.PluginUI.DataGrid.CollectionChanged += DataGrid_CollectionChanged;
+            _view.Name = plugin.GetType().FullName!.Replace(".", "_");
 
             _view.DataContext = _plugin.PluginUI.DataGrid;
-        }
-
-        private void DataGrid_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-        {
         }
     }
 }

@@ -32,7 +32,7 @@ namespace Observatory.PluginManagement
         {
             _core = core;
             _logger = logger;
-            _settings = settings;   
+            _settings = settings;
         }
 
         public static Dictionary<PropertyInfo, string> GetSettingDisplayNames(object settings)
@@ -44,7 +44,7 @@ namespace Observatory.PluginManagement
                 var properties = settings.GetType().GetProperties();
                 foreach (var property in properties)
                 {
-                    var attrib = property.GetCustomAttribute<SettingDisplayNameAttribute>();
+                    var attrib = property.GetCustomAttribute<SettingDisplayName>();
                     if (attrib == null)
                     {
                         settingNames.Add(property, property.Name);
@@ -58,77 +58,71 @@ namespace Observatory.PluginManagement
             return settingNames;
         }
 
-        public void SaveSettings(IObservatoryPlugin plugin, object settings)
-        {
-            plugin.Settings = settings;
-            _settings.SavePluginSettings(plugin);
-        }
-
         public void Shutdown()
         {
-            foreach(var plugin in Plugins.Values.Where(p => p.Instance != null))
+            foreach (var plugin in Plugins.Values.Where(p => p.Instance != null))
             {
                 (plugin.Instance as IDisposable).Dispose();
+                _core.SavePluginSettings(plugin.Instance);
                 plugin.Instance = null;
             }
         }
 
         public void LoadPlugins()
         {
+            AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
+
             // Load inbuilt plugins first
             Type pluginType = typeof(IObservatoryPlugin);
-            foreach(var type in Assembly.GetEntryAssembly().GetTypes())
+            foreach (var type in Assembly.GetEntryAssembly().GetTypes())
             {
-                if(pluginType.IsAssignableFrom(type) && !type.IsAbstract && !type.IsInterface)
+                if (pluginType.IsAssignableFrom(type) && !type.IsAbstract && !type.IsInterface)
                 {
-                    var pluginState = LoadPlugin("Inbuilt:" + type.Name, type);
-                    Plugins[type.FullName] = pluginState;
-                    Debug.WriteLine($"Plugin {pluginState.SettingKey} ({pluginState.TypeName}) loaded");
+                    var pluginState = LoadPlugin(type);
+                    Plugins[pluginState.SettingKey] = pluginState;
+                    Debug.WriteLine($"Plugin {pluginState.SettingKey} loaded");
                 }
             }
 
             // Load plugins listed in the app.config
             var solutionPlugins = _core.Services.GetRequiredService<IDebugPlugins>();
-            if(solutionPlugins != null)
+            if (solutionPlugins != null)
             {
-                foreach(var key in solutionPlugins.PluginTypes.Keys)
+                foreach (var name in solutionPlugins.PluginTypes.Keys)
                 {
-                    var type = Type.GetType(solutionPlugins.PluginTypes[key], false);
+                    var type = Type.GetType(solutionPlugins.PluginTypes[name], false);
                     if (type == null)
                     {
-                        Debug.WriteLine($"Plugin {key} ({solutionPlugins.PluginTypes[key]}) not found");
+                        Debug.WriteLine($"Plugin {name} ({solutionPlugins.PluginTypes[name]}) not found");
                     }
                     else
                     {
-                        var pluginState = LoadPlugin("Solution:" + key, type);
-                        Plugins[type.FullName] = pluginState;
-                        Debug.WriteLine($"Plugin {pluginState.SettingKey} ({pluginState.TypeName}) loaded");
+                        var pluginState = LoadPlugin(type);
+                        Plugins[pluginState.SettingKey] = pluginState;
+                        Debug.WriteLine($"Plugin {pluginState.SettingKey} loaded");
                     }
                 }
             }
 
             // Load other plugins from the Documents folder
-            var pluginsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ObservatoryCore", "Plugins");
-            ExtractPlugins(pluginsFolder);
+            ExtractPlugins(_core.GetPluginsFolder());
 
-            AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
-
-            foreach(string file in Directory.GetFiles(pluginsFolder, "*.dll"))
+            foreach (string file in Directory.GetFiles(_core.GetPluginsFolder(), "*.dll"))
             {
                 try
                 {
                     var assembly = Assembly.LoadFile(file);
-                    foreach(var type in assembly.GetTypes())
+                    foreach (var type in assembly.GetTypes())
                     {
                         if (pluginType.IsAssignableFrom(type) && !type.IsAbstract && !type.IsInterface)
                         {
-                            var pluginState = LoadPlugin("Plugin:" + type.Name, type);
-                            Plugins[type.FullName] = pluginState;
-                            Debug.WriteLine($"Plugin {pluginState.SettingKey} ({pluginState.TypeName}) loaded");
+                            var pluginState = LoadPlugin(type);
+                            Plugins[pluginState.SettingKey] = pluginState;
+                            Debug.WriteLine($"Plugin {pluginState.SettingKey} loaded");
                         }
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     // Ignore any load errors
                     _logger.LogError(ex, $"Unable to load Plugin from file {file}");
@@ -140,23 +134,20 @@ namespace Observatory.PluginManagement
         private Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
         {
             var name = args.Name.Split(',').First() + ".dll";
-            var pluginsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Elite Observatory", "Plugins");
 
-            if(!File.Exists(Path.Combine(pluginsFolder, name)))
-            {
-                // Check the deps subfolder
-                pluginsFolder = Path.Combine(pluginsFolder, "deps");
-                if (!File.Exists(Path.Combine(pluginsFolder, name)))
-                    return null;
-            }
+            if (File.Exists(Path.Combine(_core.GetPluginsFolder(), name)))
+                return Assembly.LoadFile(Path.Combine(_core.GetPluginsFolder(), name));
 
-            return Assembly.LoadFile(Path.Combine(pluginsFolder, name));
+            if (File.Exists(Path.Combine(_core.GetPluginsFolder(), "deps", name)))
+                return Assembly.LoadFile(Path.Combine(_core.GetPluginsFolder(), "deps", name));
+
+            return null;
         }
 
-        private PluginLoadState LoadPlugin(string key, Type type)
+        private PluginLoadState LoadPlugin(Type type)
         {
             var pluginState = new PluginLoadState();
-            pluginState.SettingKey = key;
+            pluginState.SettingKey = type.FullName;
             pluginState.TypeName = type?.AssemblyQualifiedName;
 
             try
@@ -167,15 +158,15 @@ namespace Observatory.PluginManagement
                     if (pluginState.Instance == null)
                         throw new InvalidCastException("Created instance does not implement IObservatoryPlugin");
 
-                    _settings.LoadPluginSettings(pluginState.Instance);
+                    _core.LoadPluginSettings(pluginState.Instance);
                     pluginState.Instance.Load(_core);
-                    _settings.SavePluginSettings(pluginState.Instance);
+                    _core.SavePluginSettings(pluginState.Instance);
                 }
             }
             catch (Exception ex)
             {
                 pluginState.Error = ex;
-                _logger.LogError(ex, $"Loading Plugin {key} ({pluginState.TypeName ?? "null"}) threw an exception");
+                _logger.LogError(ex, $"Loading Plugin {pluginState.SettingKey} ({pluginState.TypeName ?? "null"}) threw an exception");
             }
 
             return pluginState;
@@ -187,7 +178,7 @@ namespace Observatory.PluginManagement
                 Directory.CreateDirectory(pluginFolder);
 
             var files = Directory.GetFiles(pluginFolder, "*.zip")
-                .Concat(Directory.GetFiles(pluginFolder, "*.eop")); 
+                .Concat(Directory.GetFiles(pluginFolder, "*.eop"));
 
             foreach (var file in files)
             {
@@ -196,8 +187,8 @@ namespace Observatory.PluginManagement
                     System.IO.Compression.ZipFile.ExtractToDirectory(file, pluginFolder, true);
                     File.Delete(file);
                 }
-                catch 
-                { 
+                catch
+                {
                     // Just ignore files that don't extract successfully.
                 }
             }

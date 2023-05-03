@@ -33,6 +33,9 @@ namespace Observatory.Herald
 
             cacheSize = Math.Max(settings.CacheSize, 1);
             cacheLocation = new DirectoryInfo(cacheFolder);
+            if (!cacheLocation.Exists)
+                cacheLocation.Create();
+
             ReadCache();
             ErrorLogger = errorLogger;
 

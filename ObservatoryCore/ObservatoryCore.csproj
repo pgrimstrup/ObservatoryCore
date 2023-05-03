@@ -20,6 +20,8 @@
     <Version Condition=" '$(VersionSuffix)' == '' ">0.0.1.0</Version>
     <Version Condition=" '$(VersionSuffix)' != '' ">$(VersionSuffix)</Version>
     <ApplicationIcon>Assets\EOCIcon-Presized.ico</ApplicationIcon>
+    <Title>ED Observatory</Title>
+    <Product>ED Observatory</Product>
   </PropertyGroup>
   
   <ItemGroup>

@@ -77,16 +77,6 @@ namespace Observatory.Framework.Interfaces
 
     }
 
-    //public interface IInbuiltNotifierAsync : IObservatoryNotifierAsync
-    //{
-    //    public NotificationRendering Filter { get; }
-
-    //    public Task OnNotificationEventAsync(Guid id, NotificationArgs notificationEventArgs);
-
-    //    public Task OnNotificationCancelledAsync(Guid id);
-    //}
-
-
     /// <summary>
     /// Interface passed by Observatory Core to plugins. Primarily used for sending notifications and UI updates back to Core.
     /// </summary>
@@ -131,5 +121,11 @@ namespace Observatory.Framework.Interfaces
         public IServiceProvider Services { get; }
 
         public IEnumerable<IObservatoryPlugin> ActivePlugins { get; }
+
+        public string GetCoreFolder();
+        public string GetPluginsFolder();
+        public void SavePluginSettings(IObservatoryPlugin plugin);
+        public void LoadPluginSettings(IObservatoryPlugin plugin);
+        public void SaveCoreSettings();
     }
 }

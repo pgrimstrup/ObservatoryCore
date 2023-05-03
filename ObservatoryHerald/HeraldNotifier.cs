@@ -73,7 +73,7 @@ namespace Observatory.Herald
             var speechManager = new SpeechRequestManager(
                 _heraldSettings,
                 _core.HttpClient,
-                _core.PluginStorageFolder,
+                Path.Combine(_core.GetPluginsFolder(), "HeraldCache"),
                 logger);
 
             _heraldQueue = new HeraldQueue(speechManager, logger);

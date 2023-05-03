@@ -8,10 +8,10 @@ namespace Observatory.Herald
     public class HeraldSettings
     {
 
-        [SettingDisplayNameAttribute("API Key Override")]
+        [SettingDisplayName("API Key Override")]
         public string AzureAPIKeyOverride { get; set; }
 
-        [SettingIgnoreAttribute]
+        [SettingIgnore]
         public string ApiEndpoint { get; set; }
 
         [SettingDisplayName("Voice")]
@@ -22,17 +22,17 @@ namespace Observatory.Herald
         [SettingGetItemsMethod(nameof(HeraldNotifier.GetVoiceRates))]
         public string SelectedRate { get; set; }
 
-        [SettingDisplayNameAttribute("Volume")]
-        [SettingNumericUseSliderAttribute, SettingNumericBoundsAttribute(0,100,1)]
+        [SettingDisplayName("Volume")]
+        [SettingNumericUseSlider, SettingNumericBounds(0,100,1)]
         public int Volume { get; set;}
 
         [System.Text.Json.Serialization.JsonIgnore]
         public Action Test { get; internal set; }
 
-        [SettingDisplayNameAttribute("Enabled")]
+        [SettingDisplayName("Enabled")]
         public bool Enabled { get; set; }
 
-        [SettingDisplayNameAttribute("Cache Size (MB): ")]
+        [SettingDisplayName("Cache Size (MB): ")]
         public int CacheSize { get; set; }
     }
 }

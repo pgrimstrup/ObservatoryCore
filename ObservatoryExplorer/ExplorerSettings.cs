@@ -11,85 +11,85 @@ namespace Observatory.Explorer
     {
         public ExplorerSettings()
         {
-            CustomCriteriaFile = $"{Environment.GetFolderPath(Environment.SpecialFolder.Personal)}{System.IO.Path.DirectorySeparatorChar}ObservatoryCriteria.lua";
+            CustomCriteriaFile = "ObservatoryCriteria.lua";
         }
 
-        [SettingDisplayNameAttribute("Landable & Terraformable")]
+        [SettingDisplayName("Landable & Terraformable")]
         public bool LandableTerraformable { get; set; }
 
-        [SettingDisplayNameAttribute("Landable w/ Atmosphere")]
+        [SettingDisplayName("Landable w/ Atmosphere")]
         public bool LandableAtmosphere { get; set; }
 
-        [SettingDisplayNameAttribute("Landable High-g")]
+        [SettingDisplayName("Landable High-g")]
         public bool LandableHighG { get; set; }
 
-        [SettingDisplayNameAttribute("Landable Large")]
+        [SettingDisplayName("Landable Large")]
         public bool LandableLarge { get; set; }
 
-        [SettingDisplayNameAttribute("Close Orbit")]
+        [SettingDisplayName("Close Orbit")]
         public bool CloseOrbit { get; set; }
 
-        [SettingDisplayNameAttribute("Shepherd Moon")]
+        [SettingDisplayName("Shepherd Moon")]
         public bool ShepherdMoon { get; set; }
 
-        [SettingDisplayNameAttribute("Wide Ring")]
+        [SettingDisplayName("Wide Ring")]
         public bool WideRing { get; set; }
 
-        [SettingDisplayNameAttribute("Close Binary")]
+        [SettingDisplayName("Close Binary")]
         public bool CloseBinary { get; set; }
 
-        [SettingDisplayNameAttribute("Colliding Binary")]
+        [SettingDisplayName("Colliding Binary")]
         public bool CollidingBinary { get; set; }
 
-        [SettingDisplayNameAttribute("Close Ring Proximity")]
+        [SettingDisplayName("Close Ring Proximity")]
         public bool CloseRing { get; set; }
 
-        [SettingDisplayNameAttribute("Codex Discoveries")]
+        [SettingDisplayName("Codex Discoveries")]
         public bool Codex { get; set; }
 
-        [SettingDisplayNameAttribute("Uncommon Secondary Star")]
+        [SettingDisplayName("Uncommon Secondary Star")]
         public bool UncommonSecondary { get; set; }
 
-        [SettingDisplayNameAttribute("Landable w/ Ring")]
+        [SettingDisplayName("Landable w/ Ring")]
         public bool LandableRing { get; set; }
 
-        [SettingDisplayNameAttribute("Nested Moon")]
+        [SettingDisplayName("Nested Moon")]
         public bool Nested { get; set; }
 
-        [SettingDisplayNameAttribute("Small Object")]
+        [SettingDisplayName("Small Object")]
         public bool SmallObject { get; set; }
 
-        [SettingDisplayNameAttribute("Fast Rotation")]
+        [SettingDisplayName("Fast Rotation")]
         public bool FastRotation { get; set; }
 
-        [SettingDisplayNameAttribute("Fast Orbit")]
+        [SettingDisplayName("Fast Orbit")]
         public bool FastOrbit { get; set; }
 
-        [SettingDisplayNameAttribute("High Eccentricity")]
+        [SettingDisplayName("High Eccentricity")]
         public bool HighEccentricity { get; set; }
 
-        [SettingDisplayNameAttribute("Diverse Life")]
+        [SettingDisplayName("Diverse Life")]
         public bool DiverseLife { get; set; }
 
-        [SettingDisplayNameAttribute("Good FSD Injection")]
+        [SettingDisplayName("Good FSD Injection")]
         public bool GoodFSDBody { get; set; }
 
-        [SettingDisplayNameAttribute("All FSD Mats In System")]
+        [SettingDisplayName("All FSD Mats In System")]
         public bool GreenSystem { get; set; }
 
-        [SettingDisplayNameAttribute("All Surface Mats In System")]
+        [SettingDisplayName("All Surface Mats In System")]
         public bool GoldSystem { get; set; }
 
-        [SettingDisplayNameAttribute("High-Value Body")]
+        [SettingDisplayName("High-Value Body")]
         public bool HighValueMappable { get; set; }
 
-        [SettingDisplayNameAttribute("Enable Custom Criteria")]
+        [SettingDisplayName("Enable Custom Criteria")]
         public bool EnableCustomCriteria { get; set; }
 
-        [SettingDisplayNameAttribute("Only Show Current System")]
+        [SettingDisplayName("Only Show Current System")]
         public bool OnlyShowCurrentSystem { get; set; }
 
-        [SettingDisplayNameAttribute("Custom Criteria File")]
+        [SettingDisplayName("Custom Criteria File")]
         [System.Text.Json.Serialization.JsonIgnore]
         public System.IO.FileInfo CustomCriteria 
         {
@@ -97,7 +97,7 @@ namespace Observatory.Explorer
             set => CustomCriteriaFile = value.FullName;
         }
 
-        [SettingIgnoreAttribute]
+        [SettingIgnore]
         public string CustomCriteriaFile { get; set; }
     }
 }

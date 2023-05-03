@@ -268,7 +268,6 @@ namespace Observatory
             if (String.IsNullOrWhiteSpace(path))
             {
                 _settings.JournalFolder = logDirectory.FullName;
-                _settings.SaveSettings();
             }
 
             return logDirectory;
