@@ -168,7 +168,7 @@ namespace Observatory.Explorer
         {
             if (!readAll)
             {
-                string criteriaFilePath = Path.Combine(ObservatoryCore.GetPluginsFolder(), ExplorerWorker.settings.CustomCriteriaFile);
+                string criteriaFilePath = Path.Combine(ObservatoryCore.PluginStorageFolder, ExplorerWorker.settings.CustomCriteriaFile);
                 
                 if (File.Exists(criteriaFilePath))
                 {

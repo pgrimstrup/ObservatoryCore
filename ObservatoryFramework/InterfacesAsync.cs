@@ -122,8 +122,7 @@ namespace Observatory.Framework.Interfaces
 
         public IEnumerable<IObservatoryPlugin> ActivePlugins { get; }
 
-        public string GetCoreFolder();
-        public string GetPluginsFolder();
+        public string CoreFolder { get; }
         public void SavePluginSettings(IObservatoryPlugin plugin);
         public void LoadPluginSettings(IObservatoryPlugin plugin);
         public void SaveCoreSettings();

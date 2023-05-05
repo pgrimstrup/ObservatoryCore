@@ -9,7 +9,7 @@ namespace Observatory.Herald
     {
 
         [SettingDisplayName("API Key Override")]
-        public string AzureAPIKeyOverride { get; set; }
+        public string APIKeyOverride { get; set; }
 
         [SettingIgnore]
         public string ApiEndpoint { get; set; }

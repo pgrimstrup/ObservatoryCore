@@ -400,23 +400,33 @@ namespace Observatory
             return Task.FromResult(this.GetStatus());
         }
 
-        public string PluginStorageFolder => Path.Combine(GetPluginsFolder(), "data");
-
-        public string GetCoreFolder()
+        public string PluginStorageFolder
         {
-            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "ED Observatory");
-        }
+            get
+            {
+                string path = Path.Combine(CoreFolder, "Data");
+                if(!Directory.Exists(path))
+                    Directory.CreateDirectory(path);
+                return path;
+            }
+        } 
 
-        public string GetPluginsFolder()
+        public string CoreFolder
         {
-            return Path.Combine(GetCoreFolder(), "Plugins");
+            get
+            {
+                string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "ED Observatory");
+                if (!Directory.Exists(path))
+                    Directory.CreateDirectory(path);
+                return path;
+            }
         }
 
         public void SavePluginSettings(IObservatoryPlugin plugin)
         {
             if (plugin.Settings != null)
             {
-                string path = Path.Combine(GetCoreFolder(), $"{plugin.ShortName.ToLower()}.settings");
+                string path = Path.Combine(CoreFolder, $"{plugin.ShortName.ToLower()}.settings");
                 string json = JsonSerializer.Serialize(plugin.Settings, CoreExtensions.SerializerOptions);
                 File.WriteAllText(path, json);
             }
@@ -424,7 +434,7 @@ namespace Observatory
 
         public void LoadPluginSettings(IObservatoryPlugin plugin)
         {
-            string path = Path.Combine(GetCoreFolder(), $"{plugin.ShortName.ToLower()}.settings");
+            string path = Path.Combine(CoreFolder, $"{plugin.ShortName.ToLower()}.settings");
             if(File.Exists(path))
             {
                 string json = File.ReadAllText(path);
@@ -436,7 +446,7 @@ namespace Observatory
 
         public void LoadCoreSettings()
         {
-            string path = Path.Combine(GetCoreFolder(), "core.settings");
+            string path = Path.Combine(CoreFolder, "core.settings");
             if (File.Exists(path))
             {
                 string json = File.ReadAllText(path);
@@ -448,7 +458,7 @@ namespace Observatory
 
         public void SaveCoreSettings()
         {
-            string path = Path.Combine(GetCoreFolder(), "core.settings");
+            string path = Path.Combine(CoreFolder, "core.settings");
             string json = JsonSerializer.Serialize(_settings, CoreExtensions.SerializerOptions);
             File.WriteAllText(path, json);
         }

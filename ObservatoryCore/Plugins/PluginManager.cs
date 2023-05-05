@@ -21,6 +21,7 @@ namespace Observatory.Plugins
             get => Plugins.Values.Where(p => p.Instance != null && p.Error == null).Select(p => p.Instance);
         }
 
+        public string PluginsFolder => Path.Combine(_core.CoreFolder, "Plugins");
 
         public PluginManager(IObservatoryCoreAsync core, ILogger<PluginManager> logger, IAppSettings settings)
         {
@@ -99,9 +100,9 @@ namespace Observatory.Plugins
             }
 
             // Load other plugins from the Documents folder
-            ExtractPlugins(_core.GetPluginsFolder());
+            ExtractPlugins(PluginsFolder);
 
-            foreach (string file in Directory.GetFiles(_core.GetPluginsFolder(), "*.dll"))
+            foreach (string file in Directory.GetFiles(PluginsFolder, "*.dll"))
             {
                 try
                 {
@@ -129,11 +130,11 @@ namespace Observatory.Plugins
         {
             var name = args.Name.Split(',').First() + ".dll";
 
-            if (File.Exists(Path.Combine(_core.GetPluginsFolder(), name)))
-                return Assembly.LoadFile(Path.Combine(_core.GetPluginsFolder(), name));
+            if (File.Exists(Path.Combine(PluginsFolder, name)))
+                return Assembly.LoadFile(Path.Combine(PluginsFolder, name));
 
-            if (File.Exists(Path.Combine(_core.GetPluginsFolder(), "deps", name)))
-                return Assembly.LoadFile(Path.Combine(_core.GetPluginsFolder(), "deps", name));
+            if (File.Exists(Path.Combine(PluginsFolder, "deps", name)))
+                return Assembly.LoadFile(Path.Combine(PluginsFolder, "deps", name));
 
             return null;
         }

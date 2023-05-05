@@ -213,7 +213,6 @@ namespace Observatory.Framework.Interfaces
         /// <summary>
         /// Retrieves and ensures creation of a location which can be used by the plugin to store persistent data.
         /// </summary>
-        [Obsolete("Deprecated - use the GetPluginFolder method on the IObservatoryCoreAsync interface")]
         public string PluginStorageFolder { get; }
     }
 }

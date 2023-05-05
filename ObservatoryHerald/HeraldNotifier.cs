@@ -24,11 +24,11 @@ namespace Observatory.Herald
         {
             get => new HeraldSettings()
             {
-                SelectedVoice = "American - Christopher",
-                SelectedRate = "1.0",
+                SelectedVoice = "",
+                SelectedRate = "Default",
                 Volume = 75,
                 Enabled = false,
-                ApiEndpoint = "https://api.observatory.xjph.net/AzureVoice",
+                ApiEndpoint = "",
                 CacheSize = 100
             };
         }
@@ -76,7 +76,7 @@ namespace Observatory.Herald
             _speech = new SpeechRequestManager(
                 _heraldSettings,
                 _core.HttpClient,
-                Path.Combine(_core.GetPluginsFolder(), "HeraldCache"),
+                Path.Combine(_core.PluginStorageFolder, "HeraldCache"),
                 _logger);
 
             _heraldQueue = new HeraldQueue(_speech, _logger);

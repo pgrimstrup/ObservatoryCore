@@ -33,7 +33,7 @@ namespace ObservatoryUI.WPF
 
             _core = core;
             _settings = settings;
-            _dockStateFile = Path.Combine(_core.GetCoreFolder(), "docking_state.xml");
+            _dockStateFile = Path.Combine(_core.CoreFolder, "docking_state.xml");
 
             var plugins = _core.Initialize();
             foreach (var plugin in plugins.Where(p => p.PluginUI?.DataGrid != null))
