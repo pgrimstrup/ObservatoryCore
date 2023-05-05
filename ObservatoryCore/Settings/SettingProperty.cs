@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
 using Observatory.Framework;
@@ -7,7 +8,7 @@ using Observatory.Settings;
 
 namespace Observatory.Plugins
 {
-    public class SettingProperty
+    public class SettingProperty : INotifyPropertyChanged
     {
         public IObservatoryPlugin Plugin { get; private set; }
         public object Settings { get; private set; }
@@ -18,7 +19,8 @@ namespace Observatory.Plugins
         public string DisplayName { get; private set; }
         public bool Hidden { get; private set; }
         public bool UseIntSlider { get; private set; }
-
+        public string? DependsOnPropertyName { get; private set; }
+        
         public double MinimumValue { get; private set; }
         public double MaximumValue { get; private set; }
         public double Increment { get; private set; }
@@ -32,20 +34,32 @@ namespace Observatory.Plugins
         public int ColumnSpan { get; set; } = 2;
 
         private Lazy<ObservableCollection<NameValue>> _items;
+        
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public object Value
         {
             get => ValueProperty.GetValue(Settings);
-            set => ValueProperty.SetValue(Settings, value);
+            set
+            {
+                if (Value != value)
+                {
+                    ValueProperty.SetValue(Settings, value);
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Value)));
+                }
+            }
         }
 
-        public SettingProperty(IObservatoryPlugin plugin, object settings, PropertyInfo property, SettingProperty? previous)
+        private SettingProperty(IObservatoryPlugin plugin, object settings, PropertyInfo property, SettingProperty? previous)
         {
             Plugin = plugin;
             Settings = settings;
             ValueProperty = property;
             _items = new Lazy<ObservableCollection<NameValue>>(GetItems);
 
+            var dependsOn = property.GetCustomAttribute<SettingDependsOn>();
+            DependsOnPropertyName = dependsOn?.DependsOn;
+            
             var ignore = property.GetCustomAttribute<SettingIgnore>();
             Hidden = ignore != null;
 
@@ -148,13 +162,14 @@ namespace Observatory.Plugins
             }
         }
 
-        public void DoAction()
+        public async Task DoAction()
         {
             try
             {
                 if (PluginActionMethod != null)
                 {
-                    PluginActionMethod.Invoke(Plugin, new object[] { Settings });
+                    Task task = (Task)PluginActionMethod.Invoke(Plugin, new object[] { Settings });
+                    await task;
                 }
                 else
                 {
@@ -166,6 +181,27 @@ namespace Observatory.Plugins
             catch(Exception ex)
             {
                 Debug.WriteLine(ex);
+            }
+        }
+
+        private void DependentPropertyChanged()
+        {
+            if (_items.IsValueCreated && Items != null)
+            {
+                // Track current value
+                var currentValue = Convert.ToString(Value);
+
+                // Get new list of items and repopulate the existing list
+                var updated = GetItems();
+                Items.Clear();
+                foreach (var item in updated)
+                    Items.Add(item);
+
+                // Reset the selected value
+                if (updated.Any(v => v.Name == currentValue))
+                    Value = currentValue;
+                else
+                    Value = updated.FirstOrDefault()?.Name;
             }
         }
 
@@ -232,7 +268,34 @@ namespace Observatory.Plugins
             }
         }
 
-    }
+        public static IEnumerable<SettingProperty> CreateSettingProperties(IObservatoryPlugin plugin, object settings)
+        {
+            SettingProperty? previous = null;
 
-    
+            List<SettingProperty> properties = new List<SettingProperty>();
+            foreach (var property in settings.GetType().GetProperties())
+            {
+                var current = new SettingProperty(plugin, settings, property, previous);
+                properties.Add(current);
+                if (current.Hidden)
+                    continue;
+
+                yield return current;
+                previous = current;
+            }
+
+            foreach (var property in properties)
+            {
+                if(property.DependsOnPropertyName != null)
+                {
+                    var depends = properties.FirstOrDefault(p => p.ValueProperty.Name == property.DependsOnPropertyName);
+                    if(depends != null)
+                    {
+                        // Notify this property when the property value it depends on has changed
+                        depends.PropertyChanged += (sender, e) => property.DependentPropertyChanged();
+                    }
+                }
+            }
+        }
+    }
 }

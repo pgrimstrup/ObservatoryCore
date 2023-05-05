@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Observatory.Framework;
 using Observatory.Framework.Interfaces;
+using Observatory.Herald.TextToSpeech;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 
@@ -14,6 +15,7 @@ namespace Observatory.Herald
         private HeraldSettings _heraldSettings;
         private HeraldQueue _heraldQueue;
         private SpeechRequestManager _speech;
+        private List<Voice> _voices;
 
         public HeraldNotifier()
         {
@@ -24,8 +26,9 @@ namespace Observatory.Herald
         {
             get => new HeraldSettings()
             {
-                SelectedVoice = "",
+                SelectedVoice = "English (Australia) A, Female",
                 SelectedRate = "Default",
+                SelectedStyle = "Standard",
                 Volume = 75,
                 Enabled = false,
                 ApiEndpoint = "",
@@ -89,16 +92,36 @@ namespace Observatory.Herald
             await Task.CompletedTask;
         }
 
-        public async Task<Dictionary<string, object>> GetVoiceNamesAsync()
+        public async Task<Dictionary<string, object>> GetVoiceNamesAsync(object settings)
         {
-            var voices = await _speech.GetVoices();
-            return voices.ToDictionary(v => v.Description, v => (object)v.Name);
+            var styles = await GetVoiceStylesAsync();
+            if (styles == null || _voices == null)
+                return null;
+
+            var style = styles.First().Key;
+
+            if (settings is HeraldSettings heraldSettings && !String.IsNullOrWhiteSpace(heraldSettings.SelectedStyle))
+                style = heraldSettings.SelectedStyle;
+
+            return _voices
+                .Where(v => v.Category == style)
+                .OrderBy(v => v.Description)
+                .ToDictionary(v => v.Description, v => (object)v.Name);
         }
 
         public async Task<Dictionary<string, object>> GetVoiceStylesAsync()
         {
-            var voices = await _speech.GetVoices();
-            return voices.ToDictionary(v => v.Description, v => (object)v.Name);
+            if (_voices == null)
+                _voices = await _speech.GetVoices();
+
+            if (_voices == null)
+                return null;
+
+            var result = new Dictionary<string, object>();
+            foreach (var style in _voices.Select(v => v.Category).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(v => v))
+                result.Add(style, style);
+
+            return result;
         }
 
         public Dictionary<string, object> GetVoiceRates()

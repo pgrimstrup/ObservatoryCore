@@ -1,11 +1,10 @@
-﻿using Observatory.Framework;
-using Observatory.Herald.TextToSpeech;
-using System;
-using System.Collections.Generic;
+﻿using System.ComponentModel;
+using Observatory.Framework;
+using Observatory.Framework.Interfaces;
 
 namespace Observatory.Herald
 {
-    public class HeraldSettings
+    public class HeraldSettings 
     {
 
         [SettingDisplayName("API Key Override")]
@@ -16,6 +15,7 @@ namespace Observatory.Herald
 
         [SettingDisplayName("Voice")]
         [SettingGetItemsMethod(nameof(HeraldNotifier.GetVoiceNamesAsync))]
+        [SettingDependsOn(nameof(SelectedStyle))]
         public string SelectedVoice { get; set; }
 
         [SettingDisplayName("Style")]

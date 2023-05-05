@@ -7,6 +7,10 @@ using System.Threading.Tasks;
 
 namespace Observatory.Framework.Interfaces
 {
+    public interface ICanRaisePropertyChanged
+    {
+        void RaisePropertyChanged(string propertyName);
+    }
     public interface ILogMonitor
     {
         void Start();

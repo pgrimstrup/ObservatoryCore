@@ -38,8 +38,39 @@ namespace Observatory.Herald.TextToSpeech
                     Language = v.LanguageCodes.FirstOrDefault(lc => lc.StartsWith("en-")),
                     Gender = v.Gender,
                     Name = v.Name,
-                    Description = $"{v.Name} ({v.Gender})"
+                    Category = GetCategory(v.Name),
+                    Description = GetDescription(v.Name, v.Gender)
                 });
+        }
+
+        private string GetCategory(string name)
+        {
+            return name.Split('-').Skip(2).FirstOrDefault();
+        }
+
+        private string GetDescription(string name, string gender)
+        {
+            var parts = name.Split('-');
+
+            string lang = String.Join("-", parts.Take(2));
+            string category = parts.Skip(2).FirstOrDefault();
+            string id = String.Join("-", parts.Skip(3));
+
+            switch (lang.ToLower())
+            {
+                case "en-us": lang = "English (US)"; break;
+                case "en-gb": lang = "English (UK)"; break;
+                case "en-au": lang = "English (Australia)"; break;
+                case "en-in": lang = "English (India)"; break;
+            }
+
+            switch (gender.ToLower())
+            {
+                case "male": gender = "Male";break;
+                case "female": gender = "Female";break;
+            }
+
+            return $"{lang} {id}, {gender}";
         }
     }
 }

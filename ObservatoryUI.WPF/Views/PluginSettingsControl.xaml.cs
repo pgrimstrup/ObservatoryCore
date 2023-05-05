@@ -31,26 +31,20 @@ namespace ObservatoryUI.WPF.Views
         public void CreateSettingProperties()
         {
             SettingProperties.Clear();
-            SettingProperty? previous = null;
 
-            foreach (var property in Settings.GetType().GetProperties())
+            foreach(var prop in SettingProperty.CreateSettingProperties(Plugin, Settings))
             {
-                var current = new SettingProperty(Plugin, Settings, property, previous);
-                if (current.Hidden)
-                    continue;
-
-                SettingProperties.Add(current);
-                previous = current;
+                SettingProperties.Add(prop);
             }
         }
 
-        private void Action_Click(object sender, RoutedEventArgs e)
+        private async void Action_Click(object sender, RoutedEventArgs e)
         {
             if(sender is Button button)
             {
                 if(button.DataContext is SettingProperty property)
                 {
-                    property.DoAction();
+                    await property.DoAction();
                 }
             }
         }

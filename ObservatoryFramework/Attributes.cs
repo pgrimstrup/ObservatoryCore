@@ -37,6 +37,16 @@ namespace Observatory.Framework
         }
     }
 
+    public class SettingDependsOn: Attribute
+    {
+        public string DependsOn { get; set; }
+
+        public SettingDependsOn(string dependsOn)
+        {
+            DependsOn = dependsOn;
+        }   
+    }
+
 
     /// <summary>
     /// Indicates that the property should not be displayed to the user in the UI.
