@@ -1,14 +1,7 @@
 ﻿using Observatory.Framework;
-using Observatory.Framework.Files;
-using Observatory.Framework.Files.Journal;
 using Observatory.Framework.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Observatory.PluginManagement
+namespace Observatory.Plugins
 {
     public class PlaceholderPlugin : IObservatoryNotifier
     {

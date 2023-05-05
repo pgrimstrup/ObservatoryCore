@@ -82,7 +82,8 @@ namespace ObservatoryUI.WPF.Services
                     {
                         string voice = msg.VoiceName ?? speech.GetInstalledVoices().First().VoiceInfo.Name;
                         speech.Volume = msg.VoiceVolume;
-                        speech.Rate = msg.VoiceRate;
+                        if (Int32.TryParse(msg.VoiceRate, out int rate))
+                            speech.Rate = rate;
                         speech.SelectVoice(voice);
 
                         Speak(speech, msg, UpdateSsmlVoice(msg.Title, voice), cancel);

@@ -51,7 +51,7 @@
 
   <ItemGroup>
     <Compile Remove="ErrorReporter.cs" />
-    <Compile Remove="PluginManagement\PluginCore.cs" />
+    <Compile Remove="Plugins\PluginCore.cs" />
   </ItemGroup>
 
   <ItemGroup>

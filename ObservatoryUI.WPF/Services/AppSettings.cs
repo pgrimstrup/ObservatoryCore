@@ -10,6 +10,7 @@ using System.IO;
 using System.Reflection;
 using System.Diagnostics;
 using Observatory.Framework;
+using System.Text.Json.Serialization;
 
 namespace ObservatoryUI.WPF.Services
 {
@@ -32,17 +33,20 @@ namespace ObservatoryUI.WPF.Services
 
         public bool InbuiltVoiceEnabled { get; set; } = true;
         public int VoiceVolume { get; set; } = 75;
-        public int VoiceRate { get; set; }
-        public string VoiceName { get; set; }
+        public string VoiceRate { get; set; }
+        public string VoiceName { get; set; } = "";
+        public string VoiceStyle { get; set; } = "";
         public bool VoiceWelcomeMessage { get; set; } = true;
 
         public bool InbuiltPopupsEnabled {  get; set; } = true;
 
+        [JsonIgnore]
         public string CoreVersion
         {
             get => typeof(ObservatoryCore).Assembly.GetName().Version?.ToString() ?? "0.0.0";
         }
 
+        [JsonIgnore]
         public string PluginStorageFolder
         {
             get => "";

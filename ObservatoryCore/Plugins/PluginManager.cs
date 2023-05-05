@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Data;
-using Observatory.Framework.Interfaces;
-using System.IO;
-using Observatory.Framework;
-using System.Text.Json;
-using System.Configuration;
-using Microsoft.Extensions.Logging;
+﻿using System.Data;
 using System.Diagnostics;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Observatory.Framework;
+using Observatory.Framework.Interfaces;
 
-namespace Observatory.PluginManagement
+namespace Observatory.Plugins
 {
     public class PluginManager
     {

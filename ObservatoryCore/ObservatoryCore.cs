@@ -3,7 +3,7 @@ using Observatory.Framework.Files.Journal;
 using Observatory.Framework.Files;
 using Observatory.Framework;
 using Observatory.Framework.Interfaces;
-using Observatory.PluginManagement;
+using Observatory.Plugins;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json;

@@ -65,7 +65,12 @@ namespace Observatory.Herald
 
         public void Load(IObservatoryCore core)
         {
-            _core = (IObservatoryCoreAsync)core;
+            Task.Run(() => LoadAsync((IObservatoryCoreAsync)core)).GetAwaiter().GetResult();
+        }
+
+        public async Task LoadAsync(IObservatoryCoreAsync core)
+        {
+            _core = core;
 
             _logger = _core.Services.GetRequiredService<ILogger<HeraldNotifier>>();
             _speech = new SpeechRequestManager(
@@ -75,22 +80,6 @@ namespace Observatory.Herald
                 _logger);
 
             _heraldQueue = new HeraldQueue(_speech, _logger);
-            _heraldSettings.Test = () => {
-                _heraldQueue.Enqueue(
-                    new NotificationArgs() {
-                        Title = "Herald voice testing",
-                        Detail = $"This is {_heraldSettings.SelectedVoice.Split(" - ")[1]}, your Herald Vocalizer for spoken notifications."
-                    },
-                    _heraldSettings.SelectedVoice,
-                    GetAzureStyleNameFromSetting(_heraldSettings.SelectedVoice),
-                    _heraldSettings.SelectedRate,
-                    _heraldSettings.Volume);
-            };
-        }
-
-        public async Task LoadAsync(IObservatoryCoreAsync core)
-        {
-            Load(core);
             await Task.CompletedTask;
         }
 
@@ -100,9 +89,15 @@ namespace Observatory.Herald
             await Task.CompletedTask;
         }
 
-        public Dictionary<string, object> GetVoiceNames()
+        public async Task<Dictionary<string, object>> GetVoiceNamesAsync()
         {
-            var voices = Task.Run(_speech.GetVoices).GetAwaiter().GetResult();
+            var voices = await _speech.GetVoices();
+            return voices.ToDictionary(v => v.Description, v => (object)v.Name);
+        }
+
+        public async Task<Dictionary<string, object>> GetVoiceStylesAsync()
+        {
+            var voices = await _speech.GetVoices();
             return voices.ToDictionary(v => v.Description, v => (object)v.Name);
         }
 
@@ -118,8 +113,21 @@ namespace Observatory.Herald
             };
         }
 
-        private void TestVoice()
+        public async Task TestVoiceSettings(object testSettings)
         {
+            if(testSettings is HeraldSettings settings)
+            {
+                var notificationEventArgs = new NotificationArgs {
+                    Suppression = NotificationSuppression.Title,
+                    Detail = $"This is a test of the Herald Voice Notifier, using the {settings.SelectedVoice} voice.",
+                    VoiceName = settings.SelectedVoice,
+                    VoiceRate = settings.SelectedRate,
+                    VoiceStyle = settings.SelectedStyle,
+                    VoiceVolume = settings.Volume
+                };
+
+                await OnNotificationEventAsync(notificationEventArgs);
+            }
         }
 
         public void OnNotificationEvent(NotificationArgs notificationEventArgs)
@@ -127,15 +135,17 @@ namespace Observatory.Herald
             Task.Run(() => OnNotificationEventAsync(notificationEventArgs)).GetAwaiter().GetResult();
         }
 
-        public async Task OnNotificationEventAsync(NotificationArgs notificationEventArgs)
+        public async Task OnNotificationEventAsync(NotificationArgs args)
         {
             if (_heraldSettings.Enabled)
-                _heraldQueue.Enqueue(
-                    notificationEventArgs,
-                    _heraldSettings.SelectedVoice,
-                    GetAzureStyleNameFromSetting(_heraldSettings.SelectedVoice),
-                    _heraldSettings.SelectedRate,
-                    _heraldSettings.Volume);
+            {
+                args.VoiceName ??= _heraldSettings.SelectedVoice;
+                args.VoiceRate ??= _heraldSettings.SelectedRate;
+                args.VoiceStyle ??= _heraldSettings.SelectedStyle;
+                args.VoiceVolume ??= _heraldSettings.Volume;
+
+                _heraldQueue.Enqueue(args);
+            }
 
             await Task.CompletedTask;
         }

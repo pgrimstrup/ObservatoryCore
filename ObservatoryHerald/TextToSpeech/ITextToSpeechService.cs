@@ -8,7 +8,7 @@ namespace Observatory.Herald.TextToSpeech
 {
     public interface ITextToSpeechService
     {
-        FileInfo GetTextToSpeech(string ssml, string filename);
-        IEnumerable<IVoice> GetVoices();
+        Task<FileInfo> GetTextToSpeechAsync(string ssml, string filename);
+        Task<IEnumerable<Voice>> GetVoicesAsync();
     }
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Observatory.Herald.TextToSpeech
 {
-    internal class Voice : IVoice
+    public class Voice 
     {
         public Voice()
         {
@@ -14,7 +14,8 @@ namespace Observatory.Herald.TextToSpeech
             Description = "";
             Language = "en-US";
             Gender = "Male";
-
+            Category = "Default";
+            Style = "";
         }
 
         public Voice(string voiceName)
@@ -23,9 +24,15 @@ namespace Observatory.Herald.TextToSpeech
             Description = voiceName;
             Language = "en-US";
             Gender = "Male";
+            Category = "Default";
+            Style = "";
         }
 
         public string Language { get; set; }
+
+        public string Category { get; set; }
+
+        public string Style { get; set; }
 
         public string Name { get; set; }
 

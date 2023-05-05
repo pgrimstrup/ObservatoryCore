@@ -21,7 +21,7 @@ namespace Observatory.Herald
         private int cacheSize;
         private ILogger ErrorLogger;
         private ConcurrentDictionary<string, CacheData> cacheIndex;
-        private List<IVoice> voices;
+        private List<Voice> voices;
         private string initialVoice;
 
         ITextToSpeechService _speech;
@@ -45,7 +45,7 @@ namespace Observatory.Herald
             initialVoice = settings.SelectedVoice;
         }
 
-        internal string GetAudioFileFromSsml(string ssml, string voice, string style, string rate)
+        internal async Task<string> GetAudioFileFromSsmlAsync(string ssml, string voice, string style, string rate)
         {
 
             ssml = AddVoiceToSsml(ssml, voice, style, rate);
@@ -72,7 +72,7 @@ namespace Observatory.Herald
             {
                 try
                 {
-                    audioFileInfo = _speech.GetTextToSpeech(ssml, audioFilename);
+                    audioFileInfo = await _speech.GetTextToSpeechAsync(ssml, audioFilename);
                 }
                 catch(Exception ex)
                 {
@@ -119,14 +119,15 @@ namespace Observatory.Herald
             return ssmlDoc.OuterXml;
         }
 
-        internal List<IVoice> GetVoices()
+        internal async Task<List<Voice>> GetVoices()
         {
             if (voices != null)
                 return voices;
 
             try
             {
-                voices = _speech.GetVoices().ToList();
+                var result = await _speech.GetVoicesAsync();
+                voices = result.ToList();
                 return voices;
             }
             catch (Exception ex)
@@ -134,7 +135,7 @@ namespace Observatory.Herald
                 ErrorLogger.LogError(ex, "When retrieving a list of available voices from the server");
 
                 // Return the last known voice
-                var result = new List<IVoice>();
+                var result = new List<Voice>();
                 result.Add(new Voice(initialVoice));
                 return result;
             }

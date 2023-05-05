@@ -57,7 +57,8 @@ namespace Observatory.Framework
         public double YPos = -1.0;
 
         public string? VoiceName;
-        public int? VoiceRate;
+        public string? VoiceStyle;
+        public string? VoiceRate;
         public int? VoiceVolume;
 
         /// <summary>

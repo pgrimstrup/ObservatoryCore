@@ -45,7 +45,7 @@ namespace Observatory.Framework.Interfaces
 
         public bool InbuiltVoiceEnabled { get; set; }
         public int VoiceVolume { get; set; }
-        public int VoiceRate { get; set; }
+        public string VoiceRate { get; set; }
         public string VoiceName { get; set; }
         public bool VoiceWelcomeMessage { get; set; }
 
@@ -78,7 +78,7 @@ namespace Observatory.Framework.Interfaces
         public string Title;
         public string Detail;
         public string VoiceName;
-        public int VoiceRate;
+        public string VoiceRate;
         public int VoiceVolume;
         public bool Cancelled;
     }

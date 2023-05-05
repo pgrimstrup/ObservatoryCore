@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Observatory.Framework;
 using Observatory.Framework.Interfaces;
+using Observatory.Plugins;
 
 namespace ObservatoryUI.WPF.Views
 {
@@ -45,7 +46,13 @@ namespace ObservatoryUI.WPF.Views
 
         private void Action_Click(object sender, RoutedEventArgs e)
         {
-
+            if(sender is Button button)
+            {
+                if(button.DataContext is SettingProperty property)
+                {
+                    property.DoAction();
+                }
+            }
         }
 
         private void Browse_Click(object sender, RoutedEventArgs e)

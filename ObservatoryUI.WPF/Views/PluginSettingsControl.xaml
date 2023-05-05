@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:ObservatoryUI.WPF.Views"
+             xmlns:utils="clr-namespace:ObservatoryUI.WPF.Utils"
              xmlns:converters="clr-namespace:ObservatoryUI.WPF.Converters"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="600">
@@ -14,58 +14,69 @@
         
         <DataTemplate x:Key="StringTemplate">
             <StackPanel Orientation="Horizontal" Margin="6,4">
-                <Label Content="{Binding DisplayName}" Width="180"></Label>
+                <Label Content="{Binding DisplayName, Mode=OneWay}" Width="180"></Label>
                 <TextBox HorizontalAlignment="Stretch" Width="350" Text="{Binding Value}"></TextBox>
             </StackPanel>
         </DataTemplate>
 
         <DataTemplate x:Key="BooleanTemplate">
             <StackPanel Orientation="Horizontal"  Margin="6,4">
-                <CheckBox IsChecked="{Binding Value}" Content="{Binding DisplayName}"></CheckBox>
+                <CheckBox IsChecked="{Binding Value}" Content="{Binding DisplayName, Mode=OneWay}"></CheckBox>
             </StackPanel>
         </DataTemplate>
 
         <DataTemplate x:Key="IntSliderTemplate">
             <StackPanel Orientation="Horizontal" Margin="6,4">
-                <Label Content="{Binding DisplayName}" Width="180"></Label>
-                <Slider Width="300" VerticalAlignment="Center" Value="{Binding Value, Converter={StaticResource ConvertDoubleToInt}}" Minimum="{Binding MinimumValue}" Maximum="{Binding MaximumValue}" SmallChange="{Binding Increment}" LargeChange="{Binding Increment}"></Slider>
+                <Label Content="{Binding DisplayName, Mode=OneWay}" Width="180"></Label>
+                <Slider Width="300" VerticalAlignment="Center" Value="{Binding Value, Converter={StaticResource ConvertDoubleToInt}}" 
+                        Minimum="{Binding MinimumValue}" Maximum="{Binding MaximumValue, Mode=OneWay}" SmallChange="{Binding Increment, Mode=OneWay}" LargeChange="{Binding Increment, Mode=OneWay}"></Slider>
                 <Label Margin="8,0,0,0" Content="{Binding Value}"></Label>
             </StackPanel>
         </DataTemplate>
 
-        <DataTemplate x:Key="NumericTemplate">
+        <DataTemplate x:Key="DoubleNumericTemplate">
             <StackPanel Orientation="Horizontal" Margin="6,4">
-                <Label Content="{Binding DisplayName}" Width="180"></Label>
-                <syncfusion:UpDown Width="150" Value="{Binding Value, Converter={StaticResource ConvertDoubleToInt}}" NumberDecimalDigits="0" MinValue="{Binding MinimumValue}" MaxValue="{Binding MaximumValue}" Step="{Binding Increment}" />
+                <Label Content="{Binding DisplayName, Mode=OneWay}" Width="180"></Label>
+                <syncfusion:UpDown Width="150" Value="{Binding Value}" NumberDecimalDigits="0" 
+                                   MinValue="{Binding MinimumValue, Mode=OneWay}" MaxValue="{Binding MaximumValue, Mode=OneWay}" Step="{Binding Increment, Mode=OneWay}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="IntNumericTemplate">
+            <StackPanel Orientation="Horizontal" Margin="6,4">
+                <Label Content="{Binding DisplayName, Mode=OneWay}" Width="180"></Label>
+                <syncfusion:UpDown Width="150" Value="{Binding Value, Converter={StaticResource ConvertDoubleToInt}}" NumberDecimalDigits="0" 
+                                   MinValue="{Binding MinimumValue, Mode=OneWay}" MaxValue="{Binding MaximumValue, Mode=OneWay}" Step="{Binding Increment, Mode=OneWay}" />
             </StackPanel>
         </DataTemplate>
 
         <DataTemplate x:Key="FileInfoTemplate">
             <StackPanel Orientation="Horizontal"  Margin="6,4">
-                <Label Content="{Binding DisplayName}" Width="180"></Label>
+                <Label Content="{Binding DisplayName, Mode=OneWay}" Width="180"></Label>
                 <TextBox HorizontalAlignment="Stretch" Width="300"></TextBox>
                 <Button Width="75" Margin="8,0,0,0" Click="Browse_Click">Browse</Button>
             </StackPanel>
         </DataTemplate>
 
         <DataTemplate x:Key="ActionTemplate">
-            <Button Content="{Binding DisplayName, FallbackValue=Button}" Click="Action_Click" MinWidth="75" Padding="6,2" Margin="186,4,4,4" HorizontalAlignment="Left"></Button>
+            <Button Content="{Binding DisplayName, FallbackValue=Button, Mode=OneWay}" Click="Action_Click" MinWidth="75" Padding="6,2" Margin="186,4,4,4" HorizontalAlignment="Left"></Button>
         </DataTemplate>
 
         <DataTemplate x:Key="ComboBoxTemplate">
             <StackPanel Orientation="Horizontal"  Margin="6,4">
-                <Label Content="{Binding DisplayName}" Width="180"></Label>
-                <ComboBox Width="300" ItemsSource="{Binding Items}" SelectedValue="{Binding Value}" DisplayMemberPath="Name" SelectedValuePath="Value">
+                <Label Content="{Binding DisplayName, Mode=OneWay}" Width="180"></Label>
+                <ComboBox Width="300" ItemsSource="{Binding Items, Mode=OneWay}" SelectedValue="{Binding Value}" DisplayMemberPath="Name" SelectedValuePath="Name">
                 </ComboBox>
             </StackPanel>
         </DataTemplate>
 
 
-        <local:SettingTemplateSelector x:Key="SettingTemplateSelector" 
+        <utils:SettingTemplateSelector x:Key="SettingTemplateSelector" 
                                        BooleanTemplate="{StaticResource BooleanTemplate}"
                                        StringTemplate="{StaticResource StringTemplate}"
                                        IntSliderTemplate="{StaticResource IntSliderTemplate}"
-                                       NumericTemplate="{StaticResource NumericTemplate}"
+                                       IntNumericTemplate="{StaticResource IntNumericTemplate}"
+                                       DoubleNumericTemplate="{StaticResource DoubleNumericTemplate}"
                                        FileInfoTemplate="{StaticResource FileInfoTemplate}"
                                        ActionTemplate="{StaticResource ActionTemplate}" 
                                        ComboBoxTemplate="{StaticResource ComboBoxTemplate}"
@@ -99,35 +110,5 @@
                 </ItemsControl.ItemContainerStyle>
             </ItemsControl>
         </StackPanel>
-
-        <!--<ScrollViewer Visibility="Visible" Grid.Row="1" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Auto">
-            <StackPanel x:Name="TemplateTest">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <ContentPresenter Grid.Row="0" Grid.ColumnSpan="2" ContentTemplate="{StaticResource StringTemplate}"/>
-                    <ContentPresenter Grid.Row="1" Grid.ColumnSpan="2" ContentTemplate="{StaticResource BooleanTemplate}"/>
-                    <ContentPresenter Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="1" ContentTemplate="{StaticResource BooleanTemplate}"/>
-                    <ContentPresenter Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="1" ContentTemplate="{StaticResource BooleanTemplate}"/>
-                    <ContentPresenter Grid.Row="3" Grid.ColumnSpan="1" ContentTemplate="{StaticResource IntSliderTemplate}"/>
-                    <ContentPresenter Grid.Row="4" Grid.ColumnSpan="2" ContentTemplate="{StaticResource NumericTemplate}"/>
-                    <ContentPresenter Grid.Row="5" Grid.ColumnSpan="2" ContentTemplate="{StaticResource FileInfoTemplate}"/>
-                    <ContentPresenter Grid.Row="6" Grid.ColumnSpan="2" ContentTemplate="{StaticResource ComboBoxTemplate}"/>
-                    <ContentPresenter Grid.Row="7" Grid.ColumnSpan="2" ContentTemplate="{StaticResource ActionTemplate}"/>
-                </Grid>
-            </StackPanel>
-        </ScrollViewer>-->
     </Grid>
 </UserControl>

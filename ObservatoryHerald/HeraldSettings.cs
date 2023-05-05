@@ -15,8 +15,12 @@ namespace Observatory.Herald
         public string ApiEndpoint { get; set; }
 
         [SettingDisplayName("Voice")]
-        [SettingGetItemsMethod(nameof(HeraldNotifier.GetVoiceNames))]
+        [SettingGetItemsMethod(nameof(HeraldNotifier.GetVoiceNamesAsync))]
         public string SelectedVoice { get; set; }
+
+        [SettingDisplayName("Style")]
+        [SettingGetItemsMethod(nameof(HeraldNotifier.GetVoiceStylesAsync))]
+        public string SelectedStyle { get; set; }
 
         [SettingDisplayName("Voice Rate")]
         [SettingGetItemsMethod(nameof(HeraldNotifier.GetVoiceRates))]
@@ -27,6 +31,7 @@ namespace Observatory.Herald
         public int Volume { get; set;}
 
         [System.Text.Json.Serialization.JsonIgnore]
+        [SettingPluginAction(nameof(HeraldNotifier.TestVoiceSettings))]
         public Action Test { get; internal set; }
 
         [SettingDisplayName("Enabled")]

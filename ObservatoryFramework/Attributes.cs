@@ -90,6 +90,17 @@ namespace Observatory.Framework
         public string MethodName { get; set; }
     }
 
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
+    public class SettingPluginAction : Attribute
+    {
+        public SettingPluginAction(string methodName)
+        {
+            this.MethodName = methodName;
+        }
+
+        public string MethodName { get; set; }
+    }
+
     /// <summary>
     /// Specify bounds for numeric inputs.
     /// </summary>

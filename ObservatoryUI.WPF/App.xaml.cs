@@ -3,7 +3,7 @@ using System.Data;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Observatory.Framework.Interfaces;
-using Observatory.PluginManagement;
+using Observatory.Plugins;
 using Observatory;
 using ObservatoryUI.WPF.Services;
 using Syncfusion.SfSkinManager;

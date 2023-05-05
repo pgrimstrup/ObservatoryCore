@@ -20,14 +20,14 @@ namespace Observatory.Herald.TextToSpeech
             _http = http;
         }
 
-        public FileInfo GetTextToSpeech(string ssml, string filename)
+        public Task<FileInfo> GetTextToSpeechAsync(string ssml, string filename)
         {
-            return new FileInfo(filename);
+            return Task.FromResult(new FileInfo(filename));
         }
 
-        public IEnumerable<IVoice> GetVoices()
+        public async Task <IEnumerable<Voice>> GetVoicesAsync()
         {
-            GoogleVoiceData voiceData = Task.Run(() => _http.GetFromJsonAsync<GoogleVoiceData>($"{VoiceListEndPoint}?key={ApiKey}")).GetAwaiter().GetResult();
+            GoogleVoiceData voiceData = await  _http.GetFromJsonAsync<GoogleVoiceData>($"{VoiceListEndPoint}?key={ApiKey}");
 
             // Pull out all voices with an English language code
             var englishVoices = voiceData.Voices.Where(v => v.LanguageCodes.Any(lc => lc.StartsWith("en-"))).ToArray();
