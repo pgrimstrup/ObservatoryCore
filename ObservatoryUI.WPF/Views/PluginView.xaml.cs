@@ -41,7 +41,6 @@ namespace ObservatoryUI.WPF.Views
                         e.Column.HeaderText = display.Name ?? e.Column.HeaderText;
                     }
 
-                    //e.Column.MinimumWidth = 30;
                     e.Column.Width = double.NaN; // Force recalculation
                 }
             }
@@ -86,15 +85,19 @@ namespace ObservatoryUI.WPF.Views
                 double fontSize = DataGrid.FontSize;
                 fontSize += e.Delta / 120.0;
                 DataGrid.FontSize = fontSize;
-
-                DataGrid.GetVisualContainer().RowHeightManager.Reset();
-                DataGrid.GetVisualContainer().InvalidateMeasureInfo();
-                DataGrid.GridColumnSizer.ResetAutoCalculationforAllColumns();
+                ResetColumnRowSizes();
                 DataGrid.GridColumnSizer.Refresh();
                 e.Handled = true;
 
                 FontSizeChanged?.Invoke(this, EventArgs.Empty);
             }
+        }
+
+        public void ResetColumnRowSizes()
+        {
+            DataGrid.GetVisualContainer()?.RowHeightManager?.Reset();
+            DataGrid.GetVisualContainer()?.InvalidateMeasureInfo();
+            DataGrid.GridColumnSizer?.ResetAutoCalculationforAllColumns();
         }
 
         private void DataGrid_QueryRowHeight(object sender, QueryRowHeightEventArgs e)

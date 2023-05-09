@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Debug;
 using ObservatoryUI.WPF.Views;
 using System.Net.Http;
+using System.IO;
 
 namespace ObservatoryUI.WPF
 {
@@ -41,9 +42,17 @@ namespace ObservatoryUI.WPF
         private void ConfigureServices(ServiceCollection builder)
         {
             builder.AddLogging(logging => {
-                logging.AddProvider(new FileLoggerProvider());
+                logging.AddFileLogging(options => {
+                    options.FileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ED Observatory", "Logs", "observatory.log");
+                    options.LogLevel = LogLevel.Information;
+                    options.RolloverCount = 10;
+                    options.DailyRollover = true;
 #if DEBUG
-                logging.AddProvider(new DebugLoggerProvider());
+                    options.LogLevel = LogLevel.Debug;
+#endif
+                });
+#if DEBUG
+                logging.AddDebugLogging();
 #endif
             });
 

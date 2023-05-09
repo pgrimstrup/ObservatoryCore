@@ -98,9 +98,12 @@ namespace Observatory
             if (!_pluginsInitialized)
                 return Guid.Empty;
 
+            if (_logMonitor.CurrentState.HasFlag(LogMonitorState.Batch) || _logMonitor.CurrentState.HasFlag(LogMonitorState.PreRead))
+                return Guid.Empty;
+
             // Queue the message to the internal VoiceQueue 
             args.Id = Guid.NewGuid();
-            if((args.Rendering & NotificationRendering.NativeVocal) != 0)
+            if((args.Rendering & NotificationRendering.NativeVocal) != 0 && _settings.InbuiltVoiceEnabled)
             {
                 string title = (args.Suppression & NotificationSuppression.Title) == 0 ? GetSsml(args.Title, args.TitleSsml) : "";
                 string detail = (args.Suppression & NotificationSuppression.Detail) == 0 ? GetSsml(args.Detail, args.DetailSsml) : "";
@@ -115,7 +118,7 @@ namespace Observatory
             }
 
             // Queue the message to the internal PopupQueue
-            if ((args.Rendering & NotificationRendering.NativeVisual) != 0)
+            if ((args.Rendering & NotificationRendering.NativeVisual) != 0 && _settings.InbuiltPopupsEnabled)
             {
                 string title = "";
                 string detail = "";

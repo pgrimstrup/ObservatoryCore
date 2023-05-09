@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Xml;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Observatory.Framework;
 using Observatory.Framework.Interfaces;
 using ObservatoryUI.WPF.ViewModels;
@@ -23,16 +24,18 @@ namespace ObservatoryUI.WPF
         readonly IObservatoryCoreAsync _core;
         readonly IAppSettings _settings;
         readonly string _dockStateFile;
+        readonly ILogger _logger;
 
         public ObservableCollection<PluginViewModel> PluginViews { get; } = new ObservableCollection<PluginViewModel>();
 
-        public MainWindow(IObservatoryCoreAsync core, IAppSettings settings)
+        public MainWindow(IObservatoryCoreAsync core, IAppSettings settings, ILogger<MainWindow> logger)
         {
             SfSkinManager.SetTheme(this, new Theme(settings.AppTheme));
             InitializeComponent();
 
             _core = core;
             _settings = settings;
+            _logger = logger;
             _dockStateFile = Path.Combine(_core.CoreFolder, "docking_state.xml");
 
             var plugins = _core.Initialize();
@@ -50,6 +53,7 @@ namespace ObservatoryUI.WPF
                 if(_settings.GridFontSizes.TryGetValue(plugin.GetType().FullName, out var size))
                 {
                     view.DataGrid.FontSize = size;
+                    view.ResetColumnRowSizes();
                 }
 
                 PluginViews.Add(viewModel);
@@ -72,6 +76,7 @@ namespace ObservatoryUI.WPF
             }
 
             LoadDockingState();
+            _logger.LogInformation("MainWindow load has completed");
         }
 
         private void LoadDockingState()
@@ -123,10 +128,12 @@ namespace ObservatoryUI.WPF
                 Documents.Items.Add(viewModel.View);
                 DocumentContainer.SetHeader(viewModel.View, viewModel.Plugin.ShortName);
             }
+            _logger.LogInformation("MainWindow Docking State has been loaded");
         }
 
         protected override void OnClosing(CancelEventArgs e)
         {
+            _logger.LogInformation("Closing MainWindow");
             Documents.SaveDockState(_dockStateFile);
 
             // Save the location of the main window and all other settings, in case they changed

@@ -63,7 +63,11 @@ namespace NAudio.Ogg.Opus
                 throw new ObjectDisposedException("Cannot decode OGG Opus when the file has already been closed");
 
             if (count == 0)
+            {
+                for (int i = offset; i < count; i++)
+                    buffer[i + offset] = 0;
                 return 0;
+            }
 
             lock (_sync)
             {
@@ -77,7 +81,7 @@ namespace NAudio.Ogg.Opus
                 }
 
                 // We need to provide exactly count number of samples unless we are end of stream
-                while (_sampleBuffer.Available < count && _streamReader.HasNextPacket)
+                while (_sampleBuffer.Available < count && _sampleBuffer.Available < _sampleBuffer.Capacity && _streamReader.HasNextPacket)
                 {
                     short[] packet = _streamReader.DecodeNextPacket();
                     if (packet == null)
@@ -100,8 +104,8 @@ namespace NAudio.Ogg.Opus
                 }
 
                 // Zero out the remainder of the buffer to produce silence
-                for (int i = samplesReturned; i < buffer.Length; i++)
-                    buffer[i] = 0;
+                for (int i = samplesReturned; i < count; i++)
+                    buffer[i + offset] = 0;
 
                 return samplesReturned;
             }

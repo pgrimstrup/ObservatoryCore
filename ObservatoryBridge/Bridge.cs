@@ -247,7 +247,7 @@ namespace Observatory.Bridge
             log.TitleSsml.Append("Promotion");
 
             log.DetailSsml.AppendUnspoken(Emojis.Promotion);
-            log.DetailSsml.Append("Congratulations, Commander. You have been promoted to ");
+            log.DetailSsml.Append("Congratulations Commander. You have been promoted to ");
             if (promotions.Count <= 2)
                 log.DetailSsml.Append(String.Join(" and ", promotions) + ".");
             else
@@ -332,7 +332,7 @@ namespace Observatory.Bridge
             log.TitleSsml.Append("Flight Operations");
 
             log.DetailSsml
-                .Append($"{journal.StationName} Tower has granted our docking request, Commander. Heading to landing pad")
+                .Append($"{journal.StationName} Tower has granted our docking request Commander. Heading to landing pad")
                 .AppendEmphasis(journal.LandingPad.ToString(), EmphasisType.Moderate).EndSentence();
 
             LogEvent(log);
@@ -347,28 +347,28 @@ namespace Observatory.Bridge
             switch (journal.Reason)
             {
                 case Reason.TooLarge:
-                    log.DetailSsml.Append("Our ship is too large for their landing pads, Commander.");
+                    log.DetailSsml.Append("Our ship is too large for their landing pads Commander.");
                     break;
                 case Reason.Offences:
-                    log.DetailSsml.Append("Apparently we have outstanding offences against them, Commander. We might want to rectify that first.");
+                    log.DetailSsml.Append("Apparently we have outstanding offences against them Commander. We might want to rectify that first.");
                     break;
                 case Reason.DockOffline:
-                    log.DetailSsml.Append("Their docking system is offline, Commander. We may have to do this one manually.");
+                    log.DetailSsml.Append("Their docking system is offline Commander. We may have to do this one manually.");
                     break;
                 case Reason.ActiveFighter:
-                    log.DetailSsml.Append("We have an active fighter in flight, Commander. We better bring them back on board first.");
+                    log.DetailSsml.Append("We have an active fighter in flight Commander. We better bring them back on board first.");
                     break;
                 case Reason.Distance:
-                    log.DetailSsml.Append("We made the request a bit early, Commander. Let's close to within 7.5 kilometers and try to resubmit.");
+                    log.DetailSsml.Append("We made the request a bit early Commander. Let's close to within 7.5 kilometers and try to resubmit.");
                     break;
                 case Reason.NoSpace:
-                    log.DetailSsml.Append("Sorry, Commander. No room at the inn. All landing pads are occupied.");
+                    log.DetailSsml.Append("Sorry Commander. No room at the inn. All landing pads are occupied.");
                     break;
                 case Reason.RestrictedAccess:
-                    log.DetailSsml.Append("Looks like access is restricted, Commander.");
+                    log.DetailSsml.Append("Looks like access is restricted Commander.");
                     break;
                 default:
-                    log.DetailSsml.Append("No specific reason given. Guess they don't like us, Commander.");
+                    log.DetailSsml.Append("No specific reason given. Guess they don't like us Commander.");
                     break;
             }
 
@@ -379,7 +379,7 @@ namespace Observatory.Bridge
         {
             var log = new BridgeLog(this, journal);
             log.TitleSsml.Append("Flight Operations");
-            log.DetailSsml.Append($"{journal.StationName} Tower has cancelled our docking request, Commander. We'll need to resubmit another request if we want to dock.");
+            log.DetailSsml.Append($"{journal.StationName} Tower has cancelled our docking request Commander. We'll need to resubmit another request if we want to dock.");
 
             LogEvent(log);
         }
@@ -426,9 +426,9 @@ namespace Observatory.Bridge
             log.TitleSsml.Append("Flight Operations");
 
             log.DetailSsml
-                .Append($"Jump completed, commander. Arrived at")
+                .Append($"Jump completed Commander. Arrived at")
                 .AppendBodyName(journal.StarSystem)
-                .Append("We travelled")
+                .Append(". We travelled")
                 .AppendNumber(Math.Round(journal.JumpDist, 2))
                 .Append("light years, using")
                 .AppendNumber(Math.Round(journal.FuelUsed, 2))
@@ -479,7 +479,7 @@ namespace Observatory.Bridge
 
             var log = new BridgeLog(this, journal);
             log.TitleSsml.Append("Science Station");
-            log.DetailSsml.Append($"System Scan Complete, commander. We've found all bodies in this system.");
+            log.DetailSsml.Append($"System Scan Complete Commander. We've found all bodies in this system.");
 
             LogEvent(log);
             CurrentSystem.ScanComplete = true;
@@ -619,7 +619,7 @@ namespace Observatory.Bridge
             var log = new BridgeLog(this,journal);
             log.TitleSsml.Append("Science Station");
 
-            log.DetailSsml.Append($"Discovery scan found {journal.BodyCount} bodies, Commander.");
+            log.DetailSsml.Append($"Discovery scan found {journal.BodyCount} bodies Commander.");
             log.DetailSsml.Append($"Progress is {journal.Progress * 100:n0} percent.");
 
             LogEvent(log);
@@ -632,7 +632,7 @@ namespace Observatory.Bridge
                 var log = new BridgeLog(this,journal);
                 log.TitleSsml.Append("Science Station");
 
-                log.DetailSsml.Append($"Sensors are picking up {journal.USSType_Localised} signal, Commander. Threat level {journal.ThreatLevel}.");
+                log.DetailSsml.Append($"Sensors are picking up {journal.USSType_Localised} signal Commander. Threat level {journal.ThreatLevel}.");
                 var minutes = (int)Math.Truncate(journal.TimeRemaining) / 60;
                 var seconds = (int)Math.Truncate(journal.TimeRemaining) % 60;
                 if (minutes > 0 || seconds > 0)
@@ -657,23 +657,22 @@ namespace Observatory.Bridge
 
             log.DetailSsml.AppendUnspoken(Emojis.Probe);
             if (journal.ProbesUsed <= journal.EfficiencyTarget)
-                log.DetailSsml.Append($"Surface Scan complete, with efficiency bonus, using only {journal.ProbesUsed} probes, commander.");
+                log.DetailSsml.Append($"Surface Scan complete, with efficiency bonus, using only {journal.ProbesUsed} probes Commander.");
             else
-                log.DetailSsml.Append($"Surface Scan complete using {journal.ProbesUsed} probes, commander.");
+                log.DetailSsml.Append($"Surface Scan complete using {journal.ProbesUsed} probes Commander.");
 
             if (journal.Mappers == null || journal.Mappers.Count == 0)
             {
                 log.DetailSsml.AppendEmphasis("Commander,", EmphasisType.Moderate);
                 log.DetailSsml.Append($"we are the first to map body");
                 log.DetailSsml.AppendBodyName(GetBodyName(journal.BodyName));
-
             }
             else
             {
                 log.DetailSsml.Append("Body").AppendBodyName(GetBodyName(journal.BodyName)).Append("is");
             }
 
-            if (CurrentSystem.ScannedBodies.TryGetValue(journal.BodyName, out Scan scan))
+            if (CurrentSystem.ScannedBodies.TryGetValue(journal.BodyName, out Scan? scan))
             {
                 string article = "a ";
                 string terraformable = "";
@@ -730,7 +729,7 @@ namespace Observatory.Bridge
         {
             var log = new BridgeLog(this,journal);
             log.TitleSsml.Append("Away Team");
-            log.DetailSsml.Append($"Deploying {journal.SRVType_Localised} with {journal.Loadout} load-out, commander.");
+            log.DetailSsml.Append($"Deploying {journal.SRVType_Localised} with {journal.Loadout} load-out Commander.");
 
             LogEvent(log);
         }
@@ -739,7 +738,7 @@ namespace Observatory.Bridge
         {
             var log = new BridgeLog(this,journal);
             log.TitleSsml.Append("Away Team");
-            log.DetailSsml.Append($"{journal.SRVType_Localised} returned to SRV docking bay, commander.");
+            log.DetailSsml.Append($"{journal.SRVType_Localised} returned to SRV docking bay Commander.");
 
             LogEvent(log);
         }

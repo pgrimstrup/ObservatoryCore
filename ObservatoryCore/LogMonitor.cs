@@ -84,11 +84,9 @@ namespace Observatory
             var readErrors = new List<(Exception ex, string file, string line)>();
             foreach (var file in files)
             {
-                readErrors.AddRange(
-                    ProcessLines(ReadAllLines(file.FullName), file.Name));
+                ProcessLines(ReadAllLines(file.FullName), file.Name);
             }
 
-            ReportErrors(readErrors);
             SetLogMonitorState(currentState & ~LogMonitorState.Batch);
         }
 
@@ -147,7 +145,7 @@ namespace Observatory
                 linesToRead = lastSystemLines;
             }
 
-            ReportErrors(ProcessLines(linesToRead, "Pre-read"));
+            ProcessLines(linesToRead, "Pre-read");
             SetLogMonitorState(currentState & ~LogMonitorState.PreRead);
         }
 
@@ -198,7 +196,7 @@ namespace Observatory
                 NewState = newState
             });;
 
-            System.Diagnostics.Debug.WriteLine("LogMonitor State change: {0} -> {1}", oldState, newState);
+            _logger.LogInformation("LogMonitor State change: {0} -> {1}", oldState, newState);
         }
 
         private void InitializeWatchers(string path)
@@ -267,9 +265,8 @@ namespace Observatory
             return logDirectory;
         }
 
-        private List<(Exception ex, string file, string line)> ProcessLines(List<String> lines, string file)
+        private void ProcessLines(List<String> lines, string file)
         {
-            var readErrors = new List<(Exception ex, string file, string line)>();
             foreach (var line in lines)
             {
                 try
@@ -278,10 +275,9 @@ namespace Observatory
                 }
                 catch (Exception ex)
                 {
-                    readErrors.Add((ex, file, line));
+                    _logger.LogError(ex, $"While processing log lines in {file}");
                 }
             }
-            return readErrors;
         }
 
         private JournalEventArgs DeserializeToEventArgs(string eventType, string line)
@@ -347,29 +343,6 @@ namespace Observatory
             }
         }
 
-        private void ReportErrors(List<(Exception ex, string file, string line)> readErrors)
-        {
-            if (readErrors.Any())
-            {
-                var errorList = readErrors.Select(error =>
-                {
-                    string message;
-                    if (error.ex.InnerException == null)
-                    {
-                        message = error.ex.Message;
-                    }
-                    else
-                    {
-                        message = error.ex.InnerException.Message;
-                    }
-                    return ($"Error reading file {error.file}: {message}", error.line);
-                });
-
-                // TODO
-                //ErrorReporter.ShowErrorPopup($"Journal Read Error{(readErrors.Count > 1 ? "s" : "")}", errorList.ToList());
-                
-            }
-        }
 
         private void LogChangedEvent(object source, FileSystemEventArgs eventArgs)
         {
@@ -388,7 +361,7 @@ namespace Observatory
                 }
                 catch (Exception ex)
                 {
-                    ReportErrors(new List<(Exception ex, string file, string line)>() { (ex, eventArgs.Name, line) });
+                    _logger.LogError(ex, $"In file '{eventArgs.Name}' Line {line}");
                 }
             }
 

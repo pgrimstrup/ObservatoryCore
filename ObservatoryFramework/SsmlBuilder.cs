@@ -17,13 +17,29 @@ namespace Observatory.Framework
         readonly List<string> _ssmlFragments = new List<string>();
         bool _inParagraph;
 
-        static ConcurrentDictionary<string, string> BodyNameReplacements = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        static ConcurrentDictionary<string, string> BodyNameWordReplacements = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        static ConcurrentDictionary<string, string> BodyNameCharacterReplacements = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         static ConcurrentDictionary<string, string> BodyTypeReplacements = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
 
         static SsmlBuilder()
         {
-            BodyNameReplacements.TryAdd("A", "<phoneme alphabet=\"ipa\" ph=\"ˈeɪ\">A</phoneme>");
+            BodyNameWordReplacements.TryAdd("A", "<say-as interpret-as=\"characters\">A</say-as>");
+            BodyNameWordReplacements.TryAdd("B", "<say-as interpret-as=\"characters\">B</say-as>");
+            BodyNameWordReplacements.TryAdd("C", "<say-as interpret-as=\"characters\">C</say-as>");
+            BodyNameWordReplacements.TryAdd("D", "<say-as interpret-as=\"characters\">D</say-as>");
+            BodyNameWordReplacements.TryAdd("E", "<say-as interpret-as=\"characters\">E</say-as>");
+            BodyNameWordReplacements.TryAdd("F", "<say-as interpret-as=\"characters\">F</say-as>");
+            BodyNameWordReplacements.TryAdd("G", "<say-as interpret-as=\"characters\">G</say-as>");
+            BodyNameWordReplacements.TryAdd("H", "<say-as interpret-as=\"characters\">H</say-as>");
+            BodyNameWordReplacements.TryAdd("I", "<say-as interpret-as=\"characters\">I</say-as>");
+            BodyNameWordReplacements.TryAdd("J", "<say-as interpret-as=\"characters\">J</say-as>");
+            BodyNameWordReplacements.TryAdd("K", "<say-as interpret-as=\"characters\">K</say-as>");
+            BodyNameWordReplacements.TryAdd("L", "<say-as interpret-as=\"characters\">L</say-as>");
+            BodyNameWordReplacements.TryAdd("M", "<say-as interpret-as=\"characters\">M</say-as>");
+            BodyNameWordReplacements.TryAdd("N", "<say-as interpret-as=\"characters\">N</say-as>");
+            BodyNameCharacterReplacements.TryAdd("-", " dash ");
+            BodyNameCharacterReplacements.TryAdd(".", " dot ");
 
             BodyTypeReplacements.TryAdd("I", "1");
             BodyTypeReplacements.TryAdd("II", "2");
@@ -52,7 +68,7 @@ namespace Observatory.Framework
         public SsmlBuilder AppendBodyName(string name)
         {
             _textFragments.Add(name.Trim());
-            _ssmlFragments.Add(ReplaceWords(name.Trim(), BodyNameReplacements));
+            _ssmlFragments.Add(ReplaceWords(name.Trim(), BodyNameWordReplacements, BodyNameCharacterReplacements));
             return this;
         }
 
@@ -87,27 +103,28 @@ namespace Observatory.Framework
             _textFragments.Add($"{value} ");
 
             if (value > 1500000000)
-                _ssmlFragments.Add($"<say-as interpret-as=\"cardinal\" format=\".\">{value / 1000000000.0:n1}</say-as> billion");
+                _ssmlFragments.Add($"{value / 1000000000.0:n2} billion");
             else if (value > 1500000)
-                _ssmlFragments.Add($"<say-as interpret-as=\"cardinal\" format=\".\">{value / 1000000.0:n1}</say-as> million");
+                _ssmlFragments.Add($"{value / 1000000.0:n2} million");
             else if (value > 1500)
-                _ssmlFragments.Add($"<say-as interpret-as=\"cardinal\" format=\".\">{value / 1000.0:n1}</say-as> thousand");
+                _ssmlFragments.Add($"{value / 1000.0:n1} thousand");
             else
-                _ssmlFragments.Add($"<say-as interpret-as=\"cardinal\" format=\".\">{value}</say-as>");
+                _ssmlFragments.Add($"{value:g}");
             return this;
         }
+
         public SsmlBuilder AppendNumber(long value)
         {
             _textFragments.Add($"{value:n0} ");
 
             if (value > 1500000000)
-                _ssmlFragments.Add($"<say-as interpret-as=\"cardinal\" format=\".\">{value / 1000000000.0:n1}</say-as> billion");
+                _ssmlFragments.Add($"{value / 1000000000.0:n1} billion");
             else if (value > 1500000)
-                _ssmlFragments.Add($"<say-as interpret-as=\"cardinal\" format=\".\">{value / 1000000.0:n1}</say-as> million");
+                _ssmlFragments.Add($"{value / 1000000.0:n1} million");
             else if (value > 1500)
-                _ssmlFragments.Add($"<say-as interpret-as=\"cardinal\" format=\".\">{value / 1000.0:n1}</say-as> thousand");
+                _ssmlFragments.Add($"{value / 1000.0:n1} thousand");
             else
-                _ssmlFragments.Add($"<say-as interpret-as=\"cardinal\" format=\".\">{value:n0}</say-as>");
+                _ssmlFragments.Add($"{value:n0}");
             return this;
         }
 
@@ -166,7 +183,7 @@ namespace Observatory.Framework
             return this;
         }
 
-        private string ReplaceWords(string text, IDictionary<string, string> replacements)
+        private string ReplaceWords(string text, IDictionary<string, string> replacements, IDictionary<string, string>? characterReplacements = null)
         {
             var words = text.Split();
             for (int i = 0; i < words.Length; i++)
@@ -174,7 +191,16 @@ namespace Observatory.Framework
                 if (replacements.TryGetValue(words[i], out var replacement))
                     words[i] = replacement;
             }
-            return string.Join(" ", words);
+            text = string.Join(" ", words);
+
+            if (characterReplacements != null)
+            {
+                foreach (var key in characterReplacements.Keys)
+                {
+                    text = text.Replace(key, characterReplacements[key]);
+                }
+            }
+            return text;
         }
 
         public override string ToString()
@@ -199,13 +225,11 @@ namespace Observatory.Framework
             {
                 if (_ssmlFragments[i].StartsWith('<'))
                 {
-                    sb.Append($"{_ssmlFragments[i]}");
+                    sb.Append(_ssmlFragments[i]);
                 }
                 else
                 {
-                    sb.Append(_ssmlFragments[i]
-                        .Replace(", ", $"{CommaBreakSsml}")
-                        .Replace(",", $"{CommaBreakSsml}"));
+                    sb.Append(_ssmlFragments[i]);
                     sb.Append(" ");
                 }
             }
