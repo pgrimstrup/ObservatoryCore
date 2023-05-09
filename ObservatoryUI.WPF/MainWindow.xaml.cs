@@ -41,8 +41,26 @@ namespace ObservatoryUI.WPF
                 var view = _core.Services.GetRequiredService<PluginView>();
                 var viewModel = new PluginViewModel(plugin, view);
 
+                // Font size changes on the grid
+                view.FontSizeChanged += (s, e) => {
+                    _settings.GridFontSizes[plugin.GetType().FullName] = view.DataGrid.FontSize;
+                };
+
+                // Speaking of which, initialize the font size
+                if(_settings.GridFontSizes.TryGetValue(plugin.GetType().FullName, out var size))
+                {
+                    view.DataGrid.FontSize = size;
+                }
+
                 PluginViews.Add(viewModel);
             }
+
+            this.DataContext = this;
+        }
+
+        protected async void OnLoadedAsync(object sender, RoutedEventArgs e)
+        {
+            Ribbon.BackStageButton.Visibility = Visibility.Collapsed;
 
             if (!_settings.MainWindowBounds.IsEmpty)
             {
@@ -52,14 +70,6 @@ namespace ObservatoryUI.WPF
                 this.Height = _settings.MainWindowBounds.Height;
                 this.WindowState = (WindowState)_settings.MainWindowBounds.State;
             }
-
-
-            this.DataContext = this;
-        }
-
-        protected async void OnLoadedAsync(object sender, RoutedEventArgs e)
-        {
-            Ribbon.BackStageButton.Visibility = Visibility.Collapsed;
 
             LoadDockingState();
         }
@@ -158,6 +168,18 @@ namespace ObservatoryUI.WPF
             var window = _core.Services.GetRequiredService<SettingsWindow>();
             window.Owner = this;
             window.ShowDialog();
+        }
+
+        private void OnReadAllClick(object sender, RoutedEventArgs e)
+        {
+            var logMonitor = _core.Services.GetRequiredService<ILogMonitor>();
+            logMonitor.ReadAll();
+        }
+
+        private void OnReadCurrentClick(object sender, RoutedEventArgs e)
+        {
+            var logMonitor = _core.Services.GetRequiredService<ILogMonitor>();
+            logMonitor.ReadCurrent();
         }
     }
 }

@@ -106,9 +106,7 @@
         </ControlTemplate>
         <Style x:Key="GridCellStyle" TargetType="{x:Type syncfusion:GridCell}">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="Gray"/>
-            <Setter Property="BorderThickness" Value="0,0,1,1"/>
-            <Setter Property="Padding" Value="0,0,0,0"/>
+            <Setter Property="Padding" Value="4,2"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="IsTabStop" Value="False"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -116,7 +114,6 @@
         <Style x:Key="customCellStyle" BasedOn="{StaticResource GridCellStyle}" TargetType="{x:Type syncfusion:GridCell}">
             <Style.Triggers>
                 <Trigger Property="UseDrawing" Value="True">
-                    <Setter Property="BorderThickness" Value="1"/>
                     <Setter Property="Padding" Value="1,1,2,2"/>
                     <Setter Property="Template" Value="{StaticResource LightweightGridCellControlTemplate}"/>
                 </Trigger>
@@ -128,8 +125,10 @@
     </UserControl.Resources>
     <Grid>
         <syncfusion:SfDataGrid CellStyle="{DynamicResource customCellStyle}" HeaderStyle="{DynamicResource customHeaderStyle}" 
+                               PreviewMouseWheel="DataGrid_MouseWheel" QueryRowHeight="DataGrid_QueryRowHeight"
                                x:Name="DataGrid" AutoGenerateColumns="True" AllowSorting="False" AllowFiltering="True" ColumnSizer="SizeToHeader"
-                               AlternationCount="2" ItemsSource="{Binding}" NavigationMode="Row" AutoGeneratingColumn="OnAutoGeneratingColumn">
+                               AlternationCount="2" 
+                               ItemsSource="{Binding}" NavigationMode="Row" AutoGeneratingColumn="OnAutoGeneratingColumn">
         </syncfusion:SfDataGrid>
     </Grid>
 </UserControl>

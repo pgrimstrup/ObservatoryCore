@@ -29,7 +29,7 @@ namespace ObservatoryUI.WPF.ViewModels
 
         public IList<PluginColumnInfo> DataGridColumns => _columns;
 
-        public PluginViewModel(IObservatoryPlugin plugin, PluginView view)
+        public PluginViewModel( IObservatoryPlugin plugin, PluginView view)
         {
             _plugin = plugin;
             _view = view;

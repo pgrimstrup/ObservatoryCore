@@ -15,6 +15,8 @@ namespace Observatory.Framework.Interfaces
     {
         void Start();
         void Stop();
+        void ReadAll();
+        void ReadCurrent();
 
         LogMonitorState CurrentState { get; }
 
@@ -54,9 +56,8 @@ namespace Observatory.Framework.Interfaces
         public string GoogleTextToSpeechApiKey { get; set; }
         public string AzureTextToSpeechApiKey { get; set; }
         public bool VoiceWelcomeMessage { get; set; }
-
         public bool InbuiltPopupsEnabled { get; set; }
-
+        public Dictionary<string, double> GridFontSizes { get; set; }
         public string CoreVersion { get; }
     }
 

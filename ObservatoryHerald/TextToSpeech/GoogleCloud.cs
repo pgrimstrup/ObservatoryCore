@@ -10,7 +10,6 @@ namespace Observatory.Herald.TextToSpeech
 {
     internal class GoogleCloud : ITextToSpeechService
     {
-        //public const string ApiKey = "AIzaSyDw3YQF7W_BvAEXwh8wYJ3AuPujBlsUAMs";
         public const string ApiEndPoint = "https://texttospeech.googleapis.com/v1/";
         public const string ApiGetVoices = "voices";
         public const string ApiTextToSpeech = "text:synthesize";

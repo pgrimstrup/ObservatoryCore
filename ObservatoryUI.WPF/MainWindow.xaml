@@ -18,7 +18,7 @@
         <syncfusion:Ribbon x:Name="Ribbon" EnableSimplifiedLayoutMode="True" LayoutMode="Simplified">
             <syncfusion:RibbonTab Caption="Home" IsChecked="True">
                 <syncfusion:RibbonBar Header="" ShowInMoreCommands="False" IsLauncherButtonVisible="False">
-                    <syncfusion:RibbonButton SizeForm="Large" Label="Settings" Click="OnSettingsClick"></syncfusion:RibbonButton>
+                    <syncfusion:RibbonButton SizeForm="Large" Label="Settings" Click="OnSettingsClick" ToolTip="Change application and plugin settings"></syncfusion:RibbonButton>
                     <syncfusion:DropDownButton SizeForm="Large" Label="Theme" IsDropDownOpenChanged="OnThemeMenuOpenedChanged">
                         <syncfusion:DropDownMenuItem Header="Fluent Dark" Click="OnThemeClick" CommandParameter="FluentDark"></syncfusion:DropDownMenuItem>
                         <syncfusion:DropDownMenuItem Header="Fluent Light" Click="OnThemeClick" CommandParameter="FluentLight"></syncfusion:DropDownMenuItem>
@@ -27,7 +27,9 @@
                         <syncfusion:DropDownMenuItem Header="Windows 11 Dark" Click="OnThemeClick" CommandParameter="Windows11Dark"></syncfusion:DropDownMenuItem>
                         <syncfusion:DropDownMenuItem Header="Windows 11 Light" Click="OnThemeClick" CommandParameter="Windows11Light"></syncfusion:DropDownMenuItem>
                     </syncfusion:DropDownButton>
-                    <syncfusion:RibbonButton SizeForm="Large" Label="Reset Layout" Click="OnResetLayoutClick"></syncfusion:RibbonButton>
+                    <syncfusion:RibbonButton SizeForm="Large" Label="Read Current" Click="OnReadCurrentClick" ToolTip="Read Journal entry for the current system"></syncfusion:RibbonButton>
+                    <syncfusion:RibbonButton SizeForm="Large" Label="Read All" Click="OnReadAllClick" ToolTip="Read all Journal entries"></syncfusion:RibbonButton>
+                    <syncfusion:RibbonButton SizeForm="Large" Label="Reset Layout" Click="OnResetLayoutClick" ToolTip="Reset UI layout"></syncfusion:RibbonButton>
                 </syncfusion:RibbonBar>
             </syncfusion:RibbonTab>
             <syncfusion:RibbonTab Caption="Support">

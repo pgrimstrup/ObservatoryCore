@@ -44,9 +44,9 @@ namespace Observatory
                 // Only pre-read on first start monitor. Beyond that it's simply pause/resume.
                 firstStartMonitor = false;
                 if (_settings.StartReadAll)
-                    ReadAllJournals(_settings.JournalFolder);
+                    ReadAll();
                 else
-                    PrereadJournals(_settings.JournalFolder);
+                    ReadCurrent();
             }
             journalWatcher.EnableRaisingEvents = true;
             statusWatcher.EnableRaisingEvents = true;
@@ -73,19 +73,13 @@ namespace Observatory
             return currentState.HasFlag(LogMonitorState.Realtime);
         }
 
-        // TODO(fredjk_gh): Remove?
-        public bool ReadAllInProgress()
-        {
-            return LogMonitorStateChangedEventArgs.IsBatchRead(currentState);
-        }
-
-        public void ReadAllJournals(string path)
+        public void ReadAll()
         {
             // Prevent pre-reading when starting monitoring after reading all.
             firstStartMonitor = false;
             SetLogMonitorState(currentState | LogMonitorState.Batch);
 
-            DirectoryInfo logDirectory = GetJournalFolder(path);
+            DirectoryInfo logDirectory = GetJournalFolder(_settings.JournalFolder);
             var files = GetJournalFilesOrdered(logDirectory);
             var readErrors = new List<(Exception ex, string file, string line)>();
             foreach (var file in files)
@@ -98,7 +92,7 @@ namespace Observatory
             SetLogMonitorState(currentState & ~LogMonitorState.Batch);
         }
 
-        public void PrereadJournals(string path)
+        public void ReadCurrent()
         {
             SetLogMonitorState(currentState | LogMonitorState.PreRead);
 
