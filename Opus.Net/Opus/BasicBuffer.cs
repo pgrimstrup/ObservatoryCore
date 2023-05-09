@@ -65,6 +65,7 @@ namespace NAudio.Ogg.Opus
 
         public T[] Read(int count)
         {
+            count = Math.Min(count, available);
             T[] returnVal = new T[count];
             // Read the data in chunks
             int sourceIndex = 0;
@@ -76,12 +77,6 @@ namespace NAudio.Ogg.Opus
                 sourceIndex += readCount;
             }
             available -= count;
-            // Did we underflow? In this case, move the writeIndex to where the next data will be read
-            if (available < 0)
-            {
-                writeIndex = (readIndex + 1) % capacity;
-                available = 0;
-            }
             return returnVal;
         }
 
@@ -192,8 +187,9 @@ namespace NAudio.Ogg.Opus
 
         public short[] Read(int count)
         {
+            count = Math.Min(count, available);
             short[] returnVal = new short[count];
-            // Read the data in chunks
+            // Read the data in chunks 
             int sourceIndex = 0;
             while (sourceIndex < count)
             {
@@ -203,12 +199,6 @@ namespace NAudio.Ogg.Opus
                 sourceIndex += readCount;
             }
             available -= count;
-            // Did we underflow? In this case, move the writeIndex to where the next data will be read
-            if (available < 0)
-            {
-                writeIndex = (readIndex + 1) % capacity;
-                available = 0;
-            }
             return returnVal;
         }
 
@@ -319,6 +309,7 @@ namespace NAudio.Ogg.Opus
 
         public byte[] Read(int count)
         {
+            count = Math.Min(count, available);
             byte[] returnVal = new byte[count];
             // Read the data in chunks
             int sourceIndex = 0;
@@ -330,12 +321,6 @@ namespace NAudio.Ogg.Opus
                 sourceIndex += readCount;
             }
             available -= count;
-            // Did we underflow? In this case, move the writeIndex to where the next data will be read
-            if (available < 0)
-            {
-                writeIndex = (readIndex + 1) % capacity;
-                available = 0;
-            }
             return returnVal;
         }
 

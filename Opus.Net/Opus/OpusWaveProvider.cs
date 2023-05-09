@@ -19,7 +19,7 @@ namespace NAudio.Ogg.Opus
 
         private bool _closeOnDispose;
         private bool _disposed;
-        private int _frameSize;
+        private long _lastPagePos;
         private WaveFormat _waveFormat;
         private Stream _stream;
         private OpusOggReadStream _streamReader;
@@ -83,6 +83,8 @@ namespace NAudio.Ogg.Opus
                 // We need to provide exactly count number of samples unless we are end of stream
                 while (_sampleBuffer.Available < count && _sampleBuffer.Available < _sampleBuffer.Capacity && _streamReader.HasNextPacket)
                 {
+                    var pagePos = _streamReader.PagePosition;
+
                     short[] packet = _streamReader.DecodeNextPacket();
                     if (packet == null)
                     {
@@ -93,10 +95,11 @@ namespace NAudio.Ogg.Opus
                     }
 
                     _sampleBuffer.Write(packet);
+                    _lastPagePos = pagePos;
                 }
 
                 int samplesReturned = 0;
-                if (_sampleBuffer.Available > 0)
+                if (count > 0)
                 {
                     short[] samples = _sampleBuffer.Read(count);
                     samples.ShortsToFloats(0, buffer, offset, samples.Length);
