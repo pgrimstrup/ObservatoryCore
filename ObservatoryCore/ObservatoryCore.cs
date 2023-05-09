@@ -404,7 +404,7 @@ namespace Observatory
         {
             get
             {
-                string path = Path.Combine(CoreFolder, "Data");
+                string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ED Observatory", "Data");
                 if(!Directory.Exists(path))
                     Directory.CreateDirectory(path);
                 return path;
@@ -415,7 +415,7 @@ namespace Observatory
         {
             get
             {
-                string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "ED Observatory");
+                string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ED Observatory");
                 if (!Directory.Exists(path))
                     Directory.CreateDirectory(path);
                 return path;

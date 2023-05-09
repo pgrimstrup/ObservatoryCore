@@ -57,6 +57,7 @@ namespace ObservatoryUI.WPF
             builder.AddSingleton<IObservatoryCore>(services => services.GetRequiredService<IObservatoryCoreAsync>());
             builder.AddSingleton<IVoiceNotificationQueue, VoiceNotificationQueue>();
             builder.AddSingleton<IVisualNotificationQueue, VisualNotificationQueue>();
+            builder.AddSingleton<IAudioPlayback, NAudioService>();
 
             builder.AddSingleton<PluginManager>();
             builder.AddSingleton<ILogMonitor, LogMonitor>();

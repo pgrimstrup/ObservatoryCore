@@ -19,7 +19,7 @@ namespace Observatory.Herald
         public string SelectedVoice { get; set; }
 
         [SettingDisplayName("Style")]
-        [SettingGetItemsMethod(nameof(HeraldNotifier.GetVoiceStylesAsync))]
+        [SettingGetItemsMethod(nameof(HeraldNotifier.GetVoiceStyles))]
         public string SelectedStyle { get; set; }
 
         [SettingDisplayName("Voice Rate")]
@@ -29,6 +29,10 @@ namespace Observatory.Herald
         [SettingDisplayName("Volume")]
         [SettingNumericUseSlider, SettingNumericBounds(0,100,1)]
         public int Volume { get; set;}
+
+        [SettingDisplayName("Audio Encoding")]
+        [SettingGetItemsMethod(nameof(HeraldNotifier.GetAudioEncodings))]
+        public string AudioEncoding { get; set; }
 
         [System.Text.Json.Serialization.JsonIgnore]
         [SettingPluginAction(nameof(HeraldNotifier.TestVoiceSettings))]

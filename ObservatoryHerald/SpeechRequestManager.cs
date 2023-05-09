@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using Observatory.Herald.TextToSpeech;
 using Microsoft.Extensions.Logging;
+using System.Net.Http.Headers;
 
 namespace Observatory.Herald
 {
@@ -45,34 +46,32 @@ namespace Observatory.Herald
             initialVoice = settings.SelectedVoice;
         }
 
-        internal async Task<string> GetAudioFileFromSsmlAsync(string ssml, string voice, string style, string rate)
+        internal async Task<FileInfo> GetAudioFileFromSsmlAsync(NotificationArgs args, string speech)
         {
-
-            ssml = AddVoiceToSsml(ssml, voice, style, rate);
-
             using var sha = SHA256.Create();
 
-            var ssmlHash = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(ssml))).Replace("-", string.Empty);
+            // Create a string based on the SSML and provided parameters. Calculate the hash based on this.
+            var uniqueness = $"{speech}|{args.VoiceName}|{args.VoiceRate}|{args.VoiceVolume}|{args.VoiceStyle}";
+            var hash = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(uniqueness))).Replace("-", string.Empty);
+            var audioFilename = Path.Combine(cacheLocation.FullName, hash + args.AudioEncoding);
 
-            var audioFilename = Path.Combine(cacheLocation.FullName, ssmlHash + ".mp3");
-
-            FileInfo audioFileInfo = null;
-            if (File.Exists(audioFilename))
+            FileInfo audioFileInfo = new FileInfo(audioFilename);
+            if (audioFileInfo.Exists)
             {
-                audioFileInfo = new FileInfo(audioFilename);
                 if (audioFileInfo.Length == 0)
                 {
-                    File.Delete(audioFilename);
+                    audioFileInfo.Delete();
                     audioFileInfo = null;
                 }
             }
 
 
-            if (audioFileInfo == null)
+            if (audioFileInfo == null || !audioFileInfo.Exists)
             {
                 try
                 {
-                    audioFileInfo = await _speech.GetTextToSpeechAsync(ssml, audioFilename);
+                    if (await _speech.GetTextToSpeechAsync(args, speech, audioFilename))
+                        audioFileInfo = new FileInfo(audioFilename);
                 }
                 catch(Exception ex)
                 {
@@ -83,7 +82,7 @@ namespace Observatory.Herald
             if(audioFileInfo != null)
                 UpdateAndPruneCache(audioFileInfo);
 
-            return audioFilename;
+            return audioFileInfo;
         }
 
         private static string AddVoiceToSsml(string ssml, string voiceName, string styleName, string rate)

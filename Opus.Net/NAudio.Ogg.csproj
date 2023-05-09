@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Opus\AudioChunk.cs" />
+    <Compile Remove="Opus\AudioMath.cs" />
+    <Compile Remove="Opus\CodecStatistics.cs" />
+    <Compile Remove="Opus\IOpusCodec.cs" />
+    <Compile Remove="Opus\NativeOpusCodec.cs" />
+    <Compile Remove="Opus\OpusSampleProvider_Option1.cs" />
+    <Compile Remove="Opus\ShortResampler.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="opus32-float-avx.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="opus32-float-avx.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.1.0" />
+    <PackageReference Include="NAudio.Vorbis" Version="1.5.0" />
+    <PackageReference Include="NVorbis" Version="0.10.5" />
+  </ItemGroup>
+
+</Project>

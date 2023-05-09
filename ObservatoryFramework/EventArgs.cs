@@ -60,6 +60,7 @@ namespace Observatory.Framework
         public string? VoiceStyle;
         public string? VoiceRate;
         public int? VoiceVolume;
+        public string? AudioEncoding; // .wav, .mp3 or .ogg
 
         /// <summary>
         /// Specifies the desired renderings of the notification. Defaults to <see cref="NotificationRendering.All"/>.

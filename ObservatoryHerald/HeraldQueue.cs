@@ -1,34 +1,28 @@
 ﻿using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO.Enumeration;
 using Microsoft.Extensions.Logging;
 using NetCoreAudio;
 using Observatory.Framework;
+using Observatory.Framework.Interfaces;
 
 namespace Observatory.Herald
 {
-    class HeraldQueueItem
-    {
-        public NotificationArgs Args;
-        public string SelectedVoice;
-        public string SelectedStyle;
-        public string SelectedRate;
-        public byte Volume;
-    }
-
     class HeraldQueue
     {
-        private BlockingCollection<HeraldQueueItem> notifications;
+        private BlockingCollection<NotificationArgs> notifications;
         private SpeechRequestManager speechManager;
-        private Player audioPlayer;
+        //private Player audioPlayer;
         private ILogger ErrorLogger;
+        private IAudioPlayback audioPlayer;
         private CancellationTokenSource CancellationToken;
 
-        public HeraldQueue(SpeechRequestManager speechManager, ILogger errorLogger)
+        public HeraldQueue(SpeechRequestManager speechManager, ILogger errorLogger, IAudioPlayback playback)
         {
             this.speechManager = speechManager;
             notifications = new();
-            audioPlayer = new();
+            audioPlayer = playback;
             ErrorLogger = errorLogger;
             CancellationToken = new CancellationTokenSource();
 
@@ -38,19 +32,29 @@ namespace Observatory.Herald
 
         internal void Enqueue(NotificationArgs notification)
         {
-            HeraldQueueItem item = new HeraldQueueItem {
-                Args = notification,
-                SelectedVoice = notification.VoiceName,
-                SelectedStyle = notification.VoiceStyle,
-                SelectedRate = notification.VoiceRate,
-                Volume = (byte)(notification.VoiceVolume >= 0 && notification.VoiceVolume <= 100 ? notification.VoiceVolume : 75)
-            };
-
             // Volume is perceived logarithmically, convert to exponential curve
             // to make perceived volume more in line with value set.
-            item.Volume = ((byte)Math.Floor(Math.Pow(item.Volume / 100.0, 2.0) * 100));
+            //item.Volume = ((byte)Math.Floor(Math.Pow(item.Volume / 100.0, 2.0) * 100));
 
-            notifications.Add(item);
+            // Validate notification - all fields must be filled
+            if (String.IsNullOrWhiteSpace(notification.VoiceName))
+                throw new ArgumentException(nameof(notification.VoiceName));
+            if (String.IsNullOrWhiteSpace(notification.VoiceRate))
+                throw new ArgumentException(nameof(notification.VoiceRate));
+            if (notification.VoiceVolume == null)
+                throw new ArgumentException(nameof(notification.VoiceVolume));
+            if (String.IsNullOrWhiteSpace(notification.VoiceStyle))
+                throw new ArgumentException(nameof(notification.VoiceStyle));
+
+            if (!String.IsNullOrEmpty(notification.TitleSsml) && !notification.TitleSsml.StartsWith("<speak>"))
+                throw new ArgumentException(nameof(notification.TitleSsml));
+            if (!String.IsNullOrEmpty(notification.DetailSsml) && !notification.DetailSsml.StartsWith("<speak>"))
+                throw new ArgumentException(nameof(notification.DetailSsml));
+
+            if (String.IsNullOrWhiteSpace(notification.AudioEncoding))
+                throw new ArgumentException(nameof(notification.AudioEncoding));
+
+            notifications.Add(notification);
         }
 
         public void Cancel()
@@ -69,85 +73,80 @@ namespace Observatory.Herald
                 {
                     try
                     {
-                        await audioPlayer.SetVolume(item.Volume);
-                        ErrorLogger.LogDebug("Processing notification: {0} - {1}", item.Args.Title, item.Args.Detail);
+                        await audioPlayer.SetVolume(item.VoiceVolume.GetValueOrDefault(75));
+                        ErrorLogger.LogDebug("Processing notification: {0} - {1}", item.Title, item.Detail);
 
-                        if (item.Args.Title != null)
+                        if (!String.IsNullOrWhiteSpace(item.Title))
                         {
-                            if (lastTitle != null && item.Args.Title == lastTitle && DateTime.Now.Subtract(lastTitleTime).TotalSeconds < 30)
-                                item.Args.Suppression |= NotificationSuppression.Title;
+                            if (lastTitle != null && item.Title == lastTitle && DateTime.Now.Subtract(lastTitleTime).TotalSeconds < 30)
+                                item.Suppression |= NotificationSuppression.Title;
 
-                            lastTitle = item.Args.Title;
+                            lastTitle = item.Title;
                             lastTitleTime = DateTime.Now;
                         }
 
-                        string filename;
-                        if (!item.Args.Suppression.HasFlag(NotificationSuppression.Title))
+                        if (!item.Suppression.HasFlag(NotificationSuppression.Title))
                         {
-                            if (!String.IsNullOrWhiteSpace(item.Args.Title) || !String.IsNullOrWhiteSpace(item.Args.TitleSsml))
-                            {
-                                if (String.IsNullOrWhiteSpace(item.Args.TitleSsml))
-                                    filename = await RetrieveAudioToFileAsync(item, item.Args.Title);
-                                else
-                                    filename = await RetrieveAudioSsmlToFileAsync(item, item.Args.TitleSsml);
-
-                                Debug.WriteLine($"Herald: Playing {filename}");
-                                await PlayAudioRequestsSequentiallyAsync(filename);
-                            }
+                            var fileInfo = await TextToSpeechTitle(item);
+                            await PlayAudioFileAsync(fileInfo);
                         }
 
-                        if (!item.Args.Suppression.HasFlag(NotificationSuppression.Detail))
+                        if (!item.Suppression.HasFlag(NotificationSuppression.Detail))
                         {
-                            if (!String.IsNullOrWhiteSpace(item.Args.Detail) || !String.IsNullOrWhiteSpace(item.Args.DetailSsml))
-                            {
-                                if (String.IsNullOrWhiteSpace(item.Args.DetailSsml))
-                                    filename = await RetrieveAudioToFileAsync(item, item.Args.Detail);
-                                else
-                                    filename = await RetrieveAudioSsmlToFileAsync(item, item.Args.DetailSsml);
-
-                                Debug.WriteLine($"Herald: Playing {filename}");
-                                await PlayAudioRequestsSequentiallyAsync(filename);
-                            }
+                            var fileInfo = await TextToSpeechDetail(item);
+                            await PlayAudioFileAsync(fileInfo);
                         }
                     }
                     catch (Exception ex)
                     {
-                        ErrorLogger.LogError(ex, $"Failed to fetch/play notification: {item?.Args.Title} - {item?.Args.Detail}");
+                        ErrorLogger.LogError(ex, $"Failed to fetch/play notification: {item?.Title} - {item?.Detail}");
                     }
                 }
             }
         }
 
-        private async Task<string> RetrieveAudioToFileAsync(HeraldQueueItem item, string text)
+        private async Task<FileInfo> TextToSpeechTitle(NotificationArgs args)
         {
-            return await RetrieveAudioSsmlToFileAsync(item, $"<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xml:lang=\"en-US\"><voice name=\"\">{System.Security.SecurityElement.Escape(text)}</voice></speak>");
+            if (!String.IsNullOrWhiteSpace(args.TitleSsml))
+                return await speechManager.GetAudioFileFromSsmlAsync(args, args.TitleSsml);
+
+            if (!String.IsNullOrWhiteSpace(args.Title))
+                return await speechManager.GetAudioFileFromSsmlAsync(args, args.Title);
+
+            return null;
         }
 
-        private async Task<string> RetrieveAudioSsmlToFileAsync(HeraldQueueItem item, string ssml)
+        private async Task<FileInfo> TextToSpeechDetail(NotificationArgs args)
         {
-            return await speechManager.GetAudioFileFromSsmlAsync(ssml, item.SelectedVoice, item.SelectedStyle, item.SelectedRate);
+            if (!String.IsNullOrWhiteSpace(args.DetailSsml))
+                return await speechManager.GetAudioFileFromSsmlAsync(args, args.DetailSsml);
+
+            if (!String.IsNullOrWhiteSpace(args.Detail))
+                return await speechManager.GetAudioFileFromSsmlAsync(args, args.Detail);
+
+            return null;
         }
 
-        private async Task PlayAudioRequestsSequentiallyAsync(string filename)
+        private async Task PlayAudioFileAsync(FileInfo fileInfo)
         {
-            if (!string.IsNullOrWhiteSpace(filename))
+            if (fileInfo != null && fileInfo.Exists)
             {
+                ErrorLogger.LogDebug($"Playing audio file: {fileInfo.FullName}");
+
                 try
                 {
-                    ErrorLogger.LogDebug($"Playing audio file: {filename}");
-                    await audioPlayer.Play(filename);
+                    await audioPlayer.PlayAsync(fileInfo.FullName);
+
+                    while (audioPlayer.IsPlaying)
+                        await Task.Delay(100);
+
+                    await audioPlayer.StopAsync();
                 }
                 catch (Exception ex)
                 {
-                    ErrorLogger.LogError(ex, $"Failed to play {filename}: {ex.Message}");
+                    ErrorLogger.LogError(ex, $"Failed to play {fileInfo.FullName}: {ex.Message}");
+                    await audioPlayer.StopAsync();
                 }
-
-                while (audioPlayer.Playing)
-                    await Task.Delay(50);
-
-                // Explicit stop to ensure device is ready for next file.
-                // ...hopefully. Fire and Forget
-                _ = audioPlayer.Stop(true);
             }
             speechManager.CommitCache();
         }

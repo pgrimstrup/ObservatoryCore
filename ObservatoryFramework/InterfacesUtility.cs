@@ -76,6 +76,15 @@ namespace Observatory.Framework.Interfaces
         void Shutdown();
     }
 
+    public interface IAudioPlayback
+    {
+        Task SetVolume(int volume);
+        Task PlayAsync(string filename);
+        Task StopAsync();
+        bool IsPlaying { get; }
+        string FileName { get; }
+    }
+
     public class VoiceMessage
     {
         public Guid Id;
