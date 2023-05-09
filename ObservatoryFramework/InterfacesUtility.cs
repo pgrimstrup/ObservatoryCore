@@ -51,6 +51,8 @@ namespace Observatory.Framework.Interfaces
         public int VoiceVolume { get; set; }
         public string VoiceRate { get; set; }
         public string VoiceName { get; set; }
+        public string GoogleTextToSpeechApiKey { get; set; }
+        public string AzureTextToSpeechApiKey { get; set; }
         public bool VoiceWelcomeMessage { get; set; }
 
         public bool InbuiltPopupsEnabled { get; set; }

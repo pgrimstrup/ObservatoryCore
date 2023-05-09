@@ -116,9 +116,11 @@ namespace Observatory.Herald
         {
             _core = core;
 
+            var settings = _core.Services.GetRequiredService<IAppSettings>();
             _logger = _core.Services.GetRequiredService<ILogger<HeraldNotifier>>();
             _player = _core.Services.GetRequiredService<IAudioPlayback>();
             _speech = new SpeechRequestManager(
+                settings,
                 _heraldSettings,
                 _core.HttpClient,
                 Path.Combine(_core.PluginStorageFolder, "HeraldCache"),
@@ -179,11 +181,11 @@ namespace Observatory.Herald
                 var notificationEventArgs = new NotificationArgs {
                     Suppression = NotificationSuppression.Title,
                     Detail = $"This is a test of the Herald Voice Notifier, using the {settings.SelectedVoice} voice.",
-                    VoiceName = voice.Name,
-                    VoiceRate = (string)rate,
-                    VoiceStyle = (string)style,
+                    VoiceName = voice?.Name,
+                    VoiceRate = rate,
+                    VoiceStyle = style,
                     VoiceVolume = settings.Volume,
-                    AudioEncoding = (string)encoding
+                    AudioEncoding = encoding
                 };
 
                 _heraldQueue.Enqueue(notificationEventArgs);
@@ -194,11 +196,16 @@ namespace Observatory.Herald
         {
             if (_heraldSettings.Enabled)
             {
-                args.VoiceName ??= _heraldSettings.SelectedVoice;
-                args.VoiceRate ??= _heraldSettings.SelectedRate;
-                args.VoiceStyle ??= _heraldSettings.SelectedStyle;
+                var rate = (string)_voiceRates.Value[_heraldSettings.SelectedRate];
+                var style = (string)_voiceStyles.Value[_heraldSettings.SelectedStyle];
+                var voice = _voices.Value.FirstOrDefault(v => v.Description == _heraldSettings.SelectedVoice && v.Category == style);
+                var encoding = (string)_audioEncodings.Value[_heraldSettings.AudioEncoding];
+
+                args.VoiceName ??= voice?.Name;
+                args.VoiceRate ??= rate;
+                args.VoiceStyle ??= style;
+                args.AudioEncoding ??= encoding;
                 args.VoiceVolume ??= _heraldSettings.Volume;
-                args.AudioEncoding ??= _heraldSettings.AudioEncoding;
 
                 _heraldQueue.Enqueue(args);
             }
@@ -210,15 +217,29 @@ namespace Observatory.Herald
             await Task.CompletedTask;
         }
 
-        public async Task OnNotificationEventAsync(Guid id, NotificationArgs notificationEventArgs)
+        public async Task OnNotificationEventAsync(Guid id, NotificationArgs args)
         {
+            if (_heraldSettings.Enabled)
+            {
+                var rate = (string)_voiceRates.Value[_heraldSettings.SelectedRate];
+                var style = (string)_voiceStyles.Value[_heraldSettings.SelectedStyle];
+                var voice = _voices.Value.FirstOrDefault(v => v.Description == _heraldSettings.SelectedVoice && v.Category == style);
+                var encoding = (string)_audioEncodings.Value[_heraldSettings.AudioEncoding];
 
+                args.VoiceName ??= voice?.Name;
+                args.VoiceRate ??= rate;
+                args.VoiceStyle ??= style;
+                args.AudioEncoding ??= encoding;
+                args.VoiceVolume ??= _heraldSettings.Volume;
+
+                _heraldQueue.UpdateNotification(id, args);
+            }
             await Task.CompletedTask;
         }
 
         public async Task OnNotificationCancelledAsync(Guid id)
         {
-
+            _heraldQueue.CancelNotification(id);
             await Task.CompletedTask;
         }
 

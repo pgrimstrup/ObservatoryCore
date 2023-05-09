@@ -61,6 +61,8 @@ namespace Observatory.Framework
         public string? VoiceRate;
         public int? VoiceVolume;
         public string? AudioEncoding; // .wav, .mp3 or .ogg
+        public Guid Id;
+        public bool IsCancelled;
 
         /// <summary>
         /// Specifies the desired renderings of the notification. Defaults to <see cref="NotificationRendering.All"/>.

@@ -36,6 +36,8 @@ namespace ObservatoryUI.WPF.Services
         public string VoiceRate { get; set; }
         public string VoiceName { get; set; } = "";
         public string VoiceStyle { get; set; } = "";
+        public string GoogleTextToSpeechApiKey { get; set; } = "";
+        public string AzureTextToSpeechApiKey { get; set; } = "";
         public bool VoiceWelcomeMessage { get; set; } = true;
 
         public bool InbuiltPopupsEnabled {  get; set; } = true;

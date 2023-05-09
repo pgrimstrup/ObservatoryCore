@@ -57,37 +57,6 @@ namespace NAudio.Ogg.Opus
             }
         }
 
-        public int Read(byte[] buffer, int offset, int count)
-        {
-            if (_disposed)
-                throw new ObjectDisposedException("Cannot decode OGG Opus when the file has already been closed");
-
-            if (count == 0)
-                return 0;
-
-            int bytesOut = 0;
-            lock (_sync)
-            {
-                while (bytesOut + _frameSize < count)
-                {
-                    short[] packet = _streamReader.DecodeNextPacket();
-                    if (packet == null)
-                    {
-                        if (_streamReader.LastError != null)
-                            Debug.WriteLine(_streamReader.LastError);
-
-                        break;
-                    }
-
-                    _frameSize = packet.Length;
-                    packet.ShortsToBytes(0, buffer, offset + bytesOut, _frameSize);
-                    bytesOut += _frameSize;
-                }
-            }
-
-            return bytesOut;
-        }
-
         public int Read(float[] buffer, int offset, int count)
         {
             if (_disposed)
@@ -107,7 +76,7 @@ namespace NAudio.Ogg.Opus
                     _sampleBuffer = newBuffer;
                 }
 
-                    // We need to provide exactly count number of samples unless we are end of stream
+                // We need to provide exactly count number of samples unless we are end of stream
                 while (_sampleBuffer.Available < count && _streamReader.HasNextPacket)
                 {
                     short[] packet = _streamReader.DecodeNextPacket();
@@ -122,12 +91,19 @@ namespace NAudio.Ogg.Opus
                     _sampleBuffer.Write(packet);
                 }
 
-                if (_sampleBuffer.Available == 0)
-                    return 0;
+                int samplesReturned = 0;
+                if (_sampleBuffer.Available > 0)
+                {
+                    short[] samples = _sampleBuffer.Read(count);
+                    samples.ShortsToFloats(0, buffer, offset, samples.Length);
+                    samplesReturned = samples.Length;
+                }
 
-                short[] samples = _sampleBuffer.Read(count);
-                samples.ShortsToFloats(0, buffer, offset, samples.Length);
-                return samples.Length;
+                // Zero out the remainder of the buffer to produce silence
+                for (int i = samplesReturned; i < buffer.Length; i++)
+                    buffer[i] = 0;
+
+                return samplesReturned;
             }
         }
     }

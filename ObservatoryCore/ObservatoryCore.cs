@@ -99,13 +99,13 @@ namespace Observatory
                 return Guid.Empty;
 
             // Queue the message to the internal VoiceQueue 
-            Guid id = Guid.NewGuid();
+            args.Id = Guid.NewGuid();
             if((args.Rendering & NotificationRendering.NativeVocal) != 0)
             {
                 string title = (args.Suppression & NotificationSuppression.Title) == 0 ? GetSsml(args.Title, args.TitleSsml) : "";
                 string detail = (args.Suppression & NotificationSuppression.Detail) == 0 ? GetSsml(args.Detail, args.DetailSsml) : "";
                 _voiceQueue.Add(new VoiceMessage { 
-                    Id = id, 
+                    Id = args.Id, 
                     Title = title, 
                     Detail = detail,
                     VoiceName = args.VoiceName ?? _settings.VoiceName,
@@ -127,12 +127,12 @@ namespace Observatory
                     detail = args.Detail.TrimEnd(' ', '.');
 
                 if (!String.IsNullOrEmpty(title) || !String.IsNullOrEmpty(detail))
-                    _popupQueue.Add(new PopupMessage { Id = id, Title = title, Detail = detail, Timeout = args.Timeout });
+                    _popupQueue.Add(new PopupMessage { Id = args.Id, Title = title, Detail = detail, Timeout = args.Timeout });
             }
 
             if ((args.Rendering & NotificationRendering.PluginNotifier) != 0)
             {
-                // Notify all plugins of the event
+                // Notify all notifier plugins of the event
                 await Parallel.ForEachAsync(_pluginManager.ActivePlugins, async (plugin, token) =>
                 {
                     try
@@ -153,7 +153,7 @@ namespace Observatory
                 });
             }
 
-            return id;
+            return args.Id;
 
         }
 

@@ -17,6 +17,7 @@ namespace Observatory.Herald
         private ILogger ErrorLogger;
         private IAudioPlayback audioPlayer;
         private CancellationTokenSource CancellationToken;
+        private ManualResetEvent continueProcessing = new ManualResetEvent(true);
 
         public HeraldQueue(SpeechRequestManager speechManager, ILogger errorLogger, IAudioPlayback playback)
         {
@@ -46,9 +47,9 @@ namespace Observatory.Herald
             if (String.IsNullOrWhiteSpace(notification.VoiceStyle))
                 throw new ArgumentException(nameof(notification.VoiceStyle));
 
-            if (!String.IsNullOrEmpty(notification.TitleSsml) && !notification.TitleSsml.StartsWith("<speak>"))
+            if (!String.IsNullOrEmpty(notification.TitleSsml) && !notification.TitleSsml.StartsWith("<speak"))
                 throw new ArgumentException(nameof(notification.TitleSsml));
-            if (!String.IsNullOrEmpty(notification.DetailSsml) && !notification.DetailSsml.StartsWith("<speak>"))
+            if (!String.IsNullOrEmpty(notification.DetailSsml) && !notification.DetailSsml.StartsWith("<speak"))
                 throw new ArgumentException(nameof(notification.DetailSsml));
 
             if (String.IsNullOrWhiteSpace(notification.AudioEncoding))
@@ -71,8 +72,13 @@ namespace Observatory.Herald
             {
                 if (notifications.TryTake(out var item, 100, cancelToken))
                 {
+                    // Herald will wait for up to 5 seconds before processing this notification if needed by Update/Cancel
+                    continueProcessing.WaitOne(TimeSpan.FromSeconds(5));
                     try
                     {
+                        if (item.IsCancelled)
+                            continue;
+
                         await audioPlayer.SetVolume(item.VoiceVolume.GetValueOrDefault(75));
                         ErrorLogger.LogDebug("Processing notification: {0} - {1}", item.Title, item.Detail);
 
@@ -149,6 +155,49 @@ namespace Observatory.Herald
                 }
             }
             speechManager.CommitCache();
+        }
+
+        internal void CancelNotification(Guid id)
+        {
+            continueProcessing.Reset();
+            try
+            {
+                foreach(var item in notifications.Where(i => i.Id == id))
+                {
+                    item.IsCancelled = true;
+                }
+            }
+            finally
+            {
+                continueProcessing.Set();
+            }
+        }
+
+        internal void UpdateNotification(Guid id, NotificationArgs notificationEventArgs)
+        {
+            continueProcessing.Reset();
+            try
+            {
+                foreach (var item in notifications.Where(i => i.Id == id))
+                {
+                    item.Title = notificationEventArgs.Title;
+                    item.TitleSsml = notificationEventArgs.TitleSsml;
+                    item.Detail = notificationEventArgs.Detail;
+                    item.DetailSsml = notificationEventArgs.DetailSsml;
+                    item.Rendering = notificationEventArgs.Rendering;
+                    item.Suppression = notificationEventArgs.Suppression;
+                    item.VoiceRate = notificationEventArgs.VoiceRate;
+                    item.VoiceStyle = notificationEventArgs.VoiceStyle;
+                    item.VoiceName = notificationEventArgs.VoiceName;
+                    item.VoiceVolume = notificationEventArgs.VoiceVolume;
+                    item.AudioEncoding = notificationEventArgs.AudioEncoding;
+                    item.IsCancelled = notificationEventArgs.IsCancelled;
+                }
+            }
+            finally
+            {
+                continueProcessing.Set();
+            }
         }
     }
 }

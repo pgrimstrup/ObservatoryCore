@@ -99,8 +99,9 @@ namespace Observatory.Bridge
             _logState = e.NewState;
         }
 
-        internal void LogEvent(BridgeLog log)
+        internal void LogEvent(BridgeLog log, BridgeSettings options = null)
         {
+            options ??= this.Options;
             if (log.IsText)
             {
                 _core.ExecuteOnUIThread(() => {
@@ -108,7 +109,7 @@ namespace Observatory.Bridge
                 });
             }
 
-            if (log.IsSpoken && _logState == LogMonitorState.Realtime)
+            if (log.IsSpoken)
             {
                 var e = new NotificationArgs {
                     Title = log.TitleSsml.ToString() ,
@@ -118,9 +119,9 @@ namespace Observatory.Bridge
                     Rendering = 0
                 };
 
-                if (Options.UseHeraldVocalizer)
+                if (options.UseHeraldVocalizer)
                     e.Rendering |= NotificationRendering.PluginNotifier;
-                if (Options.UseInternalVocalizer)
+                if (options.UseInternalVocalizer)
                     e.Rendering |= NotificationRendering.NativeVocal;
 
                 if (String.IsNullOrEmpty(e.Title))
@@ -137,9 +138,9 @@ namespace Observatory.Bridge
                     log.IsDetailSpoken = false;
                 }
 
-                if(!Options.AlwaysSpeakTitles && !log.IsTitleSpoken)
+                if(!options.AlwaysSpeakTitles && !log.IsTitleSpoken)
                 {
-                    e.Suppression |= NotificationSuppression.Detail;
+                    e.Suppression |= NotificationSuppression.Title;
                 }
 
                 if (!log.IsDetailSpoken)

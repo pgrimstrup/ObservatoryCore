@@ -28,6 +28,14 @@
                     <CheckBox  Margin="6,4" IsChecked="{Binding Model.StartMonitor}">Start Log Monitoring on Startup</CheckBox>
                     <CheckBox  Margin="6,4" IsChecked="{Binding Model.StartReadAll}">Read all Log Entries on Startup</CheckBox>
                     <CheckBox  Margin="6,4" IsChecked="{Binding Model.AllowUnsigned}">Allow Unsigned Plugins</CheckBox>
+                    <StackPanel Orientation="Horizontal" Margin="6,4">
+                        <Label Width="200">Google Text to Speech API Key</Label>
+                        <TextBox Width="320" Text="{Binding Model.GoogleTextToSpeechApiKey}"></TextBox>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="6,4">
+                        <Label Width="200">Azure Text to Speech API Key</Label>
+                        <TextBox Width="320" Text="{Binding Model.AzureTextToSpeechApiKey}"></TextBox>
+                    </StackPanel>
                 </StackPanel>
             </TabItem>
             <TabItem Header="Inbuilt Notifiers" DataContext="{Binding}">

@@ -10,16 +10,20 @@ namespace Observatory.Herald.TextToSpeech
 {
     internal class GoogleCloud : ITextToSpeechService
     {
-        public const string ApiKey = "AIzaSyDw3YQF7W_BvAEXwh8wYJ3AuPujBlsUAMs";
+        //public const string ApiKey = "AIzaSyDw3YQF7W_BvAEXwh8wYJ3AuPujBlsUAMs";
         public const string ApiEndPoint = "https://texttospeech.googleapis.com/v1/";
         public const string ApiGetVoices = "voices";
         public const string ApiTextToSpeech = "text:synthesize";
 
         HttpClient _http;
+        string _apiKey;
 
-        public GoogleCloud(HttpClient http)
+        string ApiKey => _apiKey ?? throw new Exception("Google Text-to-Speech API Key has not been initialized");
+
+        public GoogleCloud(HttpClient http, string apiKey)
         {
             _http = http;
+            _apiKey = apiKey;
         }
 
         public async Task<bool> GetTextToSpeechAsync(NotificationArgs args, string speech, string filename)
@@ -36,7 +40,7 @@ namespace Observatory.Herald.TextToSpeech
             if (float.TryParse(args.VoiceRate, out var rate))
                 request.AudioConfig.SpeakingRate = rate;
 
-            if (speech.StartsWith("<speak>"))
+            if (speech.StartsWith("<speak"))
                 request.Input.Ssml = speech;
             else
                 request.Input.Text = speech;

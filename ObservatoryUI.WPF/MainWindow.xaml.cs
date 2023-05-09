@@ -62,26 +62,6 @@ namespace ObservatoryUI.WPF
             Ribbon.BackStageButton.Visibility = Visibility.Collapsed;
 
             LoadDockingState();
-
-            var args = new NotificationArgs {
-                Detail = "Welcome, Commander. Bridge crew are standing by and awaiting your instructions."
-            };
-
-            await Task.Delay(1000);
-            if (_settings.InbuiltVoiceEnabled)
-            {
-                // Fire and forget to the inbuilt voice notifier
-                args.Suppression = NotificationSuppression.Title;
-                args.Rendering = NotificationRendering.NativeVocal;
-                _core.SendNotification(args);
-            }
-            else
-            {
-                // Fire and forget to plugin notifiers
-                args.Suppression = NotificationSuppression.Title;
-                args.Rendering = NotificationRendering.PluginNotifier;
-                _core.SendNotification(args);
-            }
         }
 
         private void LoadDockingState()

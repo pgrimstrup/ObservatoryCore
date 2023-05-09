@@ -69,7 +69,7 @@ namespace Observatory.Bridge
                         log.DetailSsml.Append("Our destination is").AppendBodyName(status.Destination.Name).Append(".");
                 }
 
-                Bridge.Instance.LogEvent(log);
+                Bridge.Instance.LogEvent(log, this);
             }
             catch (Exception ex)
             {

@@ -13,6 +13,7 @@ using System.Collections.Concurrent;
 using Observatory.Herald.TextToSpeech;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Headers;
+using Observatory.Framework.Interfaces;
 
 namespace Observatory.Herald
 {
@@ -30,10 +31,13 @@ namespace Observatory.Herald
         string CacheIndexFile => Path.Combine(cacheLocation.FullName, "CacheIndex.json");
 
 
-        internal SpeechRequestManager(
-            HeraldSettings settings, HttpClient httpClient, string cacheFolder, ILogger errorLogger)
+        internal SpeechRequestManager(IAppSettings appSettings, HeraldSettings settings, HttpClient httpClient, string cacheFolder, ILogger errorLogger)
         {
-            _speech = new GoogleCloud(httpClient);
+            string apiKey = appSettings.GoogleTextToSpeechApiKey;
+            if(!String.IsNullOrWhiteSpace(settings.APIKeyOverride))
+                apiKey = settings.APIKeyOverride;
+
+            _speech = new GoogleCloud(httpClient, apiKey);
 
             cacheSize = Math.Max(settings.CacheSize, 1);
             cacheLocation = new DirectoryInfo(cacheFolder);
