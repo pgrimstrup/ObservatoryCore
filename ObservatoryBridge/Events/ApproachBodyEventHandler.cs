@@ -7,7 +7,7 @@ using Observatory.Framework.Files.Journal;
 
 namespace Observatory.Bridge.Events
 {
-    internal class ApprachBodyEventHandler : BaseEventHandler, IJournalEventHandler<ApproachBody>
+    internal class ApproachBodyEventHandler : BaseEventHandler, IJournalEventHandler<ApproachBody>
     {
         public void HandleEvent(ApproachBody journal)
         {
