@@ -23,6 +23,10 @@ namespace Observatory.Bridge
         internal CurrentSystemData CurrentSystem = new CurrentSystemData(new FSDJump());
         internal Status? CurrentStatus;
         internal Rank? CurrentRank;
+        internal string CommanderName;
+        internal string ShipName;
+        internal string ShipType;
+        internal long Credits;
 
         public string Name => "Observatory Bridge";
 
