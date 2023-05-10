@@ -97,18 +97,7 @@ namespace Observatory.Bridge
                 {
                     // Found a handler, so call it to handle the event
                     handler.Method.Invoke(handler.Instance, new object[] { journal });
-                    return;
                 }
-
-                // Not found, so check for a "Do..." method in this class
-                var methodName = $"Do{journal.GetType().Name}";
-                var method = GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public);
-                if (method != null)
-                {
-                    method.Invoke(this, new object[] { journal });
-                    return;
-                }
-
             }
             catch (Exception ex)
             {
