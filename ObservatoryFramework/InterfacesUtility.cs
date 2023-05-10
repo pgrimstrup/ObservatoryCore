@@ -18,6 +18,9 @@ namespace Observatory.Framework.Interfaces
         void ReadAll();
         void ReadCurrent();
 
+        Task ReadAllAsync();
+        Task ReadCurrentAsync();
+
         LogMonitorState CurrentState { get; }
 
         event EventHandler<LogMonitorStateChangedEventArgs> LogMonitorStateChanged;

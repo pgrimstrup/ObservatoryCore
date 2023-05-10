@@ -11,21 +11,22 @@ namespace Observatory.Bridge.Events
     {
         public void HandleEvent(LoadGame journal)
         {
-            Bridge.Instance.CommanderName = journal.Commander;
-            Bridge.Instance.ShipType = journal.Ship;
-            Bridge.Instance.ShipName = journal.ShipName;
-            Bridge.Instance.Credits = journal.Credits;
+            Bridge.Instance.CurrentShip.Assign(journal);
 
             var log = new BridgeLog(journal);
             log.SpokenOnly();
 
-            if(journal.ShipName.StartsWith("the ", StringComparison.OrdinalIgnoreCase))
-                log.DetailSsml.Append($"Welcome Commander {journal.Commander}, flying {journal.ShipName} with");
-            else
-                log.DetailSsml.Append($"Welcome Commander {journal.Commander}, flying the {journal.ShipName} with");
+            var shipName = Bridge.Instance.CurrentShip.ShipName;
+            if (!shipName.StartsWith("the ", StringComparison.OrdinalIgnoreCase))
+                shipName = "the " + shipName;
 
-            log.DetailSsml.AppendNumber(journal.Credits);
-            log.DetailSsml.Append("credits");
+            log.DetailSsml.Append($"Welcome Commander")
+                    .AppendEmphasis(Bridge.Instance.CurrentShip.Commander + ",", Framework.EmphasisType.Moderate)
+                    .Append("flying")
+                    .AppendEmphasis(Bridge.Instance.CurrentShip.ShipName, Framework.EmphasisType.Moderate)
+                    .Append("with")
+                    .AppendNumber(Bridge.Instance.CurrentShip.Credits)
+                    .Append("credits");
 
             Bridge.Instance.LogEvent(log);
         }

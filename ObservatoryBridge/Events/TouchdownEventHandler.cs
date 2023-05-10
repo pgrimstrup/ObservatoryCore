@@ -15,12 +15,27 @@ namespace Observatory.Bridge.Events
             var log = new BridgeLog(journal);
             log.TitleSsml.Append("Flight Operations");
             log.DetailSsml.AppendUnspoken(Emojis.Touchdown);
-            log.DetailSsml
-                .Append($"Touchdown on body")
-                .AppendBodyName(GetBodyName(journal.Body))
-                .Append("completed")
-                .AppendEmphasis("Commander", EmphasisType.Moderate);
-
+            if (Bridge.Instance.CurrentShip.Status.HasFlag(Framework.Files.ParameterTypes.StatusFlags.SRV))
+            {
+                log.DetailSsml
+                    .Append("Ship has returned from orbit and is ready to board")
+                    .AppendEmphasis("Commander", EmphasisType.Moderate);
+            }
+            if (Bridge.Instance.CurrentShip.Status.HasFlag(Framework.Files.ParameterTypes.StatusFlags.MainShip))
+            {
+                if (String.IsNullOrWhiteSpace(journal.Body))
+                {
+                    log.DetailSsml.Append("Touchdown").AppendEmphasis("Commander", EmphasisType.Moderate);
+                }
+                else
+                {
+                    log.DetailSsml
+                        .Append($"Touchdown on body")
+                        .AppendBodyName(GetBodyName(journal.Body))
+                        .Append("completed")
+                        .AppendEmphasis("Commander", EmphasisType.Moderate);
+                }
+            }
             Bridge.Instance.LogEvent(log);
         }
     }

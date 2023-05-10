@@ -2,11 +2,10 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Windows;
-using System.Windows.Controls;
+using System.Windows.Input;
 using System.Xml;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Observatory.Framework;
 using Observatory.Framework.Interfaces;
 using ObservatoryUI.WPF.ViewModels;
 using ObservatoryUI.WPF.Views;
@@ -62,7 +61,7 @@ namespace ObservatoryUI.WPF
             this.DataContext = this;
         }
 
-        protected async void OnLoadedAsync(object sender, RoutedEventArgs e)
+        protected void OnLoadedAsync(object sender, RoutedEventArgs e)
         {
             Ribbon.BackStageButton.Visibility = Visibility.Collapsed;
 
@@ -177,16 +176,24 @@ namespace ObservatoryUI.WPF
             window.ShowDialog();
         }
 
-        private void OnReadAllClick(object sender, RoutedEventArgs e)
+        private async void OnReadAllClick(object sender, RoutedEventArgs e)
         {
+            this.Cursor = Cursors.Wait;
+
             var logMonitor = _core.Services.GetRequiredService<ILogMonitor>();
-            logMonitor.ReadAll();
+            await logMonitor.ReadAllAsync();
+
+            this.Cursor = Cursors.Arrow;
         }
 
-        private void OnReadCurrentClick(object sender, RoutedEventArgs e)
+        private async void OnReadCurrentClick(object sender, RoutedEventArgs e)
         {
+            this.Cursor = Cursors.Wait;
+
             var logMonitor = _core.Services.GetRequiredService<ILogMonitor>();
-            logMonitor.ReadCurrent();
+            await logMonitor.ReadCurrentAsync();
+
+            this.Cursor = Cursors.Arrow;
         }
     }
 }

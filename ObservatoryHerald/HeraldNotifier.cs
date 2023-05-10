@@ -126,7 +126,7 @@ namespace Observatory.Herald
             await Task.CompletedTask;
         }
 
-        public async Task<Dictionary<string, object>> GetVoiceNamesAsync(object settings)
+        public Task<Dictionary<string, object>> GetVoiceNamesAsync(object settings)
         {
             if (_voiceStyles.Value == null || _voices.Value == null)
                 return null;
@@ -136,10 +136,10 @@ namespace Observatory.Herald
             if (settings is HeraldSettings heraldSettings && !String.IsNullOrWhiteSpace(heraldSettings.SelectedStyle))
                 style = heraldSettings.SelectedStyle;
 
-            return _voices.Value
+            return Task.FromResult(_voices.Value
                 .Where(v => v.Category == style)
                 .OrderBy(v => v.Description)
-                .ToDictionary(v => v.Description, v => (object)v.Name);
+                .ToDictionary(v => v.Description, v => (object)v.Name));
         }
 
         public Dictionary<string, object> GetVoiceStyles()
@@ -152,7 +152,7 @@ namespace Observatory.Herald
             return _voiceRates.Value;
         }
 
-        public async Task TestVoiceSettings(object testSettings)
+        public Task TestVoiceSettings(object testSettings)
         {
             if (testSettings is HeraldSettings settings)
             {
@@ -173,6 +173,7 @@ namespace Observatory.Herald
 
                 _heraldQueue.Enqueue(notificationEventArgs);
             }
+            return Task.CompletedTask;
         }
 
         public async Task ClearVoiceCache(object _)

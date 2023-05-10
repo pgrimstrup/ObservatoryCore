@@ -14,9 +14,18 @@ namespace Observatory.Bridge.Events
             var log = new BridgeLog(journal);
             log.TitleSsml.Append("Flight Operations");
             log.DetailSsml.AppendUnspoken(Emojis.Liftoff);
-            log.DetailSsml
-                .Append($"Liftoff complete from body")
-                .AppendBodyName(GetBodyName(journal.Body));
+            if (Bridge.Instance.CurrentShip.Status.HasFlag(Framework.Files.ParameterTypes.StatusFlags.SRV))
+            {
+                log.DetailSsml
+                   .Append($"Ship is returning to orbit")
+                   .AppendEmphasis("Commander", Framework.EmphasisType.Moderate);
+            }
+            if (Bridge.Instance.CurrentShip.Status.HasFlag(Framework.Files.ParameterTypes.StatusFlags.MainShip))
+            {
+                log.DetailSsml
+                   .Append($"Liftoff complete from body")
+                    .AppendBodyName(GetBodyName(journal.Body));
+            }
 
             Bridge.Instance.LogEvent(log);
         }

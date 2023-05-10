@@ -1,10 +1,12 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Reflection;
+using System.Text.Json.Serialization;
 using Observatory.Bridge.Events;
 using Observatory.Framework;
 using Observatory.Framework.Files;
 using Observatory.Framework.Files.Journal;
+using Observatory.Framework.Files.ParameterTypes;
 using Observatory.Framework.Interfaces;
 
 namespace Observatory.Bridge
@@ -17,22 +19,19 @@ namespace Observatory.Bridge
 
         PluginUI _ui = null!;
         ConcurrentDictionary<Type, (object?, MethodInfo?)> _eventHandlers = new ConcurrentDictionary<Type, (object?, MethodInfo?)>();
+        List<object> _batchReadEvents = new List<object>();
 
         internal IObservatoryCore Core = null!;
         internal ObservableCollection<object> Events = new ObservableCollection<object>();
         internal CurrentSystemData CurrentSystem = new CurrentSystemData(new FSDJump());
-        internal Status? CurrentStatus;
-        internal Rank? CurrentRank;
-        internal string CommanderName;
-        internal string ShipName;
-        internal string ShipType;
-        internal long Credits;
+        internal CurrentShipData CurrentShip = new CurrentShipData();
+        internal Rank CurrentRank = new Rank();
 
         public string Name => "Observatory Bridge";
 
         public string ShortName => "Bridge";
 
-        public string Version => typeof(Bridge).Assembly.GetName().Version.ToString();
+        public string Version => typeof(Bridge).Assembly.GetName().Version?.ToString() ?? "";
 
         public PluginUI PluginUI => _ui;
 
@@ -86,26 +85,27 @@ namespace Observatory.Bridge
             // Journal entry. 
             // To handle additional Journal Types, simply create a new class that implements
             // IJournalEventHandler<> and it will be auto-discovered.
-            try
+            if (!Settings.BridgeEnabled)
+                return;
+
+            // First check for an event handler class for the journal type
+            (object? Instance, MethodInfo? Method) handler = _eventHandlers.GetOrAdd(journal.GetType(), key => {
+                // All of the handler have been pre-loaded. If one hasn't been loaded, then add in a dummy value
+                return new (null, null);
+            });
+
+            if(handler.Instance != null && handler.Method != null)
             {
-                if (!Settings.BridgeEnabled)
-                    return;
-
-                // First check for an event handler class for the journal type
-                (object? Instance, MethodInfo? Method) handler = _eventHandlers.GetOrAdd(journal.GetType(), key => {
-                    // All of the handler have been pre-loaded. If one hasn't been loaded, then add in a dummy value
-                    return new (null, null);
-                });
-
-                if(handler.Instance != null && handler.Method != null)
+                try
                 {
                     // Found a handler, so call it to handle the event
+                    Core.GetPluginErrorLogger(this).Invoke(null, $"Bridge Event: {journal.Event} ({journal.GetType().Name}) handled by {handler.Instance.GetType().Name}.{handler.Method.Name}");
                     handler.Method.Invoke(handler.Instance, new object[] { journal });
                 }
-            }
-            catch (Exception ex)
-            {
-                Core.GetPluginErrorLogger(this).Invoke(ex, "When JournalEvent received");
+                catch(Exception ex)
+                {
+                    Core.GetPluginErrorLogger(this).Invoke(ex, $"When calling {handler.Instance.GetType().Name}.{handler.Method.Name} for JournalEveny '{journal.GetType().Name}'");
+                }
             }
         }
 
@@ -116,7 +116,28 @@ namespace Observatory.Bridge
 
         public void LogMonitorStateChanged(LogMonitorStateChangedEventArgs e)
         {
-            
+            if (!LogMonitorStateChangedEventArgs.IsBatchRead(e.PreviousState) && LogMonitorStateChangedEventArgs.IsBatchRead(e.NewState))
+            {
+                // Starting a batch read
+                Core.ExecuteOnUIThread(() => {
+                    Events.Clear();
+                });
+            }
+
+            if (LogMonitorStateChangedEventArgs.IsBatchRead(e.PreviousState) && !LogMonitorStateChangedEventArgs.IsBatchRead(e.NewState))
+            {
+                CurrentShip.Status = 0;
+                CurrentShip.Status2 = 0;
+
+                // Finished a batch read
+                Core.ExecuteOnUIThread(() => {
+                    // Read from the lastFSD Jump entry 
+                    Events.Clear();
+                    for (int i = 0; i < _batchReadEvents.Count; i++)
+                        Events.Add(_batchReadEvents[i]);
+                    _batchReadEvents.Clear();
+                });
+            }
         }
 
         internal void LogEvent(BridgeLog log, BridgeSettings? options = null)
@@ -124,9 +145,29 @@ namespace Observatory.Bridge
             options ??= this.Settings;
             if (log.IsText)
             {
-                Core.ExecuteOnUIThread(() => {
-                    Events.Add(log);
-                });
+                if (Core.IsLogMonitorBatchReading)
+                {
+                    if(log.EventName == "LaunchSRV")
+                    {
+                        CurrentShip.Status &= ~StatusFlags.MainShip;
+                        CurrentShip.Status |= StatusFlags.SRV;
+                    }
+
+                    if(log.EventName == "DockSRV")
+                    {
+                        CurrentShip.Status &= ~StatusFlags.SRV;
+                        CurrentShip.Status |= StatusFlags.MainShip;
+                    }
+
+                    // Keep everythng after the last FSD Jump
+                    if (log.EventName == "FSDJump")
+                        _batchReadEvents.Clear();
+                    _batchReadEvents.Add(log);
+                }
+                else
+                    Core.ExecuteOnUIThread(() => {
+                        Events.Add(log);
+                    });
             }
 
             if (log.IsSpoken)

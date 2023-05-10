@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Observatory.Framework;
 using Observatory.Framework.Files.Journal;
 
 namespace Observatory.Bridge.Events
@@ -16,7 +17,9 @@ namespace Observatory.Bridge.Events
 
             var log = new BridgeLog(journal);
             log.TitleSsml.Append("Science Station");
-            log.DetailSsml.Append($"System Scan Complete Commander. We've found all bodies in this system.");
+            log.DetailSsml.Append($"System Scan Complete")
+                .AppendEmphasis("Commander.", EmphasisType.Moderate)
+                .Append("We've found all bodies in this system.");
 
             Bridge.Instance.LogEvent(log);
             Bridge.Instance.CurrentSystem.ScanComplete = true;

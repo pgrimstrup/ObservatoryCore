@@ -62,7 +62,7 @@ namespace Observatory.Herald
 
         private async Task ProcessQueueAsync()
         {
-            string? lastTitle = null;
+            string lastTitle = null;
             DateTime lastTitleTime = DateTime.Now;
             CancellationToken cancelToken = CancellationToken.Token;
             while (!Environment.HasShutdownStarted && !cancelToken.IsCancellationRequested)
@@ -114,7 +114,7 @@ namespace Observatory.Herald
                 return await speechManager.GetAudioFileFromSsmlAsync(args, args.TitleSsml);
 
             if (!String.IsNullOrWhiteSpace(args.Title))
-                return await speechManager.GetAudioFileFromSsmlAsync(args, args.Title);
+                return await speechManager.GetAudioFileFromSsmlAsync(args, args.Title.Trim(' ','.'));
 
             return null;
         }
@@ -125,7 +125,7 @@ namespace Observatory.Herald
                 return await speechManager.GetAudioFileFromSsmlAsync(args, args.DetailSsml);
 
             if (!String.IsNullOrWhiteSpace(args.Detail))
-                return await speechManager.GetAudioFileFromSsmlAsync(args, args.Detail);
+                return await speechManager.GetAudioFileFromSsmlAsync(args, args.Detail.Trim(' ', '.'));
 
             return null;
         }

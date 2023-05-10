@@ -67,8 +67,11 @@ namespace Observatory.Framework
 
         public SsmlBuilder AppendBodyName(string name)
         {
-            _textFragments.Add(name.Trim());
-            _ssmlFragments.Add(ReplaceWords(name.Trim(), BodyNameWordReplacements, BodyNameCharacterReplacements));
+            if (!String.IsNullOrEmpty(name))
+            {
+                _textFragments.Add(name.Trim());
+                _ssmlFragments.Add(ReplaceWords(name.Trim(), BodyNameWordReplacements, BodyNameCharacterReplacements));
+            }
             return this;
         }
 
@@ -183,16 +186,9 @@ namespace Observatory.Framework
             return this;
         }
 
-        private string ReplaceWords(string text, IDictionary<string, string> replacements, IDictionary<string, string>? characterReplacements = null)
+        private string ReplaceWords(string text, IDictionary<string, string> replacements, IDictionary<string, string> characterReplacements = null)
         {
             var words = text.Split();
-            for (int i = 0; i < words.Length; i++)
-            {
-                if (replacements.TryGetValue(words[i], out var replacement))
-                    words[i] = replacement;
-            }
-            text = string.Join(" ", words);
-
             if (characterReplacements != null)
             {
                 foreach (var key in characterReplacements.Keys)
@@ -200,6 +196,14 @@ namespace Observatory.Framework
                     text = text.Replace(key, characterReplacements[key]);
                 }
             }
+
+            for (int i = 0; i < words.Length; i++)
+            {
+                if (replacements.TryGetValue(words[i], out var replacement))
+                    words[i] = replacement;
+            }
+            text = string.Join(" ", words);
+
             return text;
         }
 

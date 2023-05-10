@@ -76,13 +76,35 @@ namespace Observatory
 
             DirectoryInfo logDirectory = GetJournalFolder(_settings.JournalFolder);
             var files = GetJournalFilesOrdered(logDirectory);
-            var readErrors = new List<(Exception ex, string file, string line)>();
             foreach (var file in files)
             {
-                ProcessLines(ReadAllLines(file.FullName), file.Name);
+                foreach (var line in ReadAllLines(file.FullName))
+                    DeserializeAndInvoke(file.Name, line);
             }
 
             SetLogMonitorState(currentState & ~LogMonitorState.Batch);
+        }
+
+        public async Task ReadAllAsync()
+        {
+            // Prevent pre-reading when starting monitoring after reading all.
+            firstStartMonitor = false;
+            SetLogMonitorState(currentState | LogMonitorState.Batch);
+
+            DirectoryInfo logDirectory = GetJournalFolder(_settings.JournalFolder);
+            var files = GetJournalFilesOrdered(logDirectory);
+            foreach (var file in files)
+            {
+                await foreach(var line in  ReadAllLinesAsync(file.FullName))
+                    DeserializeAndInvoke(file.Name, line);
+            }
+
+            SetLogMonitorState(currentState & ~LogMonitorState.Batch);
+        }
+
+        public Task ReadCurrentAsync()
+        {
+            return Task.Run(() => ReadCurrent());
         }
 
         public void ReadCurrent()
@@ -140,7 +162,9 @@ namespace Observatory
                 linesToRead = lastSystemLines;
             }
 
-            ProcessLines(linesToRead, "Pre-read");
+            foreach (var line in linesToRead)
+                DeserializeAndInvoke("Pre-read", line);
+
             SetLogMonitorState(currentState & ~LogMonitorState.PreRead);
         }
 
@@ -260,21 +284,7 @@ namespace Observatory
             return logDirectory;
         }
 
-        private void ProcessLines(List<String> lines, string file)
-        {
-            foreach (var line in lines)
-            {
-                try
-                {
-                    DeserializeAndInvoke(line);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"While processing log lines in {file}");
-                }
-            }
-        }
-
+       
         private JournalEventArgs DeserializeToEventArgs(string eventType, string line)
         {
             
@@ -285,22 +295,29 @@ namespace Observatory
             return new JournalEventArgs() { journalType = eventClass, journalEvent = entry };
         }
 
-        private void DeserializeAndInvoke(string line)
+        private void DeserializeAndInvoke(string file, string line)
         {
-            var eventType = JournalUtilities.GetEventType(line);
-            if (!journalTypes.ContainsKey(eventType))
+            try
             {
-                eventType = "JournalBase";
+                var eventType = JournalUtilities.GetEventType(line);
+                if (!journalTypes.ContainsKey(eventType))
+                {
+                    eventType = "JournalBase";
+                }
+
+                var journalEvent = DeserializeToEventArgs(eventType, line);
+
+                JournalEntry?.Invoke(this, journalEvent);
+
+                // Files are only valid if realtime, otherwise they will be stale or empty.
+                if (!currentState.HasFlag(LogMonitorState.Batch) && EventsWithAncillaryFile.Contains(eventType))
+                {
+                    HandleAncillaryFile(eventType);
+                }
             }
-
-            var journalEvent = DeserializeToEventArgs(eventType, line);
-            
-            JournalEntry?.Invoke(this, journalEvent);
-
-            // Files are only valid if realtime, otherwise they will be stale or empty.
-            if (!currentState.HasFlag(LogMonitorState.Batch) && EventsWithAncillaryFile.Contains(eventType))
+            catch(Exception ex)
             {
-                HandleAncillaryFile(eventType);
+                _logger.LogError(ex, $"While processing log lines in {file}");
             }
         }
 
@@ -341,7 +358,8 @@ namespace Observatory
 
         private void LogChangedEvent(object source, FileSystemEventArgs eventArgs)
         {
-            var fileContent = ReadAllLines(eventArgs.FullPath);
+            var filename = Path.GetFileName(eventArgs.FullPath);
+            var fileContent = ReadAllLines(eventArgs.FullPath).ToList();
 
             if (!currentLine.ContainsKey(eventArgs.FullPath))
             {
@@ -350,30 +368,34 @@ namespace Observatory
 
             foreach (string line in fileContent.Skip(currentLine[eventArgs.FullPath]))
             {
-                try
-                {
-                    DeserializeAndInvoke(line);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"In file '{eventArgs.Name}' Line {line}");
-                }
+                DeserializeAndInvoke(filename, line);
             }
 
             currentLine[eventArgs.FullPath] = fileContent.Count;
         }
 
-        private List<string> ReadAllLines(string path)
+        private IEnumerable<string> ReadAllLines(string path)
         {
-            var lines = new List<string>();
             using (StreamReader file = new StreamReader(File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
             {
                 while (!file.EndOfStream)
                 {
-                    lines.Add(file.ReadLine());
+                    yield return file.ReadLine();
                 }
             }
-            return lines;
+        }
+
+        private async IAsyncEnumerable<string> ReadAllLinesAsync(string path)
+        {
+            var lines = new List<string>();
+            using(Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.Asynchronous | FileOptions.SequentialScan))
+            using (StreamReader file = new StreamReader(stream))
+            {
+                while (!file.EndOfStream)
+                {
+                    yield return await file.ReadLineAsync();
+                }
+            }
         }
 
         private void LogCreatedEvent(object source, FileSystemEventArgs eventArgs)
@@ -386,9 +408,9 @@ namespace Observatory
         {
             var handler = StatusUpdate;
             var statusLines = ReadAllLines(eventArgs.FullPath);
-            if (statusLines.Count > 0)
+            if (statusLines.Any())
             {
-                var status = JournalReader.ObservatoryDeserializer<Status>(statusLines[0]);
+                var status = JournalReader.ObservatoryDeserializer<Status>(statusLines.First());
                 handler?.Invoke(this, new JournalEventArgs() { journalType = typeof(Status), journalEvent = status });
             }
         }
@@ -437,9 +459,8 @@ namespace Observatory
 
         private IEnumerable<FileInfo> GetJournalFilesOrdered(DirectoryInfo journalFolder)
         {
-            return from file in journalFolder.GetFiles("Journal.*.??.log")
-                   orderby file.LastWriteTime
-                   select file;
+            foreach (var file in journalFolder.GetFiles("Journal.*.??.log").OrderBy(f => f.LastWriteTime))
+                yield return file;
         }
 
         [DllImport("shell32.dll", CharSet = CharSet.Auto)]

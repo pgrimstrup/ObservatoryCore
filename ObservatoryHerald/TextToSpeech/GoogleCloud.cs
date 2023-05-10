@@ -45,7 +45,11 @@ namespace Observatory.Herald.TextToSpeech
             else
                 request.Input.Text = speech;
 
+#if DEBUG
+            _logger.LogInformation($"Google Text-to-Speech Request: Voice={request.Voice.Name}, Rate={request.AudioConfig.SpeakingRate}, Encoding={request.AudioConfig.AudioEncoding}\r\n{speech}");
+#else
             _logger.LogInformation($"Google Text-to-Speech Request: Voice={request.Voice.Name}, Rate={request.AudioConfig.SpeakingRate}, Encoding={request.AudioConfig.AudioEncoding}");
+#endif
             var response = await _http.PostAsJsonAsync($"{ApiEndPoint}{ApiTextToSpeech}?key={ApiKey}", request);
 
             response.EnsureSuccessStatusCode();

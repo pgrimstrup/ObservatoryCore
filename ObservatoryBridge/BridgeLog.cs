@@ -11,6 +11,7 @@ namespace Observatory.Bridge
 {
     internal class BridgeLog
     {
+        internal string EventName = "";
         internal bool IsSpoken = true;
         internal bool IsText = true;
         internal bool IsTitleSpoken = false;
@@ -30,6 +31,7 @@ namespace Observatory.Bridge
         public BridgeLog(JournalBase journal) : this()
         {
             EventTimeUTC = journal.TimestampDateTime;
+            EventName = journal.Event;
         }
 
         public BridgeLog()

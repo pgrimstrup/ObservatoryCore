@@ -113,7 +113,7 @@ namespace ObservatoryUI.WPF
                 
             if(dlg.ShowDialog(this) == true)
             {
-                Model.JournalFolder = Path.GetDirectoryName(dlg.FileName);
+                Model.JournalFolder = Path.GetDirectoryName(dlg.FileName)!;
             }
         }
     }

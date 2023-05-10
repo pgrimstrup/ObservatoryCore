@@ -47,28 +47,6 @@ namespace Observatory.Bridge
                 log.DetailSsml.AppendEmphasis("Commander", EmphasisType.Moderate);
                 log.DetailSsml.EndSentence();
 
-                var status = Bridge.Instance.CurrentStatus;
-                if (status == null)
-                {
-                    log.DetailSsml.Append("Current ship status is unavailable.");
-                }
-                else
-                {
-                    if (status.Flags.HasFlag(StatusFlags.Supercruise))
-                        log.DetailSsml.Append("Ship is currently super cruising at").AppendBodyName(status.BodyName).Append(".");
-                    else if (status.Flags.HasFlag(StatusFlags.Docked))
-                        log.DetailSsml.Append("Ship is docked at").AppendBodyName(status.BodyName).Append(".");
-                    else if (status.Flags.HasFlag(StatusFlags.Landed))
-                        log.DetailSsml.Append("Ship is on the ground at").AppendBodyName(status.BodyName).Append(".");
-                    else
-                        log.DetailSsml.Append("Ship is currently idle at").AppendBodyName(status.BodyName).Append(".");
-
-                    log.DetailSsml.Append("Available credit balance is").AppendNumber(status.Balance).Append(".");
-
-                    if (!String.IsNullOrEmpty(status.Destination.Name))
-                        log.DetailSsml.Append("Our destination is").AppendBodyName(status.Destination.Name).Append(".");
-                }
-
                 Bridge.Instance.LogEvent(log, this);
             }
             catch (Exception ex)

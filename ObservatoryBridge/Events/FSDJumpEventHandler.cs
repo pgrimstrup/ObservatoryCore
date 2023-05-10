@@ -18,16 +18,25 @@ namespace Observatory.Bridge.Events
                 .AppendNumber(Math.Round(journal.FuelUsed, 2))
             .Append("tons of fuel.");
 
-            Bridge.Instance.Core.ExecuteOnUIThread(() => {
-                // Remove all entries except for the last Start Jump entry
-                var keep = Bridge.Instance.Events.Cast<BridgeLog>().LastOrDefault(e => e.Title.StartsWith("FSD Jump"));
-                while (Bridge.Instance.Events.Count > 0)
-                {
-                    if (Bridge.Instance.Events[0] == keep)
-                        break;
-                    Bridge.Instance.Events.RemoveAt(0);
-                }
-            });
+            if (!Bridge.Instance.Core.IsLogMonitorBatchReading)
+            {
+                Bridge.Instance.Core.ExecuteOnUIThread(() => {
+                    // Remove all entries up to the last FSD Jump
+                    var lastJump = Bridge.Instance.Events
+                        .OfType<BridgeLog>()
+                        .LastOrDefault(e => e.EventName == nameof(FSDJump));
+
+                    if(lastJump != null)
+                    {
+                        var keepIndex = Bridge.Instance.Events.IndexOf(lastJump);
+                        while(keepIndex > 0 && Bridge.Instance.Events.Count > 0)
+                        {
+                            Bridge.Instance.Events.RemoveAt(0);
+                            keepIndex--;
+                        }
+                    }
+                });
+            }
 
             Bridge.Instance.LogEvent(log);
             Bridge.Instance.CurrentSystem = new CurrentSystemData(journal);

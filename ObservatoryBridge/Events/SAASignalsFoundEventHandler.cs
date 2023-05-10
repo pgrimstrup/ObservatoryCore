@@ -19,10 +19,11 @@ namespace Observatory.Bridge.Events
             bool hasBio = false;
             foreach (var signal in journal.Signals)
             {
+                var typename = signal.Type_Localised ?? signal.Type;
                 signals.Add($"{signal.Count} {signal.Type_Localised}");
-                if (signal.Type_Localised.StartsWith("Geo", StringComparison.OrdinalIgnoreCase))
+                if (typename.StartsWith("Geo", StringComparison.OrdinalIgnoreCase))
                     hasGeo = true;
-                if (signal.Type_Localised.StartsWith("Bio", StringComparison.OrdinalIgnoreCase))
+                if (typename.StartsWith("Bio", StringComparison.OrdinalIgnoreCase))
                     hasBio = true;
             }
 

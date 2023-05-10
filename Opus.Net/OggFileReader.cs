@@ -66,7 +66,7 @@ namespace NAudio.Ogg
 
         public int Read(byte[] buffer, int offset, int count)
         {
-            if (count == 0)
+            if (count == 0 || _sampleProvider == null)
                 return 0;
 
             int floatCount = count / sizeof(float);
@@ -81,8 +81,6 @@ namespace NAudio.Ogg
 
             Buffer.BlockCopy(_floatBuffer, 0, buffer, offset, bytesRead);
             return bytesRead;
-
-            return 0;
         }
     }
 }

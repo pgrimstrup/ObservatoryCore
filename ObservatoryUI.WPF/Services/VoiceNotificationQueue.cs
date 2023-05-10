@@ -72,7 +72,7 @@ namespace ObservatoryUI.WPF.Services
             using var speech = new SpeechSynthesizer();
             while (!cancel.IsCancellationRequested)
             {
-                if(_queue.TryTake(out VoiceMessage msg, 100, cancel))
+                if(_queue.TryTake(out VoiceMessage? msg, 100, cancel))
                 {
                     _current = msg;
                     if (msg.Cancelled)
@@ -127,14 +127,16 @@ namespace ObservatoryUI.WPF.Services
 
                 XmlDocument ssmlDoc = new();
                 ssmlDoc.LoadXml(ssml);
+                if (ssmlDoc.DocumentElement != null)
+                {
+                    var ssmlNamespace = ssmlDoc.DocumentElement.NamespaceURI;
+                    XmlNamespaceManager ssmlNs = new(ssmlDoc.NameTable);
+                    ssmlNs.AddNamespace("ssml", ssmlNamespace);
 
-                var ssmlNamespace = ssmlDoc.DocumentElement.NamespaceURI;
-                XmlNamespaceManager ssmlNs = new(ssmlDoc.NameTable);
-                ssmlNs.AddNamespace("ssml", ssmlNamespace);
-
-                var voiceNode = ssmlDoc.SelectSingleNode("/ssml:speak/ssml:voice", ssmlNs);
-                if(voiceNode != null)
-                    voiceNode.Attributes.GetNamedItem("name").Value = voiceName;
+                    var voiceNode = ssmlDoc.SelectSingleNode("/ssml:speak/ssml:voice", ssmlNs);
+                    if (voiceNode != null && voiceNode.Attributes?.GetNamedItem("name") is XmlAttribute attrib)
+                        attrib.Value = voiceName;
+                }
 
                 return ssmlDoc.OuterXml;
             }

@@ -260,7 +260,12 @@ namespace Observatory
 
         public Action<Exception, string> GetPluginErrorLogger(IObservatoryPlugin plugin)
         {
-            return (ex, msg) => _logger.LogError(ex, msg);
+            return (ex, msg) => {
+                if (ex == null)
+                    _logger.LogInformation(msg);
+                else
+                    _logger.LogError(ex, msg);
+            };
         }
 
         /// <summary>

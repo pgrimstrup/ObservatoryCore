@@ -10,9 +10,11 @@ namespace Observatory.Bridge.Events
     {
         static public readonly string[] ScoopableStars = { "K", "G", "B", "F", "O", "A", "M" };
 
-
         public static string GetBodyName(string name)
         {
+            if (String.IsNullOrWhiteSpace(name))
+                return name;
+
             var currentSystem = Bridge.Instance.CurrentSystem;
             if (currentSystem.SystemName == null || name.Length < currentSystem.SystemName.Length || !name.StartsWith(currentSystem.SystemName, StringComparison.OrdinalIgnoreCase))
                 return name;
@@ -22,6 +24,16 @@ namespace Observatory.Bridge.Events
                 return "A";
 
             return name.Substring(currentSystem.SystemName.Length).Trim();
+        }
+
+        protected void LogInfo(string message)
+        {
+            Bridge.Instance.Core.GetPluginErrorLogger(Bridge.Instance).Invoke(null, message);
+        }
+
+        protected void LogError(Exception ex, string message)
+        {
+            Bridge.Instance.Core.GetPluginErrorLogger(Bridge.Instance).Invoke(ex, message);
         }
 
     }

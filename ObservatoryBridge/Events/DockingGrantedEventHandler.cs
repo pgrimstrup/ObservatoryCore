@@ -16,7 +16,9 @@ namespace Observatory.Bridge.Events
             log.TitleSsml.Append("Flight Operations");
 
             log.DetailSsml
-                .Append($"{journal.StationName} Tower has granted our docking request Commander. Heading to landing pad")
+                .Append($"{journal.StationName} Tower has granted our docking request")
+                .AppendEmphasis("Commander.", EmphasisType.Moderate)
+                .Append("Heading to landing pad")
                 .AppendEmphasis(journal.LandingPad.ToString(), EmphasisType.Moderate).EndSentence();
 
             Bridge.Instance.LogEvent(log);

@@ -18,9 +18,11 @@ namespace Observatory.Bridge.Events
 
             log.DetailSsml.AppendUnspoken(Emojis.Probe);
             if (journal.ProbesUsed <= journal.EfficiencyTarget)
-                log.DetailSsml.Append($"Surface Scan complete, with efficiency bonus, using only {journal.ProbesUsed} probes Commander.");
+                log.DetailSsml.Append($"Surface Scan complete, with efficiency bonus, using only {journal.ProbesUsed} probes")
+                    .AppendEmphasis("Commander.", EmphasisType.Moderate);
             else
-                log.DetailSsml.Append($"Surface Scan complete using {journal.ProbesUsed} probes Commander.");
+                log.DetailSsml.Append($"Surface Scan complete using {journal.ProbesUsed} probes")
+                    .AppendEmphasis("Commander.", EmphasisType.Moderate);
 
             if (journal.Mappers == null || journal.Mappers.Count == 0)
             {

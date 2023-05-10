@@ -96,6 +96,11 @@ namespace ObservatoryUI.WPF.Services
                 Message = formatter(state, exception)
             };
 
+            if(exception != null)
+            {
+                log.Message += $": {exception}";
+            }
+
             _messages.Add(log);
         }
 
@@ -158,8 +163,9 @@ namespace ObservatoryUI.WPF.Services
 
         private void CreateDirectory()
         {
-            if (!Directory.Exists(Path.GetDirectoryName(_targetFile)))
-                Directory.CreateDirectory(Path.GetDirectoryName(_targetFile));
+            if(!String.IsNullOrWhiteSpace(_targetFile))
+                if (!Directory.Exists(Path.GetDirectoryName(_targetFile)))
+                    Directory.CreateDirectory(Path.GetDirectoryName(_targetFile)!);
         }
     }
 

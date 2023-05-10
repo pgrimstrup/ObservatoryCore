@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Observatory.Framework;
 using Observatory.Framework.Files.Journal;
 
 namespace Observatory.Bridge.Events
@@ -16,7 +17,10 @@ namespace Observatory.Bridge.Events
                 var log = new BridgeLog(journal);
                 log.TitleSsml.Append("Science Station");
 
-                log.DetailSsml.Append($"Sensors are picking up {journal.USSType_Localised} signal Commander. Threat level {journal.ThreatLevel}.");
+                log.DetailSsml.Append($"Sensors are picking up {journal.USSType_Localised} signal")
+                    .AppendEmphasis("Commander.", EmphasisType.Moderate)
+                    .Append($"Threat level {journal.ThreatLevel}.");
+
                 var minutes = (int)Math.Truncate(journal.TimeRemaining) / 60;
                 var seconds = (int)Math.Truncate(journal.TimeRemaining) % 60;
                 if (minutes > 0 || seconds > 0)

@@ -13,7 +13,8 @@ namespace Observatory.Bridge.Events
         {
             var log = new BridgeLog(journal);
             log.TitleSsml.Append("Away Team");
-            log.DetailSsml.Append($"Collected {journal.Count} units of {journal.Name_Localised}.");
+            log.DetailSsml.Append($"Collected {journal.Count} units of")
+                .AppendEmphasis(journal.Name_Localised ?? journal.Name, Framework.EmphasisType.Moderate);
 
             Bridge.Instance.LogEvent(log);
         }
