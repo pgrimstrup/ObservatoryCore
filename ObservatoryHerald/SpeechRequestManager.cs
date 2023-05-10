@@ -14,6 +14,8 @@ using Observatory.Herald.TextToSpeech;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Headers;
 using Observatory.Framework.Interfaces;
+using static System.Formats.Asn1.AsnWriter;
+using System.Text.Json.Serialization;
 
 namespace Observatory.Herald
 {
@@ -76,9 +78,14 @@ namespace Observatory.Herald
             {
                 try
                 {
+                    // Always grab text-to-speech as WAV file (PCM)
+                    // Google's conversion to Ogg Opus is really bad, almost as bad as MP3. So I'm going
+                    // to avoid using MP3 and OGG from Google and simply use WAV. The NAudio encoder encodes
+                    // to Ogg Opus really well, so we will do it ourselves.
                     string waveFilename = Path.ChangeExtension(audioFilename, ".wav");
                     if (await _speech.GetTextToSpeechAsync(args, speech, waveFilename))
                     {
+                        // Convert to Ogg Opus to reduce size, keeping quality pretty good.
                         var opusFilename = _player.ConvertWavToOpus(waveFilename);
                         File.Delete(waveFilename);
 
@@ -88,6 +95,7 @@ namespace Observatory.Herald
                 catch(Exception ex)
                 {
                     _logger.LogError(ex, "while processing text-to-speech");
+                    return null;
                 }
             }
 
@@ -152,6 +160,19 @@ namespace Observatory.Herald
             }
         }
 
+        private List<FileInfo> GetCacheFiles()
+        {
+            var cacheFiles = cacheLocation.GetFiles("*.mp3")
+                .Union(cacheLocation.GetFiles("*.ogg"))
+                .Union(cacheLocation.GetFiles("*.opus"))
+                .Union(cacheLocation.GetFiles("*.wav"))
+                .ToList();
+
+            // Remove all files with a period at the start of their name
+            cacheFiles.RemoveAll(f => f.Name.StartsWith("."));
+
+            return cacheFiles;
+        }
 
         private void ReadCache()
         {
@@ -176,41 +197,42 @@ namespace Observatory.Herald
             }
 
             // Re-index orphaned files in event of corrupted or lost index.
-            var cacheFiles = cacheLocation.GetFiles("*.mp3")
-                .Union(cacheLocation.GetFiles("*.wav"));
+            var cacheFiles = GetCacheFiles();
             foreach (var file in cacheFiles.Where(file => !cacheIndex.ContainsKey(file.Name)))
             {
-                cacheIndex.TryAdd(file.Name, new(file.CreationTime, 0));
+                // Assume orphaned files were last used at their creation time
+                cacheIndex.TryAdd(file.Name, new(file.CreationTime, file.CreationTime, 0));
             };
         }
 
         private void UpdateAndPruneCache(FileInfo currentFile)
         {
-            var cacheFiles = cacheLocation.GetFiles("*.mp3")
-                .Union(cacheLocation.GetFiles("*.wav"));
-            if (cacheIndex.ContainsKey(currentFile.Name))
+            var cacheFiles = GetCacheFiles();
+
+            if (cacheIndex.TryGetValue(currentFile.Name, out var data))
             {
-                cacheIndex[currentFile.Name].HitCount++;
+                data.HitCount++;
+                data.LastUsed = DateTime.Now;
             }
             else
             {
-                cacheIndex.TryAdd(currentFile.Name, new(DateTime.UtcNow, 1));
+                cacheIndex.TryAdd(currentFile.Name, new(DateTime.Now, DateTime.Now, 1));
             }
 
-            var indexedCacheSize = cacheFiles
-                .Where(f => cacheIndex.ContainsKey(f.Name))
-                .Sum(f => f.Length);
-
+            var indexedCacheSize = cacheFiles.Sum(f => f.Length);
             while (indexedCacheSize > cacheSize * 1024 * 1024)
             {
                 var staleFile = (from file in cacheIndex
-                                 orderby file.Value.HitCount, file.Value.Created
+                                 orderby file.Value.Age descending, file.Value.HitCount
                                  select file.Key).First();
 
                 if (staleFile == currentFile.Name)
                     break;
 
                 cacheIndex.TryRemove(staleFile, out _);
+                indexedCacheSize -= staleFile.Length;
+                if(File.Exists(staleFile))
+                    File.Delete(staleFile);
             }
         }
 
@@ -228,7 +250,7 @@ namespace Observatory.Herald
             // if we're still waiting something else is locking the file, just give up.
             if (stopwatch.ElapsedMilliseconds < 1000)
             {
-                File.WriteAllText(CacheIndexFile, JsonSerializer.Serialize(cacheIndex));
+                File.WriteAllText(CacheIndexFile, JsonSerializer.Serialize(cacheIndex, new JsonSerializerOptions { WriteIndented = true}));
             }
 
             stopwatch.Stop();
@@ -248,15 +270,35 @@ namespace Observatory.Herald
             }
         }
 
+        internal void ClearCache()
+        {
+            foreach (var file in GetCacheFiles())
+                file.Delete();
+
+            cacheIndex.Clear();
+            CommitCache();
+        }
+
         private class CacheData
         {
-            public CacheData(DateTime Created, int HitCount)
+            public CacheData()
+            {
+
+            }
+
+            public CacheData(DateTime Created, DateTime LastUsed, int HitCount)
             {
                 this.Created = Created;
+                this.LastUsed = LastUsed;
                 this.HitCount = HitCount;
             }
+
             public DateTime Created { get; set; }
+            public DateTime LastUsed { get; set; }
             public int HitCount { get; set; }
+
+            [JsonIgnore]
+            public int Age => (int)DateTime.Today.Subtract(LastUsed.Date).TotalDays;
         }
     }
 }

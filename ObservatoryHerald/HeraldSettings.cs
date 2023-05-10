@@ -6,6 +6,8 @@ namespace Observatory.Herald
 {
     public class HeraldSettings 
     {
+        [SettingDisplayName("Enabled")]
+        public bool Enabled { get; set; }
 
         [SettingDisplayName("API Key Override")]
         public string APIKeyOverride { get; set; }
@@ -30,14 +32,17 @@ namespace Observatory.Herald
         [SettingNumericUseSlider, SettingNumericBounds(0,100,1)]
         public int Volume { get; set;}
 
+        [SettingDisplayName("Cache Size (MB)")]
+        public int CacheSize { get; set; }
+
         [System.Text.Json.Serialization.JsonIgnore]
         [SettingPluginAction(nameof(HeraldNotifier.TestVoiceSettings))]
+        [SettingDisplayName("Test Voice")]
         public Action Test { get; internal set; }
 
-        [SettingDisplayName("Enabled")]
-        public bool Enabled { get; set; }
-
-        [SettingDisplayName("Cache Size (MB): ")]
-        public int CacheSize { get; set; }
+        [System.Text.Json.Serialization.JsonIgnore]
+        [SettingPluginAction(nameof(HeraldNotifier.ClearVoiceCache))]
+        [SettingDisplayName("Clear Cache")]
+        public Action Clear { get; internal set; }
     }
 }

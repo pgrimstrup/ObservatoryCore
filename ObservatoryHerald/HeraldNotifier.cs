@@ -175,6 +175,12 @@ namespace Observatory.Herald
             }
         }
 
+        public async Task ClearVoiceCache(object _)
+        {
+            _speech.ClearCache();
+            await Task.CompletedTask;
+        }
+
         public void OnNotificationEvent(NotificationArgs args)
         {
             if (_heraldSettings.Enabled)
