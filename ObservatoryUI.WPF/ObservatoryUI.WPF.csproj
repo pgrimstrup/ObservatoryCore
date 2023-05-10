@@ -9,11 +9,18 @@
     <Title>Elite Observatory</Title>
     <Product>Elite Observatory</Product>
     <PlatformTarget>x86</PlatformTarget>
+    <ApplicationIcon>graphics-design.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="Services\InbuiltVisualNotifier.cs" />
     <Compile Remove="Services\InbuiltVoiceNotifier.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="graphics-design.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

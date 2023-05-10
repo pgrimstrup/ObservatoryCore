@@ -83,6 +83,7 @@ namespace Observatory.Herald.TextToSpeech
         AUDIO_ENCODING_UNSPECIFIED,
         LINEAR16,
         MP3,
+        MP3_64_KBPS,
         OGG_OPUS,
         MULAW,
         ALAW

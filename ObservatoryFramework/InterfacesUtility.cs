@@ -86,6 +86,8 @@ namespace Observatory.Framework.Interfaces
         Task StopAsync();
         bool IsPlaying { get; }
         string FileName { get; }
+
+        string ConvertWavToOpus(string sourceFile);
     }
 
     public class VoiceMessage

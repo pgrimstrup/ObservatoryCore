@@ -20,7 +20,6 @@ namespace Observatory.Herald
         Lazy<List<Voice>> _voices;
         Lazy<Dictionary<string, object>> _voiceRates;
         Lazy<Dictionary<string, object>> _voiceStyles;
-        Lazy<Dictionary<string, object>> _audioEncodings;
 
         static HeraldNotifier()
         {
@@ -29,7 +28,6 @@ namespace Observatory.Herald
                     SelectedVoice = "English (Australia) A, Female",
                     SelectedRate = "Default",
                     SelectedStyle = "Standard",
-                    AudioEncoding = ".wav",
                     Volume = 75,
                     Enabled = false,
                     ApiEndpoint = GoogleCloud.ApiEndPoint,
@@ -64,15 +62,6 @@ namespace Observatory.Herald
 
                 return result;
             });
-            _audioEncodings = new Lazy<Dictionary<string, object>>(() => {
-                return new Dictionary<string, object>
-                {
-                    {".wav", ".wav" },
-                    {".mp3", ".mp3" },
-                    {".ogg", ".ogg" }
-                };
-            });
-
         }
 
         private static HeraldSettings DefaultSettings => _defaultSettings.Value;
@@ -124,7 +113,8 @@ namespace Observatory.Herald
                 _heraldSettings,
                 _core.HttpClient,
                 Path.Combine(_core.PluginStorageFolder, "HeraldCache"),
-                _logger);
+                _logger,
+                _player);
 
             _heraldQueue = new HeraldQueue(_speech, _logger, _player);
             await Task.CompletedTask;
@@ -162,11 +152,6 @@ namespace Observatory.Herald
             return _voiceRates.Value;
         }
 
-        public Dictionary<string, object> GetAudioEncodings()
-        {
-            return _audioEncodings.Value;
-        }
-
         public async Task TestVoiceSettings(object testSettings)
         {
             if (testSettings is HeraldSettings settings)
@@ -174,9 +159,8 @@ namespace Observatory.Herald
                 var rate = (string)_voiceRates.Value[settings.SelectedRate];
                 var style = (string)_voiceStyles.Value[settings.SelectedStyle];
                 var voice = _voices.Value.FirstOrDefault(v => v.Description == settings.SelectedVoice && v.Category == style);
-                var encoding = (string)_audioEncodings.Value[settings.AudioEncoding];
 
-                Debug.WriteLine($"Testing Herald Voice settings using {voice.Name} at {rate} rate encoded as {encoding}");
+                Debug.WriteLine($"Testing Herald Voice settings using {voice.Name} at {rate}");
 
                 var notificationEventArgs = new NotificationArgs {
                     Suppression = NotificationSuppression.Title,
@@ -184,8 +168,7 @@ namespace Observatory.Herald
                     VoiceName = voice?.Name,
                     VoiceRate = rate,
                     VoiceStyle = style,
-                    VoiceVolume = settings.Volume,
-                    AudioEncoding = encoding
+                    VoiceVolume = settings.Volume
                 };
 
                 _heraldQueue.Enqueue(notificationEventArgs);
@@ -199,12 +182,10 @@ namespace Observatory.Herald
                 var rate = (string)_voiceRates.Value[_heraldSettings.SelectedRate];
                 var style = (string)_voiceStyles.Value[_heraldSettings.SelectedStyle];
                 var voice = _voices.Value.FirstOrDefault(v => v.Description == _heraldSettings.SelectedVoice && v.Category == style);
-                var encoding = (string)_audioEncodings.Value[_heraldSettings.AudioEncoding];
 
                 args.VoiceName ??= voice?.Name;
                 args.VoiceRate ??= rate;
                 args.VoiceStyle ??= style;
-                args.AudioEncoding ??= encoding;
                 args.VoiceVolume ??= _heraldSettings.Volume;
 
                 _heraldQueue.Enqueue(args);
@@ -224,12 +205,10 @@ namespace Observatory.Herald
                 var rate = (string)_voiceRates.Value[_heraldSettings.SelectedRate];
                 var style = (string)_voiceStyles.Value[_heraldSettings.SelectedStyle];
                 var voice = _voices.Value.FirstOrDefault(v => v.Description == _heraldSettings.SelectedVoice && v.Category == style);
-                var encoding = (string)_audioEncodings.Value[_heraldSettings.AudioEncoding];
 
                 args.VoiceName ??= voice?.Name;
                 args.VoiceRate ??= rate;
                 args.VoiceStyle ??= style;
-                args.AudioEncoding ??= encoding;
                 args.VoiceVolume ??= _heraldSettings.Volume;
 
                 _heraldQueue.UpdateNotification(id, args);

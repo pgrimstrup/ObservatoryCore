@@ -30,10 +30,6 @@ namespace Observatory.Herald
         [SettingNumericUseSlider, SettingNumericBounds(0,100,1)]
         public int Volume { get; set;}
 
-        [SettingDisplayName("Audio Encoding")]
-        [SettingGetItemsMethod(nameof(HeraldNotifier.GetAudioEncodings))]
-        public string AudioEncoding { get; set; }
-
         [System.Text.Json.Serialization.JsonIgnore]
         [SettingPluginAction(nameof(HeraldNotifier.TestVoiceSettings))]
         public Action Test { get; internal set; }

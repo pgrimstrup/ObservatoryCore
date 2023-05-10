@@ -60,7 +60,6 @@ namespace Observatory.Framework
         public string? VoiceStyle;
         public string? VoiceRate;
         public int? VoiceVolume;
-        public string? AudioEncoding; // .wav, .mp3 or .ogg
         public Guid Id;
         public bool IsCancelled;
 

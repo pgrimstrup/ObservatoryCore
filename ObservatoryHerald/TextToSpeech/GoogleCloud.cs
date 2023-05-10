@@ -4,25 +4,28 @@ using System.Linq;
 using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Observatory.Framework;
 
 namespace Observatory.Herald.TextToSpeech
 {
     internal class GoogleCloud : ITextToSpeechService
     {
-        public const string ApiEndPoint = "https://texttospeech.googleapis.com/v1/";
+        public const string ApiEndPoint = "https://texttospeech.googleapis.com/v1beta1/";
         public const string ApiGetVoices = "voices";
         public const string ApiTextToSpeech = "text:synthesize";
 
         HttpClient _http;
         string _apiKey;
+        ILogger _logger;
 
         string ApiKey => _apiKey ?? throw new Exception("Google Text-to-Speech API Key has not been initialized");
 
-        public GoogleCloud(HttpClient http, string apiKey)
+        public GoogleCloud(HttpClient http, string apiKey, ILogger logger)
         {
             _http = http;
             _apiKey = apiKey;
+            _logger = logger;
         }
 
         public async Task<bool> GetTextToSpeechAsync(NotificationArgs args, string speech, string filename)
@@ -30,20 +33,19 @@ namespace Observatory.Herald.TextToSpeech
             GoogleTextToSpeechRequest request = new GoogleTextToSpeechRequest();
             request.Voice.Name = args.VoiceName;
             request.Voice.LanguageCode = args.VoiceName.Substring(0, 5);
-            request.AudioConfig.AudioEncoding = args.AudioEncoding switch {
-                ".wav" => GoogleAudioEncoding.LINEAR16,
-                ".ogg" => GoogleAudioEncoding.OGG_OPUS,
-                ".mp3" => GoogleAudioEncoding.MP3,
-                _ => GoogleAudioEncoding.LINEAR16
-            };
+            request.AudioConfig.AudioEncoding = GoogleAudioEncoding.LINEAR16;
+
             if (float.TryParse(args.VoiceRate, out var rate))
                 request.AudioConfig.SpeakingRate = rate;
+            else
+                request.AudioConfig.SpeakingRate = 1;
 
             if (speech.StartsWith("<speak"))
                 request.Input.Ssml = speech;
             else
                 request.Input.Text = speech;
 
+            _logger.LogInformation($"Google Text-to-Speech Request: Voice={request.Voice.Name}, Rate={request.AudioConfig.SpeakingRate}, Encoding={request.AudioConfig.AudioEncoding}");
             var response = await _http.PostAsJsonAsync($"{ApiEndPoint}{ApiTextToSpeech}?key={ApiKey}", request);
 
             response.EnsureSuccessStatusCode();

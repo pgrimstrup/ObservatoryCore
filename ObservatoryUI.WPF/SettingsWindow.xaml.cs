@@ -66,6 +66,9 @@ namespace ObservatoryUI.WPF
 
         private async void OnTestClicked(object sender, RoutedEventArgs e)
         {
+            bool wasEnabled = _settings.InbuiltVoiceEnabled;
+            _settings.InbuiltVoiceEnabled = true;
+
             NotificationArgs args = new NotificationArgs {
                 Detail = $"This is a test of the Inbuilt Voice Notification system, using the {Model.VoiceName} voice.",
                 Rendering = NotificationRendering.NativeVocal,
@@ -74,6 +77,8 @@ namespace ObservatoryUI.WPF
                 VoiceRate = Model.VoiceRate
             };
             await _core.SendNotificationAsync(args);
+
+            _settings.InbuiltVoiceEnabled = wasEnabled;
         }
 
         private void CancelClicked(object sender, RoutedEventArgs e)

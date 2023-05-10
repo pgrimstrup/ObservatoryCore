@@ -21,23 +21,25 @@ namespace Observatory.Herald
     {
         private DirectoryInfo cacheLocation;
         private int cacheSize;
-        private ILogger ErrorLogger;
+        private ILogger _logger;
         private ConcurrentDictionary<string, CacheData> cacheIndex;
         private List<Voice> voices;
         private string initialVoice;
 
         ITextToSpeechService _speech;
+        IAudioPlayback _player;
 
         string CacheIndexFile => Path.Combine(cacheLocation.FullName, "CacheIndex.json");
 
 
-        internal SpeechRequestManager(IAppSettings appSettings, HeraldSettings settings, HttpClient httpClient, string cacheFolder, ILogger errorLogger)
+        internal SpeechRequestManager(IAppSettings appSettings, HeraldSettings settings, HttpClient httpClient, string cacheFolder, ILogger logger, IAudioPlayback player)
         {
             string apiKey = appSettings.GoogleTextToSpeechApiKey;
             if(!String.IsNullOrWhiteSpace(settings.APIKeyOverride))
                 apiKey = settings.APIKeyOverride;
 
-            _speech = new GoogleCloud(httpClient, apiKey);
+            _speech = new GoogleCloud(httpClient, apiKey, logger);
+            _player = player;
 
             cacheSize = Math.Max(settings.CacheSize, 1);
             cacheLocation = new DirectoryInfo(cacheFolder);
@@ -45,7 +47,7 @@ namespace Observatory.Herald
                 cacheLocation.Create();
 
             ReadCache();
-            ErrorLogger = errorLogger;
+            _logger = logger;
 
             initialVoice = settings.SelectedVoice;
         }
@@ -57,7 +59,7 @@ namespace Observatory.Herald
             // Create a string based on the SSML and provided parameters. Calculate the hash based on this.
             var uniqueness = $"{speech}|{args.VoiceName}|{args.VoiceRate}|{args.VoiceVolume}|{args.VoiceStyle}";
             var hash = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(uniqueness))).Replace("-", string.Empty);
-            var audioFilename = Path.Combine(cacheLocation.FullName, hash + args.AudioEncoding);
+            var audioFilename = Path.Combine(cacheLocation.FullName, hash + ".opus");
 
             FileInfo audioFileInfo = new FileInfo(audioFilename);
             if (audioFileInfo.Exists)
@@ -74,12 +76,18 @@ namespace Observatory.Herald
             {
                 try
                 {
-                    if (await _speech.GetTextToSpeechAsync(args, speech, audioFilename))
-                        audioFileInfo = new FileInfo(audioFilename);
+                    string waveFilename = Path.ChangeExtension(audioFilename, ".wav");
+                    if (await _speech.GetTextToSpeechAsync(args, speech, waveFilename))
+                    {
+                        var opusFilename = _player.ConvertWavToOpus(waveFilename);
+                        File.Delete(waveFilename);
+
+                        audioFileInfo = new FileInfo(opusFilename);
+                    }
                 }
                 catch(Exception ex)
                 {
-                    ErrorLogger.LogError(ex, "while processing text-to-speech");
+                    _logger.LogError(ex, "while processing text-to-speech");
                 }
             }
 
@@ -135,7 +143,7 @@ namespace Observatory.Herald
             }
             catch (Exception ex)
             {
-                ErrorLogger.LogError(ex, "When retrieving a list of available voices from the server");
+                _logger.LogError(ex, "When retrieving a list of available voices from the server");
 
                 // Return the last known voice
                 var result = new List<Voice>();
@@ -159,7 +167,7 @@ namespace Observatory.Herald
                 {
                     Console.WriteLine(ex.Message);
                     cacheIndex = new();
-                    ErrorLogger.LogError(ex, "deserializing CacheIndex.json");
+                    _logger.LogError(ex, "deserializing CacheIndex.json");
                 }
             }
             else

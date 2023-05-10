@@ -52,9 +52,6 @@ namespace Observatory.Herald
             if (!String.IsNullOrEmpty(notification.DetailSsml) && !notification.DetailSsml.StartsWith("<speak"))
                 throw new ArgumentException(nameof(notification.DetailSsml));
 
-            if (String.IsNullOrWhiteSpace(notification.AudioEncoding))
-                throw new ArgumentException(nameof(notification.AudioEncoding));
-
             notifications.Add(notification);
         }
 
@@ -190,7 +187,6 @@ namespace Observatory.Herald
                     item.VoiceStyle = notificationEventArgs.VoiceStyle;
                     item.VoiceName = notificationEventArgs.VoiceName;
                     item.VoiceVolume = notificationEventArgs.VoiceVolume;
-                    item.AudioEncoding = notificationEventArgs.AudioEncoding;
                     item.IsCancelled = notificationEventArgs.IsCancelled;
                 }
             }
