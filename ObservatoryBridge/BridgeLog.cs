@@ -11,7 +11,6 @@ namespace Observatory.Bridge
 {
     internal class BridgeLog
     {
-        internal readonly Bridge Bridge;
         internal bool IsSpoken = true;
         internal bool IsText = true;
         internal bool IsTitleSpoken = false;
@@ -28,22 +27,21 @@ namespace Observatory.Bridge
 
         public string Detail => DetailSsml.ToString();
 
-        public BridgeLog(Bridge bridge, JournalBase journal)
-            : this(bridge)
+        public BridgeLog(JournalBase journal) : this()
         {
             EventTimeUTC = journal.TimestampDateTime;
         }
-        public BridgeLog(Bridge bridge)
+
+        public BridgeLog()
         {
-            Bridge = bridge;
             EventTimeUTC = DateTime.UtcNow;
             TitleSsml = new SsmlBuilder {
-                CommaBreak = bridge.Options.SpokenCommaDelay,
-                PeriodBreak = bridge.Options.SpokenPeriodDelay
+                CommaBreak = Bridge.Instance.Settings.SpokenCommaDelay,
+                PeriodBreak = Bridge.Instance.Settings.SpokenPeriodDelay
             };
             DetailSsml = new SsmlBuilder {
-                CommaBreak = bridge.Options.SpokenCommaDelay,
-                PeriodBreak = bridge.Options.SpokenPeriodDelay
+                CommaBreak = Bridge.Instance.Settings.SpokenCommaDelay,
+                PeriodBreak = Bridge.Instance.Settings.SpokenPeriodDelay
             };
         }
 

@@ -40,7 +40,7 @@ namespace Observatory.Bridge
         public Action Test => () => {
             try
             {
-                BridgeLog log = new BridgeLog(Bridge.Instance);
+                BridgeLog log = new BridgeLog();
                 log.IsTitleSpoken = AlwaysSpeakTitles;
                 log.TitleSsml.Append("Testing Vocalizer");
                 log.DetailSsml.Append("Bridge crew standing by,");
