@@ -59,6 +59,7 @@ namespace Observatory.Bridge.Events
             {
                 CheckShipFuelLevel(newStatus);
                 CheckDestination(newStatus);
+                CheckJumpDestination(newStatus);
             }
 
             if (newStatus.Flags.HasFlag(StatusFlags.SRV))
@@ -73,7 +74,8 @@ namespace Observatory.Bridge.Events
             if (ship.Status2 != newStatus.Flags2)
                 LogInfo($"StatusChanged: Flags2: {ship.Status2} -> {newStatus.Flags2}");
 
-            if (HasShipStatusChanged(StatusFlags.Masslock, ship, newStatus))
+            // Seems to be a bug, we get the masslock flag when entering FSDJump
+            if (HasShipStatusChanged(StatusFlags.Masslock, ship, newStatus) && !newStatus.Flags.HasFlag(StatusFlags.FSDJump))
                 DoMasslock(newStatus);
 
             if (HasShipStatusChanged(StatusFlags.LandingGear, ship, newStatus))
@@ -102,7 +104,7 @@ namespace Observatory.Bridge.Events
 
                     log.DetailSsml
                         .Append("Course laid in to")
-                        .AppendBodyName(status.Destination.Name);
+                        .AppendBodyName(GetBodyName(status.Destination.Name));
 
                     Bridge.Instance.LogEvent(log);
                 }
@@ -110,6 +112,30 @@ namespace Observatory.Bridge.Events
 
             _lastSystemId = status.Destination.System;
             _lastBodyId = status.Destination.Body;
+        }
+
+        private void CheckJumpDestination(Status status)
+        {
+            if(status.Flags.HasFlag(StatusFlags.FSDCharging) && status.Flags2.HasFlag(StatusFlags2.FsdHyperdriveCharging))
+            {
+                if(Bridge.Instance.CurrentSystem.NextDestinationNotify <= DateTime.Now && !String.IsNullOrWhiteSpace(Bridge.Instance.CurrentSystem.NextSystemName))
+                {
+                    var log = new BridgeLog(status);
+                    log.SpokenOnly();
+
+                    var scoopable = ScoopableStars.Contains(Bridge.Instance.CurrentSystem.NextStarClass) ? ", scoopable" : ", non-scoopable";
+                    log.DetailSsml
+                        .Append("Preparing to jump to")
+                        .AppendBodyName(Bridge.Instance.CurrentSystem.NextSystemName)
+                        .Append($". Destination star is type-{Bridge.Instance.CurrentSystem.NextStarClass}{scoopable}.");
+
+                    if (Bridge.Instance.CurrentSystem.RemainingJumpsInRoute > 0 && (Bridge.Instance.CurrentSystem.RemainingJumpsInRoute < 5 || (Bridge.Instance.CurrentSystem.RemainingJumpsInRoute % 5) == 0))
+                        log.DetailSsml.Append($"There are {Bridge.Instance.CurrentSystem.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
+
+                    Bridge.Instance.LogEvent(log);
+                    Bridge.Instance.CurrentSystem.NextDestinationNotify = DateTime.Now.AddSeconds(30); // notify in 30 seconds time
+                }
+            }
         }
 
         private void CheckSrvFuelLevel(Status status)

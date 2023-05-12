@@ -15,7 +15,7 @@ namespace Observatory.Bridge.Events
             log.TitleSsml.Append("Flight Operations");
 
             log.DetailSsml.AppendUnspoken(Emojis.Departing);
-            log.DetailSsml.Append($"Departing body")
+            log.DetailSsml.Append($"Departing")
                 .AppendBodyName(GetBodyName(journal.Body));
 
             Bridge.Instance.LogEvent(log);

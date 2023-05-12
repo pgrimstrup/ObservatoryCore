@@ -3,22 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Observatory.Framework.Files.ParameterTypes;
 
 namespace Observatory.Bridge
 {
     internal static class BridgeUtils
     {
-        public static bool IsNeutronStar(this string starType) => starType.Contains("Neutron", StringComparison.OrdinalIgnoreCase);
-        public static bool IsBlackHole(this string starType) => starType.Contains("Black Hole", StringComparison.OrdinalIgnoreCase);
-        public static bool IsWhiteDwarf(this string starType) => starType.Contains("White Dwarf", StringComparison.OrdinalIgnoreCase);
-        public static bool IsEarthlike(this string bodyType) => bodyType.Contains("Earthlike", StringComparison.OrdinalIgnoreCase);
-        public static bool IsWaterWorld(this string bodyType) => bodyType.Contains("Water World", StringComparison.OrdinalIgnoreCase);
-        public static bool IsHighMetalContent(this string bodyType) => bodyType.Contains("High Metal Content", StringComparison.OrdinalIgnoreCase);
-        public static bool IsAmmoniaWorld(this string bodyType) => bodyType.Contains("Ammonia", StringComparison.OrdinalIgnoreCase);
-        public static bool IsMetalRich(this string bodyType) => bodyType.Contains("Metal Rich", StringComparison.OrdinalIgnoreCase);
-        public static bool IsIcyBody(this string bodyType) => bodyType.Contains("Icy Body", StringComparison.OrdinalIgnoreCase);
-        public static bool IsGasGiant(this string bodyType, string surdarskyClass) => bodyType.Contains($"Class {surdarskyClass} Gas Giant", StringComparison.OrdinalIgnoreCase);
-        public static bool IsGasGiant(this string bodyType) => bodyType.Contains($"Gas Giant", StringComparison.OrdinalIgnoreCase);
+        public static bool IsNeutronStar(this string? starType) => !String.IsNullOrWhiteSpace(starType) && starType.Contains("Neutron", StringComparison.OrdinalIgnoreCase);
+        public static bool IsBlackHole(this string? starType) => !String.IsNullOrWhiteSpace(starType) && starType.Contains("Black Hole", StringComparison.OrdinalIgnoreCase);
+        public static bool IsWhiteDwarf(this string? starType) => !String.IsNullOrWhiteSpace(starType) && starType.Contains("White Dwarf", StringComparison.OrdinalIgnoreCase);
+        public static bool IsEarthlike(this string? bodyType) => !String.IsNullOrWhiteSpace(bodyType) && bodyType.Contains("Earthlike", StringComparison.OrdinalIgnoreCase);
+        public static bool IsWaterWorld(this string? bodyType) => !String.IsNullOrWhiteSpace(bodyType) && bodyType.Contains("Water World", StringComparison.OrdinalIgnoreCase);
+        public static bool IsHighMetalContent(this string? bodyType) => !String.IsNullOrWhiteSpace(bodyType) && bodyType.Contains("High Metal Content", StringComparison.OrdinalIgnoreCase);
+        public static bool IsAmmoniaWorld(this string? bodyType) => !String.IsNullOrWhiteSpace(bodyType) && bodyType.Contains("Ammonia", StringComparison.OrdinalIgnoreCase);
+        public static bool IsMetalRich(this string? bodyType) => !String.IsNullOrWhiteSpace(bodyType) && bodyType.Contains("Metal Rich", StringComparison.OrdinalIgnoreCase);
+        public static bool IsIcyBody(this string? bodyType) => !String.IsNullOrWhiteSpace(bodyType) && bodyType.Contains("Icy Body", StringComparison.OrdinalIgnoreCase);
+        public static bool IsGasGiant(this string? bodyType, string surdarskyClass) => !String.IsNullOrWhiteSpace(bodyType) && bodyType.Contains($"Class {surdarskyClass} Gas Giant", StringComparison.OrdinalIgnoreCase);
+        public static bool IsGasGiant(this string? bodyType) => !String.IsNullOrWhiteSpace(bodyType) && bodyType.Contains($"Gas Giant", StringComparison.OrdinalIgnoreCase);
 
         public static string ReplaceRomanNumerals(this string text)
         {

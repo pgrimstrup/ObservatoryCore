@@ -12,7 +12,7 @@ namespace Observatory.Bridge.Events
         public void HandleEvent(SAASignalsFound journal)
         {
             var log = new BridgeLog(journal);
-            log.TitleSsml.Append("Body").AppendBodyName(GetBodyName(journal.BodyName));
+            log.TitleSsml.AppendBodyName(GetBodyName(journal.BodyName));
 
             List<string> signals = new List<string>();
             bool hasGeo = false;
@@ -37,11 +37,11 @@ namespace Observatory.Bridge.Events
 
             if (signals.Count <= 2)
                 log.DetailSsml
-                    .Append($"Sensors are picking up {String.Join(" and ", signals)} {plural} on body")
+                    .Append($"Sensors are picking up {String.Join(" and ", signals)} {plural} on")
                     .AppendBodyName(GetBodyName(journal.BodyName));
             else
                 log.DetailSsml
-                    .Append($"Sensors are picking up {String.Join(", ", signals.Take(signals.Count - 1))} and {signals.Last()} {plural} on body")
+                    .Append($"Sensors are picking up {String.Join(", ", signals.Take(signals.Count - 1))} and {signals.Last()} {plural} on")
                     .AppendBodyName(GetBodyName(journal.BodyName));
 
             Bridge.Instance.LogEvent(log);

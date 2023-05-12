@@ -13,17 +13,16 @@ namespace Observatory.Bridge.Events
     {
         public void HandleEvent(FSDTarget journal)
         {
+            LogInfo($"FSDTarget: {journal.Event} to {journal.Name} ({journal.StarClass})");
+            Bridge.Instance.CurrentSystem.Assign(journal);
+
             // This event is received mid-jump when auto-plotting to the next star system in the route
             if (Bridge.Instance.CurrentShip.Status.HasFlag(Framework.Files.ParameterTypes.StatusFlags.FSDJump))
-            {
-                Bridge.Instance.CurrentSystem.CoursePlotted = "";
                 return;
-            }
 
-            if (!String.IsNullOrEmpty(journal.Name) && journal.Name != Bridge.Instance.CurrentSystem.CoursePlotted)
+            // Manually selected the next destination system
+            if (!String.IsNullOrEmpty(journal.Name))
             {
-                LogInfo($"FSDTarget: {journal.Event} to {journal.Name} ({journal.StarClass})");
-
                 var log = new BridgeLog(journal);
                 log.TitleSsml.Append("Flight Operations");
 
@@ -31,7 +30,10 @@ namespace Observatory.Bridge.Events
                 log.DetailSsml
                     .Append("Course laid in to")
                     .AppendBodyName(journal.Name)
-                    .Append($". Destination star is type {journal.StarClass}{scoopable}.");
+                    .Append($". Destination star is type-{journal.StarClass}{scoopable}.");
+
+                if (Bridge.Instance.CurrentSystem.RemainingJumpsInRoute > 0 && (Bridge.Instance.CurrentSystem.RemainingJumpsInRoute < 5 || (Bridge.Instance.CurrentSystem.RemainingJumpsInRoute % 5) == 0))
+                    log.DetailSsml.Append($"There are {Bridge.Instance.CurrentSystem.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
 
                 if (journal.StarClass.IsNeutronStar() || journal.StarClass.IsWhiteDwarf())
                 {
@@ -43,7 +45,7 @@ namespace Observatory.Bridge.Events
                 }
 
                 Bridge.Instance.LogEvent(log);
-                Bridge.Instance.CurrentSystem.CoursePlotted = journal.Name;
+                Bridge.Instance.CurrentSystem.NextDestinationNotify = DateTime.Now.AddSeconds(30);
             }
         }
     }

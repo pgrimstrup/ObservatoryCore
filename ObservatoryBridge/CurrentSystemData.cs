@@ -10,18 +10,29 @@ namespace Observatory.Bridge
     internal class CurrentSystemData
     {
         public string SystemName { get; set; } = "Unknown";
-        public string CoursePlotted { get; set; } = "";
-        public bool ScanComplete { get; set; }
+        public int ScanPercent { get; set; }
+
+        public string NextSystemName { get; set; } = "";
+        public string NextStarClass { get; set; } = "";
+        public int RemainingJumpsInRoute { get; set; }
+        public DateTime NextDestinationNotify { get; set; }
 
         public Dictionary<string, Scan> ScannedBodies { get; } = new Dictionary<string, Scan>();
 
         public Dictionary<string, FSSBodySignals> BodySignals { get; } = new Dictionary<string, FSSBodySignals>();
 
+        public void Assign(FSDTarget target)
+        {
+            RemainingJumpsInRoute = target.RemainingJumpsInRoute;
+            NextSystemName = target.Name;
+            NextStarClass = target.StarClass;
+            NextDestinationNotify = DateTime.MinValue; // immediately when needed
+        }
+
         public void Assign(FSDJump jump)
         {
             SystemName = jump.StarSystem;
-            CoursePlotted = "";
-            ScanComplete = false;
+            ScanPercent = 0;
             ScannedBodies.Clear();
             BodySignals.Clear();
         }

@@ -23,7 +23,7 @@ namespace Observatory.Bridge.Events
             if (Bridge.Instance.CurrentShip.Status.HasFlag(Framework.Files.ParameterTypes.StatusFlags.MainShip))
             {
                 log.DetailSsml
-                   .Append($"Liftoff complete from body")
+                   .Append($"Liftoff complete from")
                     .AppendBodyName(GetBodyName(journal.Body));
             }
 

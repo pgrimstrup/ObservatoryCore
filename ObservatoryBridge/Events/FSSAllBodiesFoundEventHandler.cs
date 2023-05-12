@@ -12,7 +12,7 @@ namespace Observatory.Bridge.Events
     {
         public void HandleEvent(FSSAllBodiesFound journal)
         {
-            if (Bridge.Instance.CurrentSystem.ScanComplete)
+            if (Bridge.Instance.CurrentSystem.ScanPercent == 100)
                 return;
 
             var log = new BridgeLog(journal);
@@ -22,7 +22,7 @@ namespace Observatory.Bridge.Events
                 .Append("We've found all bodies in this system.");
 
             Bridge.Instance.LogEvent(log);
-            Bridge.Instance.CurrentSystem.ScanComplete = true;
+            Bridge.Instance.CurrentSystem.ScanPercent = 100;
         }
     }
 }

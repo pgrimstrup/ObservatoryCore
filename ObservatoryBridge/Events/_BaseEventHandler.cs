@@ -24,9 +24,9 @@ namespace Observatory.Bridge.Events
 
             // Single star system, primary star name is the same as the system name
             if (name.Equals(currentSystem.SystemName, StringComparison.OrdinalIgnoreCase))
-                return "A";
+                return "Star A";
 
-            return name.Substring(currentSystem.SystemName.Length).Trim();
+            return "Body " + name.Substring(currentSystem.SystemName.Length).Trim();
         }
 
         protected void LogInfo(string message)

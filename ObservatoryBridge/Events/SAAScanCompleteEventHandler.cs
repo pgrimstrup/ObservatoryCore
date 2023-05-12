@@ -12,9 +12,11 @@ namespace Observatory.Bridge.Events
     {
         public void HandleEvent(SAAScanComplete journal)
         {
+            LogInfo($"{journal.Event}: {journal.BodyName}");
+
             var log = new BridgeLog(journal);
             log.IsTitleSpoken = true;
-            log.TitleSsml.Append("Body").AppendBodyName(GetBodyName(journal.BodyName));
+            log.TitleSsml.AppendBodyName(GetBodyName(journal.BodyName));
 
             log.DetailSsml.AppendUnspoken(Emojis.Probe);
             if (journal.ProbesUsed <= journal.EfficiencyTarget)
@@ -27,12 +29,12 @@ namespace Observatory.Bridge.Events
             if (journal.Mappers == null || journal.Mappers.Count == 0)
             {
                 log.DetailSsml.AppendEmphasis("Commander,", EmphasisType.Moderate);
-                log.DetailSsml.Append($"we are the first to map body");
+                log.DetailSsml.Append($"we are the first to map");
                 log.DetailSsml.AppendBodyName(GetBodyName(journal.BodyName));
             }
             else
             {
-                log.DetailSsml.Append("Body").AppendBodyName(GetBodyName(journal.BodyName)).Append("is");
+                log.DetailSsml.AppendBodyName(GetBodyName(journal.BodyName)).Append("is");
             }
 
             if (Bridge.Instance.CurrentSystem.ScannedBodies.TryGetValue(journal.BodyName, out Scan? scan))

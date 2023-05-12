@@ -21,13 +21,15 @@ namespace Observatory.Bridge.Events
 
             if (!String.IsNullOrEmpty(journal.StarType))
             {
+                LogInfo($"{journal.Event}: {journal.BodyName}, StarType {journal.StarType}");
+
                 var log = new BridgeLog(journal);
                 log.IsTitleSpoken = true;
 
                 if (Int32.TryParse(GetBodyName(journal.BodyName), out int bodyNumber))
-                    log.TitleSsml.Append("Body").AppendBodyName(GetBodyName(journal.BodyName));
+                    log.TitleSsml.AppendBodyName(GetBodyName(journal.BodyName));
                 else
-                    log.TitleSsml.Append("Star").AppendBodyName(GetBodyName(journal.BodyName));
+                    log.TitleSsml.AppendBodyName(GetBodyName(journal.BodyName));
 
                 var scoopable = ScoopableStars.Contains(journal.StarType.Substring(0, 1)) ? ", scoopable" : ", non-scoopable";
 
@@ -57,9 +59,11 @@ namespace Observatory.Bridge.Events
             }
             else if (!String.IsNullOrEmpty(journal.PlanetClass)) // ignore belt clusters
             {
+                LogInfo($"{journal.Event}: {journal.BodyName} is PlanetClass {journal.PlanetClass}");
+
                 var log = new BridgeLog(journal);
                 log.IsTitleSpoken = true;
-                log.TitleSsml.Append("Body").AppendBodyName(GetBodyName(journal.BodyName));
+                log.TitleSsml.AppendBodyName(GetBodyName(journal.BodyName));
 
                 if (journal.PlanetClass.IsEarthlike())
                     log.DetailSsml.AppendUnspoken(Emojis.Earthlike);

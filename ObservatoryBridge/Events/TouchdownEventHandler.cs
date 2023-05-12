@@ -30,7 +30,7 @@ namespace Observatory.Bridge.Events
                 else
                 {
                     log.DetailSsml
-                        .Append($"Touchdown on body")
+                        .Append($"Touchdown on")
                         .AppendBodyName(GetBodyName(journal.Body))
                         .Append("completed")
                         .AppendEmphasis("Commander", EmphasisType.Moderate);

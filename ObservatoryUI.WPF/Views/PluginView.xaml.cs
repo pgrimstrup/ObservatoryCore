@@ -58,10 +58,13 @@ namespace ObservatoryUI.WPF.Views
             // Calculate Width for column when ColumnSizer is SizeToCells.        
             protected override double CalculateCellWidth(GridColumn column, bool setWidth = true)
             {
-                double width = base.CalculateCellWidth(column, setWidth);
-                if (width < column.MinimumWidth)
+                double width = base.CalculateCellWidth(column, setWidth) + column.Padding.Left + column.Padding.Right + 10;
+                if (column.MaximumWidth != double.NaN && width > column.MaximumWidth)
+                    width = column.MaximumWidth;
+                if (column.MinimumWidth != double.NaN && width < column.MinimumWidth)
                     width = column.MinimumWidth;
-                return width + 8;
+
+                return width;
             }
 
             //Calculate Width for the column when ColumnSizer is SizeToHeader
@@ -69,14 +72,19 @@ namespace ObservatoryUI.WPF.Views
             {
                 base.FontSize = base.DataGrid.FontSize;
                 double headerWidth = base.CalculateHeaderWidth(column, setWidth);
-                if (headerWidth < column.MinimumWidth)
-                    headerWidth = column.MinimumWidth;
-
                 double cellWidth = base.CalculateCellWidth(column, setWidth);
-                if (headerWidth < cellWidth)
-                    return cellWidth + 8;
 
-                return headerWidth + 8;
+                if (headerWidth < cellWidth)
+                    cellWidth = cellWidth + column.Padding.Left + column.Padding.Right + 10;
+                else
+                    cellWidth = headerWidth + column.Padding.Left + column.Padding.Right + 10;
+
+                if(column.MaximumWidth != Double.NaN && cellWidth > column.MaximumWidth)
+                    cellWidth = column.MaximumWidth;
+                if (column.MinimumWidth != Double.NaN && cellWidth < column.MinimumWidth)
+                    cellWidth = column.MinimumWidth;
+
+                return cellWidth;
             }
         }
 
@@ -86,12 +94,14 @@ namespace ObservatoryUI.WPF.Views
             {
                 double fontSize = DataGrid.FontSize;
                 fontSize += e.Delta / 120.0;
-                DataGrid.FontSize = fontSize;
-                ResetColumnRowSizes();
-                DataGrid.GridColumnSizer.Refresh();
+                if (fontSize > 6 && fontSize < 30)
+                {
+                    DataGrid.FontSize = fontSize;
+                    ResetColumnWidths();
+                    FontSizeChanged?.Invoke(this, EventArgs.Empty);
+                }
                 e.Handled = true;
 
-                FontSizeChanged?.Invoke(this, EventArgs.Empty);
             }
         }
 
@@ -100,6 +110,13 @@ namespace ObservatoryUI.WPF.Views
             DataGrid.GetVisualContainer()?.RowHeightManager?.Reset();
             DataGrid.GetVisualContainer()?.InvalidateMeasureInfo();
             DataGrid.GridColumnSizer?.ResetAutoCalculationforAllColumns();
+        }
+
+        public void ResetColumnWidths()
+        {
+            foreach (var col in DataGrid.Columns)
+                col.Width = Double.NaN;
+            DataGrid.GridColumnSizer.Refresh();
         }
 
         private void DataGrid_QueryRowHeight(object sender, QueryRowHeightEventArgs e)
@@ -130,17 +147,21 @@ namespace ObservatoryUI.WPF.Views
                     if (e.NewItems != null && e.NewItems.Count > 0)
                     {
                         Debug.WriteLine($"CollectionChanged: NewItems {e.NewItems.Count}: Selecting {e.NewItems.Cast<object>().Last()}");
+                        ResetColumnWidths();
                         SelectLastItem(pluginUI, e.NewItems.Cast<object>());
                     }
                     break;
 
                 case NotifyCollectionChangedAction.Remove:
                     if (e.OldItems != null && e.OldItems.Count > 0)
+                    {
                         if (e.OldItems.Contains(pluginUI.SelectedItem))
                         {
                             Debug.WriteLine($"CollectionChanged: RemovedItems {e.OldItems.Count}: Unselecting: {e.OldItems.Cast<object>().Last()}");
                             pluginUI.SelectedItem = null;
                         }
+                        ResetColumnWidths();
+                    }
                     break;
 
             }

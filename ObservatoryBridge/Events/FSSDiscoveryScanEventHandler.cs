@@ -12,11 +12,20 @@ namespace Observatory.Bridge.Events
     {
         public void HandleEvent(FSSDiscoveryScan journal)
         {
+            LogInfo($"{journal.Event}: {journal.BodyCount} bodies, {journal.Progress * 100:n0} percent");
+            if(Bridge.Instance.CurrentSystem.ScanPercent == 100)
+                return;
+
+            Bridge.Instance.CurrentSystem.ScanPercent = (int)(journal.Progress * 100);
+
             var log = new BridgeLog(journal);
             log.TitleSsml.Append("Science Station");
 
-            log.DetailSsml.Append($"Discovery scan found {journal.BodyCount} bodies").AppendEmphasis("Commander.", EmphasisType.Moderate);
+            string plural = journal.BodyCount == 1 ? "body" : "bodies";
+            log.DetailSsml.Append($"Discovery scan found {journal.BodyCount} {plural}").AppendEmphasis("Commander.", EmphasisType.Moderate);
             log.DetailSsml.Append($"Progress is {journal.Progress * 100:n0} percent.");
+            if (Bridge.Instance.CurrentSystem.ScanPercent == 100)
+                log.DetailSsml.Append("All bodies found.");
 
             Bridge.Instance.LogEvent(log);
         }
