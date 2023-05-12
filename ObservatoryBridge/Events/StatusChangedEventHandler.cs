@@ -90,7 +90,7 @@ namespace Observatory.Bridge.Events
             if (status.Destination == null)
                 return;
 
-            if (status.Destination.Body > 0)
+            if (status.Destination.Body > 0 && Bridge.Instance.CurrentShip.Status != 0)
             {
                 if (_lastSystemId != status.Destination.System || _lastBodyId != status.Destination.Body)
                 {
