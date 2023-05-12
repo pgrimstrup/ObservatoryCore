@@ -1,35 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Observatory.Framework;
-using Observatory.Plugins;
-using System.Windows.Controls;
+﻿using System.IO;
 using System.Windows;
+using System.Windows.Controls;
+using Observatory.Plugins;
 
 namespace ObservatoryUI.WPF.Utils
 {
     public class SettingTemplateSelector : DataTemplateSelector
     {
-        public DataTemplate StringTemplate { get; set; }
+        public DataTemplate StringTemplate { get; set; } = null!;
 
-        public DataTemplate BooleanTemplate { get; set; }
+        public DataTemplate BooleanTemplate { get; set; } = null!;
 
-        public DataTemplate FileInfoTemplate { get; set; }
+        public DataTemplate FileInfoTemplate { get; set; } = null!;
 
-        public DataTemplate IntSliderTemplate { get; set; }
+        public DataTemplate IntSliderTemplate { get; set; } = null!;
 
-        public DataTemplate DoubleNumericTemplate { get; set; }
+        public DataTemplate DoubleNumericTemplate { get; set; } = null!;
 
-        public DataTemplate IntNumericTemplate { get; set; }
+        public DataTemplate IntNumericTemplate { get; set; } = null!;
 
-        public DataTemplate ActionTemplate { get; set; }
+        public DataTemplate ActionTemplate { get; set; } = null!;
 
-        public DataTemplate ComboBoxTemplate { get; set; }
+        public DataTemplate ComboBoxTemplate { get; set; } = null!;
 
-        public DataTemplate HiddenTemplate { get; set; }
+        public DataTemplate HiddenTemplate { get; set; } = null!;
 
         public override DataTemplate SelectTemplate(object item, DependencyObject container)
         {

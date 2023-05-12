@@ -13,7 +13,7 @@ namespace Observatory.Bridge.Events
         {
             var log = new BridgeLog(journal);
             log.TitleSsml.Append("Flight Operations");
-            log.DetailSsml.Append($"Exiting super-cruise, sub-light engines active.");
+            log.DetailSsml.Append($"Exiting supercruise, sub-light engines active.");
 
             Bridge.Instance.LogEvent(log);
         }

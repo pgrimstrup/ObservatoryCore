@@ -128,7 +128,8 @@
                                PreviewMouseWheel="DataGrid_MouseWheel" QueryRowHeight="DataGrid_QueryRowHeight"
                                x:Name="DataGrid" AutoGenerateColumns="True" AllowSorting="False" AllowFiltering="True" ColumnSizer="SizeToHeader"
                                AlternationCount="2" 
-                               ItemsSource="{Binding}" NavigationMode="Row" AutoGeneratingColumn="OnAutoGeneratingColumn">
+                               ItemsSource="{Binding DataGrid}" SelectedItem="{Binding SelectedItem}"
+                               NavigationMode="Row" AutoGeneratingColumn="OnAutoGeneratingColumn" Loaded="DataGrid_Loaded">
         </syncfusion:SfDataGrid>
     </Grid>
 </UserControl>

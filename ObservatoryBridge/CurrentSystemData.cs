@@ -9,19 +9,21 @@ namespace Observatory.Bridge
 {
     internal class CurrentSystemData
     {
-        readonly FSDJump _jump;
-
-        public string? SystemName => _jump.StarSystem;
-
+        public string SystemName { get; set; } = "Unknown";
+        public string CoursePlotted { get; set; } = "";
         public bool ScanComplete { get; set; }
 
         public Dictionary<string, Scan> ScannedBodies { get; } = new Dictionary<string, Scan>();
 
         public Dictionary<string, FSSBodySignals> BodySignals { get; } = new Dictionary<string, FSSBodySignals>();
 
-        public CurrentSystemData(FSDJump journal) 
+        public void Assign(FSDJump jump)
         {
-            _jump = journal;
+            SystemName = jump.StarSystem;
+            CoursePlotted = "";
+            ScanComplete = false;
+            ScannedBodies.Clear();
+            BodySignals.Clear();
         }
     }
 }

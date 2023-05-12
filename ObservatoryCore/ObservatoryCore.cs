@@ -277,13 +277,6 @@ namespace Observatory
         {
             ExecuteOnUIThread(() => {
                 worker.PluginUI.DataGrid.Add(item);
-
-                //Hacky removal of original empty object if one was used to populate columns
-                if (worker.PluginUI.DataGrid.Count == 2)
-                {
-                    if (FirstRowIsAllNull(worker))
-                        worker.PluginUI.DataGrid.RemoveAt(0);
-                }
             });
         }
 
@@ -295,29 +288,23 @@ namespace Observatory
         public void AddGridItems(IObservatoryWorker worker, IEnumerable<object> items)
         {
             ExecuteOnUIThread(() => {
-                var cleanEmptyRow = worker.PluginUI.DataGrid.Count == 1 && FirstRowIsAllNull(worker) && items.Count() > 0;
                 foreach (var item in items)
                 {
                     worker.PluginUI.DataGrid.Add(item);
                 }
-                if (cleanEmptyRow)
-                    worker.PluginUI.DataGrid.RemoveAt(0);
             });
         }
 
         public void ClearGrid(IObservatoryWorker worker, object templateItem)
         {
             ExecuteOnUIThread(() => {
-                worker.PluginUI.DataGrid.Add(templateItem);
-                while (worker.PluginUI.DataGrid.Count > 1)
-                    worker.PluginUI.DataGrid.RemoveAt(0);
+                worker.PluginUI.DataGrid.Clear();
             });
         }
 
         public void ExecuteOnUIThread(Action action)
         {
             _dispatcher.Run(action);
-            //Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(action);
         }
 
         public LogMonitorState CurrentLogMonitorState
@@ -342,21 +329,6 @@ namespace Observatory
             SaveCoreSettings();
         }
 
-        private static bool FirstRowIsAllNull(IObservatoryWorker worker)
-        {
-            bool allNull = true;
-            Type itemType = worker.PluginUI.DataGrid[0].GetType();
-            foreach (var property in itemType.GetProperties())
-            {
-                if (property.GetValue(worker.PluginUI.DataGrid[0], null) != null)
-                {
-                    allNull = false;
-                    break;
-                }
-            }
-
-            return allNull;
-        }
 
         public void OnJournalEvent(object sender, JournalEventArgs e)
         {

@@ -10,7 +10,6 @@ namespace ObservatoryUI.WPF.Services
     internal class DebugPlugins : IDebugPlugins
     {
         public IDictionary<string, string> PluginTypes => new Dictionary<string, string> {
-            { "Botanist", "Observatory.Botanist.Botanist, ObservatoryBotanist" },
             { "Bridge", "Observatory.Bridge.Bridge, ObservatoryBridge" },
             { "Explorer", "Observatory.Explorer.ExplorerWorker, ObservatoryExplorer" },
             { "Herald", "Observatory.Herald.HeraldNotifier, ObservatoryHerald" }

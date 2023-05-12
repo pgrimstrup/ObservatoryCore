@@ -23,7 +23,7 @@ namespace Observatory.Bridge.Events
             log.DetailSsml.Append($"Welcome Commander")
                     .AppendEmphasis(Bridge.Instance.CurrentShip.Commander + ",", Framework.EmphasisType.Moderate)
                     .Append("flying")
-                    .AppendEmphasis(Bridge.Instance.CurrentShip.ShipName, Framework.EmphasisType.Moderate)
+                    .AppendEmphasis(shipName, Framework.EmphasisType.Moderate)
                     .Append("with")
                     .AppendNumber(Bridge.Instance.CurrentShip.Credits)
                     .Append("credits");

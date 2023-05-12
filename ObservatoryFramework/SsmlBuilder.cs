@@ -188,7 +188,6 @@ namespace Observatory.Framework
 
         private string ReplaceWords(string text, IDictionary<string, string> replacements, IDictionary<string, string> characterReplacements = null)
         {
-            var words = text.Split();
             if (characterReplacements != null)
             {
                 foreach (var key in characterReplacements.Keys)
@@ -197,6 +196,7 @@ namespace Observatory.Framework
                 }
             }
 
+            var words = text.Split();
             for (int i = 0; i < words.Length; i++)
             {
                 if (replacements.TryGetValue(words[i], out var replacement))

@@ -22,8 +22,7 @@ namespace Observatory.Bridge
         List<object> _batchReadEvents = new List<object>();
 
         internal IObservatoryCore Core = null!;
-        internal ObservableCollection<object> Events = new ObservableCollection<object>();
-        internal CurrentSystemData CurrentSystem = new CurrentSystemData(new FSDJump());
+        internal CurrentSystemData CurrentSystem = new CurrentSystemData();
         internal CurrentShipData CurrentShip = new CurrentShipData();
         internal Rank CurrentRank = new Rank();
 
@@ -67,7 +66,7 @@ namespace Observatory.Bridge
         {
             try
             {
-                _ui = new PluginUI(Events);
+                _ui = new PluginUI(new ObservableCollection<object>());
                 Core = observatoryCore;
             }
             catch (Exception ex)
@@ -99,12 +98,11 @@ namespace Observatory.Bridge
                 try
                 {
                     // Found a handler, so call it to handle the event
-                    Core.GetPluginErrorLogger(this).Invoke(null, $"Bridge Event: {journal.Event} ({journal.GetType().Name}) handled by {handler.Instance.GetType().Name}.{handler.Method.Name}");
                     handler.Method.Invoke(handler.Instance, new object[] { journal });
                 }
                 catch(Exception ex)
                 {
-                    Core.GetPluginErrorLogger(this).Invoke(ex, $"When calling {handler.Instance.GetType().Name}.{handler.Method.Name} for JournalEveny '{journal.GetType().Name}'");
+                    Core.GetPluginErrorLogger(this).Invoke(ex, $"When calling {handler.Instance.GetType().Name}.{handler.Method.Name} for JournalEvent '{journal.GetType().Name}'");
                 }
             }
         }
@@ -118,10 +116,11 @@ namespace Observatory.Bridge
         {
             if (!LogMonitorStateChangedEventArgs.IsBatchRead(e.PreviousState) && LogMonitorStateChangedEventArgs.IsBatchRead(e.NewState))
             {
+                CurrentShip.Status = 0;
+                CurrentShip.Status2 = 0;
+
                 // Starting a batch read
-                Core.ExecuteOnUIThread(() => {
-                    Events.Clear();
-                });
+                Core.ClearGrid(this, null);
             }
 
             if (LogMonitorStateChangedEventArgs.IsBatchRead(e.PreviousState) && !LogMonitorStateChangedEventArgs.IsBatchRead(e.NewState))
@@ -130,13 +129,9 @@ namespace Observatory.Bridge
                 CurrentShip.Status2 = 0;
 
                 // Finished a batch read
-                Core.ExecuteOnUIThread(() => {
-                    // Read from the lastFSD Jump entry 
-                    Events.Clear();
-                    for (int i = 0; i < _batchReadEvents.Count; i++)
-                        Events.Add(_batchReadEvents[i]);
-                    _batchReadEvents.Clear();
-                });
+                Core.ClearGrid(this, null);
+                Core.AddGridItems(this, _batchReadEvents);
+                _batchReadEvents.Clear();
             }
         }
 
@@ -147,27 +142,25 @@ namespace Observatory.Bridge
             {
                 if (Core.IsLogMonitorBatchReading)
                 {
-                    if(log.EventName == "LaunchSRV")
+                    if (log.EventName == "LaunchSRV")
                     {
                         CurrentShip.Status &= ~StatusFlags.MainShip;
                         CurrentShip.Status |= StatusFlags.SRV;
                     }
 
-                    if(log.EventName == "DockSRV")
+                    if (log.EventName == "DockSRV")
                     {
                         CurrentShip.Status &= ~StatusFlags.SRV;
                         CurrentShip.Status |= StatusFlags.MainShip;
                     }
 
                     // Keep everythng after the last FSD Jump
-                    if (log.EventName == "FSDJump")
+                    if (log.EventName == "StartJump")
                         _batchReadEvents.Clear();
                     _batchReadEvents.Add(log);
                 }
                 else
-                    Core.ExecuteOnUIThread(() => {
-                        Events.Add(log);
-                    });
+                    Core.AddGridItem(this, log);
             }
 
             if (log.IsSpoken)

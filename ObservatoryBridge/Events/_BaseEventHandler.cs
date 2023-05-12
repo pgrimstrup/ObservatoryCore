@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Observatory.Bridge.Events
 {
     internal class BaseEventHandler
     {
         static public readonly string[] ScoopableStars = { "K", "G", "B", "F", "O", "A", "M" };
+
+        protected Random R = new Random();
 
         public static string GetBodyName(string name)
         {
@@ -36,5 +39,14 @@ namespace Observatory.Bridge.Events
             Bridge.Instance.Core.GetPluginErrorLogger(Bridge.Instance).Invoke(ex, message);
         }
 
+        protected void Speak(string text)
+        {
+            LogInfo(text);
+
+            var log = new BridgeLog();
+            log.SpokenOnly();
+            log.DetailSsml.Append(text);
+            Bridge.Instance.LogEvent(log);
+        }
     }
 }

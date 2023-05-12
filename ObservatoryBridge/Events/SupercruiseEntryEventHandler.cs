@@ -13,7 +13,7 @@ namespace Observatory.Bridge.Events
         {
             var log = new BridgeLog(journal);
             log.TitleSsml.Append("Flight Operations");
-            log.DetailSsml.Append($"Super-cruising, FSD active.");
+            log.DetailSsml.Append($"Supercruise engaged");
 
             Bridge.Instance.LogEvent(log);
         }

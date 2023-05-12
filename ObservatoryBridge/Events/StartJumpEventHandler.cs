@@ -13,21 +13,30 @@ namespace Observatory.Bridge.Events
         public void HandleEvent(StartJump journal)
         {
             // We get this event when entering supercruise if we have a destination locked
-            if (!String.IsNullOrEmpty(journal.StarSystem))
+            if (!String.IsNullOrEmpty(journal.StarSystem) && Bridge.Instance.CurrentSystem.CoursePlotted != journal.StarSystem)
             {
+                LogInfo($"FSDStartJump: {journal.Event} to {journal.StarSystem} (star class {journal.StarClass})");
+
                 var log = new BridgeLog(journal);
                 log.TitleSsml.Append("Flight Operations");
 
                 var scoopable = ScoopableStars.Contains(journal.StarClass) ? ", scoopable" : ", non-scoopable";
-                log.DetailSsml.Append($"Destination star is type {journal.StarClass}{scoopable}.");
+                log.DetailSsml
+                    .Append("Jumping to")
+                    .AppendBodyName(journal.StarSystem)
+                    .Append($". Destination star is type {journal.StarClass}{scoopable}.");
 
-                if (journal.StarClass.IsNeutronStar() || journal.StarClass.IsWhiteDwarf())
-                {
-                    log.DetailSsml.AppendEmphasis("Commander,", EmphasisType.Moderate);
-                    log.DetailSsml.Append("this is a hazardous star type.");
-                    log.DetailSsml.AppendEmphasis("Throttle down now.", EmphasisType.Strong);
-                }
+                Bridge.Instance.LogEvent(log);
+            }
 
+            if (journal.StarClass.IsNeutronStar() || journal.StarClass.IsWhiteDwarf())
+            {
+                var log = new BridgeLog(journal);
+                log.SpokenOnly();
+
+                log.DetailSsml.AppendEmphasis("Commander,", EmphasisType.Moderate);
+                log.DetailSsml.Append("this is a dangerous star type.");
+                log.DetailSsml.AppendEmphasis("Throttle down now.", EmphasisType.Strong);
                 Bridge.Instance.LogEvent(log);
             }
         }

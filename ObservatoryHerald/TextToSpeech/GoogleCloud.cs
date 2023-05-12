@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 using Microsoft.Extensions.Logging;
 using Observatory.Framework;
 
@@ -14,6 +16,7 @@ namespace Observatory.Herald.TextToSpeech
         public const string ApiEndPoint = "https://texttospeech.googleapis.com/v1beta1/";
         public const string ApiGetVoices = "voices";
         public const string ApiTextToSpeech = "text:synthesize";
+        static readonly char[] LettersAndNumbers = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".ToCharArray();
 
         HttpClient _http;
         string _apiKey;
@@ -30,6 +33,7 @@ namespace Observatory.Herald.TextToSpeech
 
         public async Task<bool> GetTextToSpeechAsync(NotificationArgs args, string speech, string filename)
         {
+
             GoogleTextToSpeechRequest request = new GoogleTextToSpeechRequest();
             request.Voice.Name = args.VoiceName;
             request.Voice.LanguageCode = args.VoiceName.Substring(0, 5);
@@ -41,15 +45,29 @@ namespace Observatory.Herald.TextToSpeech
                 request.AudioConfig.SpeakingRate = 1;
 
             if (speech.StartsWith("<speak"))
-                request.Input.Ssml = speech;
+            {
+                try
+                {
+                    XmlDocument doc = new XmlDocument();
+                    doc.LoadXml(speech);
+                    if(doc.InnerText.IndexOfAny(LettersAndNumbers) < 0)
+                    {
+                        Debug.WriteLine($"The SSML does not contain any letters or numbers - it cannot be spoken:\r\n{speech}");
+                        return false;
+                    }
+
+                    request.Input.Ssml = speech;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug($"The SSML is not valid XML: {ex}:\r\n{speech}");
+                    return false;
+                }
+            }
             else
                 request.Input.Text = speech;
 
-#if DEBUG
-            _logger.LogInformation($"Google Text-to-Speech Request: Voice={request.Voice.Name}, Rate={request.AudioConfig.SpeakingRate}, Encoding={request.AudioConfig.AudioEncoding}\r\n{speech}");
-#else
-            _logger.LogInformation($"Google Text-to-Speech Request: Voice={request.Voice.Name}, Rate={request.AudioConfig.SpeakingRate}, Encoding={request.AudioConfig.AudioEncoding}");
-#endif
+            _logger.LogDebug($"Google Text-to-Speech Request: Voice={request.Voice.Name}, Rate={request.AudioConfig.SpeakingRate}, Encoding={request.AudioConfig.AudioEncoding}\r\n{speech}");
             var response = await _http.PostAsJsonAsync($"{ApiEndPoint}{ApiTextToSpeech}?key={ApiKey}", request);
 
             response.EnsureSuccessStatusCode();

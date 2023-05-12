@@ -1,4 +1,5 @@
-﻿using Observatory.Framework.Files.Journal;
+﻿using Observatory.Framework;
+using Observatory.Framework.Files.Journal;
 
 namespace Observatory.Bridge.Events
 {
@@ -6,11 +7,14 @@ namespace Observatory.Bridge.Events
     {
         public void HandleEvent(FSDJump journal)
         {
+            LogInfo($"FSDJump: Jump complete from {Bridge.Instance.CurrentSystem.SystemName} to {journal.StarSystem}, Distance {journal.JumpDist:n2} LY");
             var log = new BridgeLog(journal);
             log.TitleSsml.Append("Flight Operations");
 
             log.DetailSsml
-                .Append($"Jump completed Commander. Arrived at")
+                .Append($"Jump completed")
+                .AppendEmphasis("Commander.", Framework.EmphasisType.Moderate)
+                .Append("Arrived at")
                 .AppendBodyName(journal.StarSystem)
                 .Append(". We travelled")
                 .AppendNumber(Math.Round(journal.JumpDist, 2))
@@ -21,17 +25,17 @@ namespace Observatory.Bridge.Events
             if (!Bridge.Instance.Core.IsLogMonitorBatchReading)
             {
                 Bridge.Instance.Core.ExecuteOnUIThread(() => {
-                    // Remove all entries up to the last FSD Jump
-                    var lastJump = Bridge.Instance.Events
+                    // Remove all entries up to the last Start Jump
+                    var lastJump = Bridge.Instance.PluginUI.DataGrid
                         .OfType<BridgeLog>()
-                        .LastOrDefault(e => e.EventName == nameof(FSDJump));
+                        .LastOrDefault(e => e.EventName == "StartJump");
 
-                    if(lastJump != null)
+                    if (lastJump != null)
                     {
-                        var keepIndex = Bridge.Instance.Events.IndexOf(lastJump);
-                        while(keepIndex > 0 && Bridge.Instance.Events.Count > 0)
+                        var keepIndex = Bridge.Instance.PluginUI.DataGrid.IndexOf(lastJump);
+                        while (keepIndex > 0 && Bridge.Instance.PluginUI.DataGrid.Count > 0)
                         {
-                            Bridge.Instance.Events.RemoveAt(0);
+                            Bridge.Instance.PluginUI.DataGrid.RemoveAt(0);
                             keepIndex--;
                         }
                     }
@@ -39,7 +43,7 @@ namespace Observatory.Bridge.Events
             }
 
             Bridge.Instance.LogEvent(log);
-            Bridge.Instance.CurrentSystem = new CurrentSystemData(journal);
+            Bridge.Instance.CurrentSystem.Assign(journal);
         }
     }
 }

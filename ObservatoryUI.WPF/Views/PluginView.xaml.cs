@@ -1,12 +1,14 @@
 ﻿using System.Collections;
+using System.Collections.Specialized;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Observatory.Framework;
 using Syncfusion.UI.Xaml.Grid;
 using Syncfusion.UI.Xaml.Grid.Helpers;
-using Syncfusion.Windows.Shared;
+using Syncfusion.UI.Xaml.ScrollAxis;
 
 namespace ObservatoryUI.WPF.Views
 {
@@ -17,7 +19,7 @@ namespace ObservatoryUI.WPF.Views
     {
         GridRowSizingOptions rowSizingOptions = new GridRowSizingOptions();
 
-        public event EventHandler FontSizeChanged;
+        public event EventHandler FontSizeChanged = null!;
 
         public PluginView()
         {
@@ -105,5 +107,60 @@ namespace ObservatoryUI.WPF.Views
             e.Height = DataGrid.FontSize * 1.4 + 4;
             e.Handled = true;
         }
+
+        private void DataGrid_Loaded(object sender, System.Windows.RoutedEventArgs e)
+        {
+            var pluginUI = DataGrid.DataContext as PluginUI;
+            if (pluginUI == null)
+                return;
+
+            pluginUI.DataGrid.CollectionChanged += CollectionChanged;
+            pluginUI.SelectedItem = pluginUI.DataGrid.LastOrDefault();
+        }
+
+        private void CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            var pluginUI = DataGrid.DataContext as PluginUI;
+            if (pluginUI == null)
+                return;
+
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    if (e.NewItems != null && e.NewItems.Count > 0)
+                    {
+                        Debug.WriteLine($"CollectionChanged: NewItems {e.NewItems.Count}: Selecting {e.NewItems.Cast<object>().Last()}");
+                        SelectLastItem(pluginUI, e.NewItems.Cast<object>());
+                    }
+                    break;
+
+                case NotifyCollectionChangedAction.Remove:
+                    if (e.OldItems != null && e.OldItems.Count > 0)
+                        if (e.OldItems.Contains(pluginUI.SelectedItem))
+                        {
+                            Debug.WriteLine($"CollectionChanged: RemovedItems {e.OldItems.Count}: Unselecting: {e.OldItems.Cast<object>().Last()}");
+                            pluginUI.SelectedItem = null;
+                        }
+                    break;
+
+            }
+        }
+
+        private void SelectLastItem(PluginUI pluginUI, IEnumerable<object> items)
+        {
+            if (items != null && items.Any())
+            {
+                var selected = items.Last();
+                pluginUI.SelectedItem = selected;
+
+                var rowindex = DataGrid.ResolveToRowIndex(selected);
+                if (rowindex < 0)
+                    return;
+
+                DataGrid.ScrollInView(new RowColumnIndex(rowindex, 0));
+            }
+        }
+
+
     }
 }

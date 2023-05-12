@@ -51,7 +51,7 @@ namespace Observatory.Bridge
             }
             catch (Exception ex)
             {
-                
+                Bridge.Instance.Core.GetPluginErrorLogger(Bridge.Instance).Invoke(ex, "When testing the Bridge Voice Notification System");
             }
         };
 

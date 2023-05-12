@@ -32,6 +32,11 @@ namespace Observatory.Bridge
                 FuelMain = load.FuelLevel,
                 FuelReservoir = 0
             };
+
+            if (load.StartLanded)
+                Status |= StatusFlags.Landed | StatusFlags.LandingGear | StatusFlags.Masslock | StatusFlags.LatLongValid | StatusFlags.MainShip;
+            else if (!load.StartDead)
+                Status |= StatusFlags.MainShip;
         }
 
         public void Assign(Status status)

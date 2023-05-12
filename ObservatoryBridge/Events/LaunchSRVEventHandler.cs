@@ -14,7 +14,9 @@ namespace Observatory.Bridge.Events
         {
             var log = new BridgeLog(journal);
             log.TitleSsml.Append("Away Team");
-            log.DetailSsml.Append($"Deploying {journal.SRVType_Localised} with {journal.Loadout} load-out").AppendEmphasis("Commander.", EmphasisType.Moderate);
+            log.DetailSsml
+                .Append($"{journal.SRVType_Localised} deployed with {journal.Loadout} load-out")
+                .AppendEmphasis("Commander.", EmphasisType.Moderate);
 
             Bridge.Instance.LogEvent(log);
         }

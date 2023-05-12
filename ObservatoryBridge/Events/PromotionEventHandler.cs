@@ -45,7 +45,10 @@ namespace Observatory.Bridge.Events
             log.TitleSsml.Append("Promotion");
 
             log.DetailSsml.AppendUnspoken(Emojis.Promotion);
-            log.DetailSsml.Append("Congratulations Commander. You have been promoted to ");
+            log.DetailSsml.Append("Congratulations")
+                .AppendEmphasis("Commander.", Framework.EmphasisType.Moderate)
+                .Append("You have been promoted to");
+
             if (promotions.Count <= 2)
                 log.DetailSsml.Append(String.Join(" and ", promotions) + ".");
             else

@@ -22,9 +22,9 @@ namespace Observatory.Bridge.Events
             
             float total = (float)Math.Round(journal.Total, 2);
             if (total >= Bridge.Instance.CurrentShip.FuelCapacity)
-                log.DetailSsml.Append("Main Tank full");
+                log.DetailSsml.Append("Main tank full");
             else
-                log.DetailSsml.Append("Main Fuel at")
+                log.DetailSsml.Append("Main tank at")
                     .AppendNumber(Math.Round(journal.Total, 1))
                     .Append("tons");
 

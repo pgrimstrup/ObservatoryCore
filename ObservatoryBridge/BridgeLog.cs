@@ -17,7 +17,6 @@ namespace Observatory.Bridge
         internal bool IsTitleSpoken = false;
         internal bool IsDetailSpoken = true;
         internal DateTime EventTimeUTC;
-        internal Guid NotificationId;
         internal SsmlBuilder TitleSsml;
         internal SsmlBuilder DetailSsml;
 

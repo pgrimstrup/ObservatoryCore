@@ -13,7 +13,9 @@ namespace Observatory.Bridge.Events
         {
             var log = new BridgeLog(journal);
             log.TitleSsml.Append("Flight Operations");
-            log.DetailSsml.Append($"{journal.StationName} Tower has cancelled our docking request Commander. We'll need to resubmit another request if we want to dock.");
+            log.DetailSsml.Append($"{journal.StationName} Tower has cancelled our docking request")
+                .AppendEmphasis("Commander.", Framework.EmphasisType.Moderate)
+                .Append("We'll need to resubmit another request if we want to dock.");
 
             Bridge.Instance.LogEvent(log);
         }

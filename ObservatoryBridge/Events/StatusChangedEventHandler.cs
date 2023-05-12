@@ -1,4 +1,5 @@
-﻿using Observatory.Framework;
+﻿using System.Runtime.Serialization;
+using Observatory.Framework;
 using Observatory.Framework.Files;
 using Observatory.Framework.Files.ParameterTypes;
 
@@ -6,9 +7,32 @@ namespace Observatory.Bridge.Events
 {
     internal class StatusChangedEventHandler : BaseEventHandler, IJournalEventHandler<Status>
     {
+        public enum FuelWarnings
+        {
+            Plenty,
+            Below50,
+            Below25,
+            Below10,
+            Below5,
+            Below1
+        }
+
+        public List<(double, FuelWarnings, string)> FuelWarning = new List<(double, FuelWarnings, string)> {
+            { new (0.01, FuelWarnings.Below1, "fuel level is critical. Main Fuel tank is below 1 percent.") },
+            { new (0.05, FuelWarnings.Below5, "fuel level is dangerously low. Main Fuel tank is below 5 percent.") },
+            { new (0.10, FuelWarnings.Below10, "fuel level is very low. Main Fuel tank is below 10 percent.") },
+            { new (0.25, FuelWarnings.Below25, "fuel level is low. Main Fuel tank is below 25 percent.") },
+            { new (0.50, FuelWarnings.Below50, "fuel level is down to 50 percent.") }
+        };
+
+        FuelWarnings _shipFuelWarnings;
+        FuelWarnings _srvFuelWarnings;
+        ulong _lastSystemId;
+        int _lastBodyId;
+
         private bool HasShipStatusChanged(StatusFlags flag, CurrentShipData ship, Status newStatus)
         {
-            if(ship.Status.HasFlag(StatusFlags.MainShip) && newStatus.Flags.HasFlag(StatusFlags.MainShip))
+            if (ship.Status.HasFlag(StatusFlags.MainShip) && newStatus.Flags.HasFlag(StatusFlags.MainShip))
                 return (ship.Status & flag) != (newStatus.Flags & flag);
             return false;
         }
@@ -28,23 +52,26 @@ namespace Observatory.Bridge.Events
         }
 
 
-        bool _fuelBelow25 = false;
-        bool _fuelBelow10 = false;
-        bool _fuelBelow5 = false;
-        bool _fuelBelow1 = false;
 
         public void HandleEvent(Status newStatus)
         {
-            CheckFuelLevel(newStatus);
+            if (newStatus.Flags.HasFlag(StatusFlags.MainShip))
+            {
+                CheckShipFuelLevel(newStatus);
+                CheckDestination(newStatus);
+            }
+
+            if (newStatus.Flags.HasFlag(StatusFlags.SRV))
+                CheckSrvFuelLevel(newStatus);
 
             var ship = Bridge.Instance.CurrentShip;
             if (ship.Status == newStatus.Flags && ship.Status2 == newStatus.Flags2)
                 return;
 
-            if(ship.Status != newStatus.Flags)
-                LogInfo($"  StatusFlags : {ship.Status} -> {newStatus.Flags}");
-            if(ship.Status2 != newStatus.Flags2)
-                LogInfo($"  StatusFlags2: {ship.Status2} -> {newStatus.Flags2}");
+            if (ship.Status != newStatus.Flags)
+                LogInfo($"StatusChanged: Flags : {ship.Status} -> {newStatus.Flags}");
+            if (ship.Status2 != newStatus.Flags2)
+                LogInfo($"StatusChanged: Flags2: {ship.Status2} -> {newStatus.Flags2}");
 
             if (HasShipStatusChanged(StatusFlags.Masslock, ship, newStatus))
                 DoMasslock(newStatus);
@@ -57,10 +84,65 @@ namespace Observatory.Bridge.Events
             Bridge.Instance.CurrentShip.Status2 = newStatus.Flags2;
         }
 
-        private void CheckFuelLevel(Status status)
+        private void CheckDestination(Status status)
+        {
+            // Only interested in destinations that are bodies within a system
+            if (status.Destination == null)
+                return;
+
+            if (status.Destination.Body > 0)
+            {
+                if (_lastSystemId != status.Destination.System || _lastBodyId != status.Destination.Body)
+                {
+                    LogInfo($"Status: Destination changed to {status.Destination.Name}");
+
+                    var log = new BridgeLog(status);
+                    log.SpokenOnly();
+                    log.TitleSsml.Append("Flight Operations");
+
+                    log.DetailSsml
+                        .Append("Course laid in to")
+                        .AppendBodyName(status.Destination.Name);
+
+                    Bridge.Instance.LogEvent(log);
+                }
+            }
+
+            _lastSystemId = status.Destination.System;
+            _lastBodyId = status.Destination.Body;
+        }
+
+        private void CheckSrvFuelLevel(Status status)
+        {
+            BridgeLog? log = null;
+            double fuelLevel = status.Fuel.FuelReservoir / 0.5;
+            FuelWarnings newWarning = FuelWarnings.Plenty;
+            foreach ((double level, FuelWarnings warning, string message) item in FuelWarning)
+            {
+                if (fuelLevel <= item.level)
+                {
+                    if (_srvFuelWarnings < item.warning)
+                    {
+                        log = new BridgeLog(status);
+                        log.SpokenOnly()
+                            .DetailSsml.AppendEmphasis("Commander,", EmphasisType.Moderate)
+                            .Append("SRV " + item.message);
+                    }
+                    newWarning = item.warning;
+                    break;
+                }
+            }
+            _srvFuelWarnings = newWarning;
+
+            if (log != null)
+                Bridge.Instance.LogEvent(log);
+
+        }
+
+        private void CheckShipFuelLevel(Status status)
         {
             var ship = Bridge.Instance.CurrentShip;
-            if (ship == null )
+            if (ship == null)
                 return;
 
             ship.Assign(status);
@@ -69,69 +151,23 @@ namespace Observatory.Bridge.Events
 
             BridgeLog? log = null;
             double fuelLevel = ship.Fuel.FuelMain / ship.FuelCapacity;
-            if (fuelLevel <= 0.01)
+            FuelWarnings newWarning = FuelWarnings.Plenty;
+            foreach((double level, FuelWarnings warning, string message) item in FuelWarning)
             {
-                if (!_fuelBelow1)
+                if(fuelLevel <= item.level)
                 {
-                    log = new BridgeLog(status);
-                    log.SpokenOnly()
-                        .DetailSsml.AppendEmphasis("Commander", EmphasisType.Strong)
-                        .Append("Fuel level is critical. Main Fuel tank is below 1 percent.");
+                    if(_shipFuelWarnings < item.warning)
+                    {
+                        log = new BridgeLog(status);
+                        log.SpokenOnly()
+                            .DetailSsml.AppendEmphasis("Commander,", EmphasisType.Moderate)
+                            .Append("Ship's main " + item.message);
+                    }
+                    newWarning = item.warning;
+                    break;
                 }
-                _fuelBelow1 = true;
-                _fuelBelow5 = true;
-                _fuelBelow10 = true;
-                _fuelBelow25 = true;
             }
-            else if (fuelLevel <= 0.05)
-            {
-                if (!_fuelBelow5)
-                {
-                    log = new BridgeLog(status);
-                    log.SpokenOnly()
-                        .DetailSsml.AppendEmphasis("Commander", EmphasisType.Moderate)
-                        .Append("Fuel level is dangerously low. Main Fuel tank is below 5 percent.");
-                }
-                _fuelBelow1 = false;
-                _fuelBelow5 = true;
-                _fuelBelow10 = true;
-                _fuelBelow25 = true;
-            }
-            else if (fuelLevel <= 0.10)
-            {
-                if (!_fuelBelow10)
-                {
-                    log = new BridgeLog(status);
-                    log.SpokenOnly()
-                        .DetailSsml.AppendEmphasis("Commander", EmphasisType.Moderate)
-                        .Append("Fuel level is very low. Main Fuel tank is below 10 percent.");
-                }
-                _fuelBelow1 = false;
-                _fuelBelow5 = false;
-                _fuelBelow10 = true;
-                _fuelBelow25 = true;
-            }
-            else if (fuelLevel <= 0.25)
-            {
-                if (!_fuelBelow25)
-                {
-                    log = new BridgeLog(status);
-                    log.SpokenOnly()
-                        .DetailSsml.AppendEmphasis("Commander", EmphasisType.Moderate)
-                        .Append("Fuel level is low. Main Fuel tank is below 25 percent.");
-                }
-                _fuelBelow1 = false;
-                _fuelBelow5 = false;
-                _fuelBelow10 = false;
-                _fuelBelow25 = true;
-            }
-            else
-            {
-                _fuelBelow1 = false;
-                _fuelBelow5 = false;
-                _fuelBelow10 = false;
-                _fuelBelow25 = false;
-            }
+            _shipFuelWarnings = newWarning;
 
             if (log != null)
                 Bridge.Instance.LogEvent(log);

@@ -13,13 +13,13 @@ namespace Observatory.Plugins
         public IObservatoryPlugin Plugin { get; private set; }
         public object Settings { get; private set; }
         public PropertyInfo ValueProperty { get; private set; }
-        public PropertyInfo? GetItemsProperty { get; private set; }
-        public MethodInfo? GetItemsMethod { get; private set; }
-        public MethodInfo? PluginActionMethod { get; private set; }
+        public PropertyInfo GetItemsProperty { get; private set; }
+        public MethodInfo GetItemsMethod { get; private set; }
+        public MethodInfo PluginActionMethod { get; private set; }
         public string DisplayName { get; private set; }
         public bool Hidden { get; private set; }
         public bool UseIntSlider { get; private set; }
-        public string? DependsOnPropertyName { get; private set; }
+        public string DependsOnPropertyName { get; private set; }
         
         public double MinimumValue { get; private set; }
         public double MaximumValue { get; private set; }
@@ -50,7 +50,7 @@ namespace Observatory.Plugins
             }
         }
 
-        private SettingProperty(IObservatoryPlugin plugin, object settings, PropertyInfo property, SettingProperty? previous)
+        private SettingProperty(IObservatoryPlugin plugin, object settings, PropertyInfo property, SettingProperty previous)
         {
             Plugin = plugin;
             Settings = settings;
@@ -270,7 +270,7 @@ namespace Observatory.Plugins
 
         public static IEnumerable<SettingProperty> CreateSettingProperties(IObservatoryPlugin plugin, object settings)
         {
-            SettingProperty? previous = null;
+            SettingProperty previous = null;
 
             List<SettingProperty> properties = new List<SettingProperty>();
             foreach (var property in settings.GetType().GetProperties())
