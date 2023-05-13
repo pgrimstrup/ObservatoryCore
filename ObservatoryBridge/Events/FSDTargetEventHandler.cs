@@ -29,13 +29,15 @@ namespace Observatory.Bridge.Events
                 var scoopable = ScoopableStars.Contains(journal.StarClass) ? ", scoopable" : ", non-scoopable";
                 log.DetailSsml
                     .Append("Course laid in to")
-                    .AppendBodyName(journal.Name)
-                    .Append($". Destination star is type-{journal.StarClass}{scoopable}.");
+                        .AppendBodyName(journal.Name)
+                        .Append($". Destination star is a")
+                        .AppendBodyType(GetStarTypeName(journal.StarClass))
+                        .Append($"{scoopable}.");
 
                 if (Bridge.Instance.CurrentSystem.RemainingJumpsInRoute > 0 && (Bridge.Instance.CurrentSystem.RemainingJumpsInRoute < 5 || (Bridge.Instance.CurrentSystem.RemainingJumpsInRoute % 5) == 0))
                     log.DetailSsml.Append($"There are {Bridge.Instance.CurrentSystem.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
 
-                if (journal.StarClass.IsNeutronStar() || journal.StarClass.IsWhiteDwarf())
+                if (journal.StarClass.IsNeutronStar() || journal.StarClass.IsWhiteDwarf() || journal.StarClass.IsBlackHole())
                 {
                     log.DetailSsml
                         .AppendEmphasis("Commander,", EmphasisType.Moderate)
@@ -45,7 +47,7 @@ namespace Observatory.Bridge.Events
                 }
 
                 Bridge.Instance.LogEvent(log);
-                Bridge.Instance.CurrentSystem.NextDestinationNotify = DateTime.Now.AddSeconds(30);
+                Bridge.Instance.CurrentSystem.NextDestinationNotify = DateTime.Now.Add(SpokenDestinationInterval);
             }
         }
     }

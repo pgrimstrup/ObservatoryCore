@@ -40,7 +40,7 @@ namespace Observatory.Bridge.Events
                 else
                     log.DetailSsml.AppendUnspoken(Emojis.Solar);
 
-                log.DetailSsml.Append($"{BridgeUtils.GetStarTypeName(journal.StarType)}{scoopable}.");
+                log.DetailSsml.Append($"{GetStarTypeName(journal.StarType)}{scoopable}.");
 
                 var estimatedValue = BodyValueEstimator.GetStarValue(journal.StarType, !journal.WasDiscovered);
                 if (estimatedValue >= Bridge.Instance.Settings.HighValueBody)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -38,12 +39,26 @@ namespace Observatory.Framework
             BodyNameWordReplacements.TryAdd("L", "<say-as interpret-as=\"characters\">L</say-as>");
             BodyNameWordReplacements.TryAdd("M", "<say-as interpret-as=\"characters\">M</say-as>");
             BodyNameWordReplacements.TryAdd("N", "<say-as interpret-as=\"characters\">N</say-as>");
+            BodyNameWordReplacements.TryAdd("O", "<say-as interpret-as=\"characters\">O</say-as>");
+            BodyNameWordReplacements.TryAdd("P", "<say-as interpret-as=\"characters\">P</say-as>");
+            BodyNameWordReplacements.TryAdd("Q", "<say-as interpret-as=\"characters\">Q</say-as>");
+            BodyNameWordReplacements.TryAdd("R", "<say-as interpret-as=\"characters\">R</say-as>");
+            BodyNameWordReplacements.TryAdd("S", "<say-as interpret-as=\"characters\">S</say-as>");
+            BodyNameWordReplacements.TryAdd("T", "<say-as interpret-as=\"characters\">T</say-as>");
+            BodyNameWordReplacements.TryAdd("U", "<say-as interpret-as=\"characters\">U</say-as>");
+            BodyNameWordReplacements.TryAdd("V", "<say-as interpret-as=\"characters\">V</say-as>");
+            BodyNameWordReplacements.TryAdd("W", "<say-as interpret-as=\"characters\">W</say-as>");
+            BodyNameWordReplacements.TryAdd("X", "<say-as interpret-as=\"characters\">X</say-as>");
+            BodyNameWordReplacements.TryAdd("Y", "<say-as interpret-as=\"characters\">Y</say-as>");
+            BodyNameWordReplacements.TryAdd("Z", "<say-as interpret-as=\"characters\">Z</say-as>");
             BodyNameCharacterReplacements.TryAdd("-", " dash ");
             BodyNameCharacterReplacements.TryAdd(".", " dot ");
 
             BodyTypeReplacements.TryAdd("I", "1");
             BodyTypeReplacements.TryAdd("II", "2");
             BodyTypeReplacements.TryAdd("III", "3");
+            BodyTypeReplacements.TryAdd("IV", "4");
+            BodyTypeReplacements.TryAdd("V", "5");
         }
 
         public SsmlBuilder()
@@ -70,7 +85,7 @@ namespace Observatory.Framework
             if (!String.IsNullOrEmpty(name))
             {
                 _textFragments.Add(name.Trim());
-                _ssmlFragments.Add(ReplaceWords(name.Trim(), BodyNameWordReplacements, BodyNameCharacterReplacements));
+                _ssmlFragments.Add(ReplaceWords(name.Trim(), BodyNameWordReplacements, BodyNameCharacterReplacements, true));
             }
             return this;
         }
@@ -96,20 +111,20 @@ namespace Observatory.Framework
 
         public SsmlBuilder AppendDigits(string text)
         {
-            _textFragments.Add($"{text.Trim()} ");
-            _ssmlFragments.Add($"<say-as interpret-as=\"digits\">{text.Trim()}</say-as> ");
+            _textFragments.Add(text.Trim());
+            _ssmlFragments.Add($"<say-as interpret-as=\"digits\">{text.Trim()}</say-as>");
             return this;
         }
 
         public SsmlBuilder AppendNumber(double value)
         {
-            _textFragments.Add($"{value} ");
+            _textFragments.Add($"{value}");
 
-            if (value > 1500000000)
+            if (value >= 1000000000)
                 _ssmlFragments.Add($"{value / 1000000000.0:n2} billion");
-            else if (value > 1500000)
+            else if (value >= 1000000)
                 _ssmlFragments.Add($"{value / 1000000.0:n2} million");
-            else if (value > 1500)
+            else if (value >= 1000)
                 _ssmlFragments.Add($"{value / 1000.0:n1} thousand");
             else
                 _ssmlFragments.Add($"{value:g}");
@@ -118,13 +133,13 @@ namespace Observatory.Framework
 
         public SsmlBuilder AppendNumber(long value)
         {
-            _textFragments.Add($"{value:n0} ");
+            _textFragments.Add($"{value:n0}");
 
-            if (value > 1500000000)
+            if (value >= 1000000000)
                 _ssmlFragments.Add($"{value / 1000000000.0:n1} billion");
-            else if (value > 1500000)
+            else if (value >= 1000000)
                 _ssmlFragments.Add($"{value / 1000000.0:n1} million");
-            else if (value > 1500)
+            else if (value >= 1000)
                 _ssmlFragments.Add($"{value / 1000.0:n1} thousand");
             else
                 _ssmlFragments.Add($"{value:n0}");
@@ -186,7 +201,7 @@ namespace Observatory.Framework
             return this;
         }
 
-        private string ReplaceWords(string text, IDictionary<string, string> replacements, IDictionary<string, string> characterReplacements = null)
+        private string ReplaceWords(string text, IDictionary<string, string> replacements, IDictionary<string, string> characterReplacements = null, bool spellOutNumbers = false)
         {
             if (characterReplacements != null)
             {
@@ -201,6 +216,8 @@ namespace Observatory.Framework
             {
                 if (replacements.TryGetValue(words[i], out var replacement))
                     words[i] = replacement;
+                if (Int32.TryParse(words[i], out int number) && number >= 100)
+                    words[i] = $"<say-as interpret-as=\"digits\">{words[i]}</say-as>";
             }
             text = string.Join(" ", words);
 
@@ -227,18 +244,12 @@ namespace Observatory.Framework
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < _ssmlFragments.Count; i++)
             {
-                if (_ssmlFragments[i].StartsWith('<'))
-                {
-                    sb.Append(_ssmlFragments[i]);
-                }
-                else
-                {
-                    sb.Append(_ssmlFragments[i]);
+                if (i > 0 && !_ssmlFragments[i].StartsWith(",") && !_ssmlFragments[i].StartsWith(".") && !_ssmlFragments[i].StartsWith("<"))
                     sb.Append(" ");
-                }
+                sb.Append(_ssmlFragments[i]);
             }
 
-            return $"<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xml:lang=\"en-US\"><voice name=\"\">{sb.ToString().Trim()}</voice></speak>";
+            return $"<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xml:lang=\"en-US\">{sb.ToString().Trim()}</speak>";
         }
     }
 }

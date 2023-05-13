@@ -74,12 +74,18 @@ namespace Observatory.Bridge.Events
             if (ship.Status2 != newStatus.Flags2)
                 LogInfo($"StatusChanged: Flags2: {ship.Status2} -> {newStatus.Flags2}");
 
-            // Seems to be a bug, we get the masslock flag when entering FSDJump
-            if (HasShipStatusChanged(StatusFlags.Masslock, ship, newStatus) && !newStatus.Flags.HasFlag(StatusFlags.FSDJump))
-                DoMasslock(newStatus);
+            // Seems to be a bug, we get the masslock flag sometimes when we shouldn't
+            if (!newStatus.Flags.HasFlag(StatusFlags.FSDJump) &&
+                !newStatus.Flags.HasFlag(StatusFlags.Supercruise) &&
+                !newStatus.Flags.HasFlag(StatusFlags.Landed))
+            {
+                if (HasShipStatusChanged(StatusFlags.Masslock, ship, newStatus))
+                    DoMasslock(newStatus);
 
-            if (HasShipStatusChanged(StatusFlags.LandingGear, ship, newStatus))
-                DoLandingGear(newStatus);
+                // Sometimes get a change to LandingGear when already landed
+                if (HasShipStatusChanged(StatusFlags.LandingGear, ship, newStatus))
+                    DoLandingGear(newStatus);
+            }
 
             // Copy the instance
             Bridge.Instance.CurrentShip.Status = newStatus.Flags;
@@ -127,13 +133,15 @@ namespace Observatory.Bridge.Events
                     log.DetailSsml
                         .Append("Preparing to jump to")
                         .AppendBodyName(Bridge.Instance.CurrentSystem.NextSystemName)
-                        .Append($". Destination star is type-{Bridge.Instance.CurrentSystem.NextStarClass}{scoopable}.");
+                        .Append($". Destination star is a")
+                        .AppendBodyType(GetStarTypeName(Bridge.Instance.CurrentSystem.NextStarClass))
+                        .Append("{scoopable}.");
 
                     if (Bridge.Instance.CurrentSystem.RemainingJumpsInRoute > 0 && (Bridge.Instance.CurrentSystem.RemainingJumpsInRoute < 5 || (Bridge.Instance.CurrentSystem.RemainingJumpsInRoute % 5) == 0))
                         log.DetailSsml.Append($"There are {Bridge.Instance.CurrentSystem.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
 
                     Bridge.Instance.LogEvent(log);
-                    Bridge.Instance.CurrentSystem.NextDestinationNotify = DateTime.Now.AddSeconds(30); // notify in 30 seconds time
+                    Bridge.Instance.CurrentSystem.NextDestinationNotify = DateTime.Now.Add(SpokenDestinationInterval); // notify in 30 seconds time
                 }
             }
         }

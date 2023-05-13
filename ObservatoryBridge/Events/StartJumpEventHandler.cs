@@ -26,14 +26,16 @@ namespace Observatory.Bridge.Events
                 var scoopable = ScoopableStars.Contains(journal.StarClass) ? ", scoopable" : ", non-scoopable";
                 log.DetailSsml
                     .Append("Jumping to")
-                    .AppendBodyName(journal.StarSystem)
-                    .Append($". Destination star is type-{journal.StarClass}{scoopable}.");
+                        .AppendBodyName(journal.StarSystem)
+                        .Append($". Destination star is a")
+                        .AppendBodyType(GetStarTypeName(journal.StarClass))
+                        .Append($"{scoopable}.");
 
                 if (Bridge.Instance.CurrentSystem.RemainingJumpsInRoute > 0 && (Bridge.Instance.CurrentSystem.RemainingJumpsInRoute < 5 || (Bridge.Instance.CurrentSystem.RemainingJumpsInRoute % 5) == 0))
                     log.DetailSsml.Append($"There are {Bridge.Instance.CurrentSystem.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
 
                 Bridge.Instance.LogEvent(log);
-                Bridge.Instance.CurrentSystem.NextDestinationNotify = DateTime.Now.AddSeconds(30); // notify in 30 seconds time
+                Bridge.Instance.CurrentSystem.NextDestinationNotify = DateTime.Now.Add(SpokenDestinationInterval); // notify in 30 seconds time
             }
 
             if (journal.StarClass.IsNeutronStar() || journal.StarClass.IsWhiteDwarf())
