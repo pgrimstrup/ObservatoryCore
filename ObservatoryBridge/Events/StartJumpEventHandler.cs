@@ -12,18 +12,19 @@ namespace Observatory.Bridge.Events
     {
         public void HandleEvent(StartJump journal)
         {
-            LogInfo($"StartJump: {journal.Event} to {journal.StarSystem} (star class {journal.StarClass})");
 
             // We get this event when entering supercruise if we have a destination locked
             if (!String.IsNullOrEmpty(journal.StarSystem))
             {
+                LogInfo($"StartJump: {journal.Event} to {journal.StarSystem} (star class {journal.StarClass})");
+
                 var log = new BridgeLog(journal);
                 if (Bridge.Instance.CurrentSystem.NextDestinationNotify > DateTime.Now)
                     log.TextOnly();
 
                 log.TitleSsml.Append("Flight Operations");
 
-                var scoopable = ScoopableStars.Contains(journal.StarClass) ? ", scoopable" : ", non-scoopable";
+                var scoopable = journal.StarClass.IsScoopable() ? ", scoopable" : ", non-scoopable";
                 log.DetailSsml
                     .Append("Jumping to")
                         .AppendBodyName(journal.StarSystem)
@@ -35,18 +36,20 @@ namespace Observatory.Bridge.Events
                     log.DetailSsml.Append($"There are {Bridge.Instance.CurrentSystem.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
 
                 Bridge.Instance.LogEvent(log);
-                Bridge.Instance.CurrentSystem.NextDestinationNotify = DateTime.Now.Add(SpokenDestinationInterval); // notify in 30 seconds time
-            }
+                if (!Bridge.Instance.Core.IsLogMonitorBatchReading)
+                    Bridge.Instance.CurrentSystem.NextDestinationNotify = DateTime.Now.Add(SpokenDestinationInterval);
 
-            if (journal.StarClass.IsNeutronStar() || journal.StarClass.IsWhiteDwarf())
-            {
-                var log = new BridgeLog(journal);
-                log.SpokenOnly();
 
-                log.DetailSsml.AppendEmphasis("Commander,", EmphasisType.Moderate);
-                log.DetailSsml.Append("this is a dangerous star type.");
-                log.DetailSsml.AppendEmphasis("Throttle down now.", EmphasisType.Strong);
-                Bridge.Instance.LogEvent(log);
+                if (journal.StarClass.IsNeutronStar() || journal.StarClass.IsWhiteDwarf())
+                {
+                    log = new BridgeLog(journal);
+                    log.SpokenOnly();
+
+                    log.DetailSsml.AppendEmphasis("Commander,", EmphasisType.Moderate);
+                    log.DetailSsml.Append("this is a dangerous star type.");
+                    log.DetailSsml.AppendEmphasis("Throttle down now.", EmphasisType.Strong);
+                    Bridge.Instance.LogEvent(log);
+                }
             }
         }
     }

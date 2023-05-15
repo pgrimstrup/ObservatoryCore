@@ -23,6 +23,18 @@ namespace Observatory.Bridge.Events
             {
                 LogInfo($"{journal.Event}: {journal.BodyName}, StarType {journal.StarType}");
 
+                if(GetBodyName(journal.BodyName) == "Star A" && !journal.WasDiscovered && !Bridge.Instance.CurrentSystem.FirstDiscoverySpoken)
+                {
+                    var first = new BridgeLog(journal);
+                    first.SpokenOnly().DetailSsml
+                        .AppendEmphasis("Commander,", Framework.EmphasisType.Moderate)
+                        .Append("we are the first to discover this system.");
+                    Bridge.Instance.LogEvent(first);
+
+                    if (!Bridge.Instance.Core.IsLogMonitorBatchReading)
+                        Bridge.Instance.CurrentSystem.FirstDiscoverySpoken = true;
+                }
+
                 var log = new BridgeLog(journal);
                 log.IsTitleSpoken = true;
 
@@ -31,8 +43,6 @@ namespace Observatory.Bridge.Events
                 else
                     log.TitleSsml.AppendBodyName(GetBodyName(journal.BodyName));
 
-                var scoopable = ScoopableStars.Contains(journal.StarType.Substring(0, 1)) ? ", scoopable" : ", non-scoopable";
-
                 if (journal.StarType.IsBlackHole())
                     log.DetailSsml.AppendUnspoken(Emojis.BlackHole);
                 else if (journal.StarType.IsWhiteDwarf())
@@ -40,7 +50,10 @@ namespace Observatory.Bridge.Events
                 else
                     log.DetailSsml.AppendUnspoken(Emojis.Solar);
 
-                log.DetailSsml.Append($"{GetStarTypeName(journal.StarType)}{scoopable}.");
+                var scoopable = journal.StarType.IsScoopable() ? ", scoopable" : ", non-scoopable";
+                log.DetailSsml
+                    .AppendBodyType(GetStarTypeName(journal.StarType))
+                    .Append($"{scoopable}.");
 
                 var estimatedValue = BodyValueEstimator.GetStarValue(journal.StarType, !journal.WasDiscovered);
                 if (estimatedValue >= Bridge.Instance.Settings.HighValueBody)

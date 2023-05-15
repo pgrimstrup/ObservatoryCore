@@ -25,6 +25,8 @@ namespace Observatory.Bridge
         internal CurrentSystemData CurrentSystem = new CurrentSystemData();
         internal CurrentShipData CurrentShip = new CurrentShipData();
         internal Rank CurrentRank = new Rank();
+        internal double FuelScooped;
+        internal double FuelTotal;
 
         public string Name => "Observatory Bridge";
 

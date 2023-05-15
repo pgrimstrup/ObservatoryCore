@@ -16,6 +16,7 @@ namespace Observatory.Bridge
         public string NextStarClass { get; set; } = "";
         public int RemainingJumpsInRoute { get; set; }
         public DateTime NextDestinationNotify { get; set; }
+        public bool FirstDiscoverySpoken { get; set; }
 
         public Dictionary<string, Scan> ScannedBodies { get; } = new Dictionary<string, Scan>();
 
@@ -31,6 +32,7 @@ namespace Observatory.Bridge
 
         public void Assign(FSDJump jump)
         {
+            FirstDiscoverySpoken = false;
             SystemName = jump.StarSystem;
             ScanPercent = 0;
             ScannedBodies.Clear();

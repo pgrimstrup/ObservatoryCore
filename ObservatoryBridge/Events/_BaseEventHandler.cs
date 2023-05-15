@@ -11,8 +11,6 @@ namespace Observatory.Bridge.Events
 {
     internal class BaseEventHandler
     {
-        static public readonly string[] ScoopableStars = { "K", "G", "B", "F", "O", "A", "M" };
-
         protected Random R = new Random();
         protected TimeSpan SpokenDestinationInterval = TimeSpan.FromSeconds(60);
 

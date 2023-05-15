@@ -10,9 +10,9 @@ namespace Observatory.Bridge.Events
 {
     internal class FSSDiscoveryScanEventHandler : BaseEventHandler, IJournalEventHandler<FSSDiscoveryScan>
     {
-        public void HandleEvent(FSSDiscoveryScan journal)
+        public async void HandleEvent(FSSDiscoveryScan journal)
         {
-            LogInfo($"{journal.Event}: {journal.BodyCount} bodies, {journal.Progress * 100:n0} percent");
+            LogInfo($"{journal.Event}: {journal.BodyCount} bodies, {journal.NonBodyCount} non-bodies, {journal.Progress * 100:n0} percent");
             if(Bridge.Instance.CurrentSystem.ScanPercent == 100)
                 return;
 
@@ -28,6 +28,7 @@ namespace Observatory.Bridge.Events
                 log.DetailSsml.Append("All bodies found.");
 
             Bridge.Instance.LogEvent(log);
+            await Task.CompletedTask;
         }
     }
 }

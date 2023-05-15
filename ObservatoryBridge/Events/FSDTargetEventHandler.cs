@@ -26,7 +26,7 @@ namespace Observatory.Bridge.Events
                 var log = new BridgeLog(journal);
                 log.TitleSsml.Append("Flight Operations");
 
-                var scoopable = ScoopableStars.Contains(journal.StarClass) ? ", scoopable" : ", non-scoopable";
+                var scoopable = journal.StarClass.IsScoopable() ? ", scoopable" : ", non-scoopable";
                 log.DetailSsml
                     .Append("Course laid in to")
                         .AppendBodyName(journal.Name)
@@ -47,7 +47,8 @@ namespace Observatory.Bridge.Events
                 }
 
                 Bridge.Instance.LogEvent(log);
-                Bridge.Instance.CurrentSystem.NextDestinationNotify = DateTime.Now.Add(SpokenDestinationInterval);
+                if(!Bridge.Instance.Core.IsLogMonitorBatchReading)
+                    Bridge.Instance.CurrentSystem.NextDestinationNotify = DateTime.Now.Add(SpokenDestinationInterval);
             }
         }
     }

@@ -129,19 +129,20 @@ namespace Observatory.Bridge.Events
                     var log = new BridgeLog(status);
                     log.SpokenOnly();
 
-                    var scoopable = ScoopableStars.Contains(Bridge.Instance.CurrentSystem.NextStarClass) ? ", scoopable" : ", non-scoopable";
+                    var scoopable = Bridge.Instance.CurrentSystem.NextStarClass.IsScoopable() ? ", scoopable" : ", non-scoopable";
                     log.DetailSsml
                         .Append("Preparing to jump to")
                         .AppendBodyName(Bridge.Instance.CurrentSystem.NextSystemName)
                         .Append($". Destination star is a")
                         .AppendBodyType(GetStarTypeName(Bridge.Instance.CurrentSystem.NextStarClass))
-                        .Append("{scoopable}.");
+                        .Append($"{scoopable}.");
 
                     if (Bridge.Instance.CurrentSystem.RemainingJumpsInRoute > 0 && (Bridge.Instance.CurrentSystem.RemainingJumpsInRoute < 5 || (Bridge.Instance.CurrentSystem.RemainingJumpsInRoute % 5) == 0))
                         log.DetailSsml.Append($"There are {Bridge.Instance.CurrentSystem.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
 
                     Bridge.Instance.LogEvent(log);
-                    Bridge.Instance.CurrentSystem.NextDestinationNotify = DateTime.Now.Add(SpokenDestinationInterval); // notify in 30 seconds time
+                    if (!Bridge.Instance.Core.IsLogMonitorBatchReading)
+                        Bridge.Instance.CurrentSystem.NextDestinationNotify = DateTime.Now.Add(SpokenDestinationInterval); 
                 }
             }
         }
@@ -184,6 +185,30 @@ namespace Observatory.Bridge.Events
                 return;
 
             BridgeLog? log = null;
+            if (ship.Status.HasFlag(StatusFlags.FuelScooping) && !status.Flags.HasFlag(StatusFlags.FuelScooping) && Bridge.Instance.FuelScooped > 0)
+            {
+                log = new BridgeLog(status);
+                log.TitleSsml.Append("Fuel Scooping");
+
+                log.DetailSsml.AppendUnspoken(Emojis.FuelScoop);
+                log.DetailSsml
+                    .Append($"Fuel scooping terminated after collecting")
+                    .AppendNumber(Math.Round(Bridge.Instance.FuelScooped, 2))
+                    .Append("tons.");
+
+                double total = Math.Round(Bridge.Instance.FuelTotal, 2);
+                log.DetailSsml.Append("Main tank at")
+                    .AppendNumber(total)
+                    .Append("tons.");
+
+
+                Bridge.Instance.LogEvent(log);
+                log = null;
+
+                Bridge.Instance.FuelScooped = 0;
+                Bridge.Instance.FuelTotal = 0;
+            }
+
             double fuelLevel = ship.Fuel.FuelMain / ship.FuelCapacity;
             FuelWarnings newWarning = FuelWarnings.Plenty;
             foreach((double level, FuelWarnings warning, string message) item in FuelWarning)

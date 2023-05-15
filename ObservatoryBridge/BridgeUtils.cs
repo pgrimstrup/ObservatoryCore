@@ -42,6 +42,9 @@ namespace Observatory.Bridge
         public static bool IsGasGiant(this string? bodyType) => !String.IsNullOrWhiteSpace(bodyType) 
             && bodyType.Contains($"Gas Giant", StringComparison.OrdinalIgnoreCase);
 
+        public static bool IsScoopable(this string? starClass) => !String.IsNullOrWhiteSpace(starClass)
+            && starClass.IndexOfAny("KGBFOAM".ToCharArray()) == 0;
+
         public static string ReplaceRomanNumerals(this string text)
         {
             var words = text.Split();
