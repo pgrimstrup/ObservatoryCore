@@ -3,7 +3,6 @@ using Observatory.Framework;
 using Observatory.Framework.Files.Journal;
 using Observatory.Framework.Files.ParameterTypes;
 using Observatory.Framework.Interfaces;
-using StarGazer.Framework;
 
 namespace StarGazer.Botanist
 {

@@ -64,7 +64,7 @@ namespace StarGazer.Plugins
             }
         }
 
-        public void LoadPlugins()
+        public async Task LoadPluginsAsync()
         {
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
 
@@ -74,7 +74,7 @@ namespace StarGazer.Plugins
             {
                 if (pluginType.IsAssignableFrom(type) && !type.IsAbstract && !type.IsInterface)
                 {
-                    var pluginState = LoadPlugin(type);
+                    var pluginState = await LoadPluginAsync(type);
                     Plugins[pluginState.SettingKey] = pluginState;
                     Debug.WriteLine($"Plugin {pluginState.SettingKey} loaded");
                 }
@@ -93,7 +93,7 @@ namespace StarGazer.Plugins
                     }
                     else
                     {
-                        var pluginState = LoadPlugin(type);
+                        var pluginState = await LoadPluginAsync(type);
                         Plugins[pluginState.SettingKey] = pluginState;
                         Debug.WriteLine($"Plugin {pluginState.SettingKey} loaded");
                     }
@@ -112,7 +112,7 @@ namespace StarGazer.Plugins
                     {
                         if (pluginType.IsAssignableFrom(type) && !type.IsAbstract && !type.IsInterface)
                         {
-                            var pluginState = LoadPlugin(type);
+                            var pluginState = await LoadPluginAsync(type);
                             Plugins[pluginState.SettingKey] = pluginState;
                             Debug.WriteLine($"Plugin {pluginState.SettingKey} loaded");
                         }
@@ -140,7 +140,7 @@ namespace StarGazer.Plugins
             return null;
         }
 
-        private PluginLoadState LoadPlugin(Type type)
+        private async Task<PluginLoadState> LoadPluginAsync(Type type)
         {
             var pluginState = new PluginLoadState();
             pluginState.SettingKey = type.FullName;
@@ -155,7 +155,12 @@ namespace StarGazer.Plugins
                         throw new InvalidCastException("Created instance does not implement IObservatoryPlugin");
 
                     _core.LoadPluginSettings(pluginState.Instance);
-                    pluginState.Instance.Load(_core);
+
+                    if (pluginState.Instance is IStarGazerPlugin asyncPlugin)
+                        await asyncPlugin.LoadAsync(_core);
+                    else
+                        pluginState.Instance.Load(_core);
+
                     _core.SavePluginSettings(pluginState.Instance);
                 }
             }

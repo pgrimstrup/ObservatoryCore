@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using StarGazer.Framework;
+﻿using StarGazer.Framework;
 using StarGazer.Framework.Interfaces;
 
 namespace StarGazer.UI.Services

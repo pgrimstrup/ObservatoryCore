@@ -24,11 +24,11 @@ namespace StarGazer.Bridge
         internal CurrentGameState GameState = new CurrentGameState();
         internal Rank CurrentRank = new Rank();
 
-        public string Name => "Observatory Bridge";
+        public string Name => "StarGazer Bridge";
 
         public string ShortName => "Bridge";
 
-        public string Version => typeof(Bridge).Assembly.GetName().Version?.ToString() ?? "";
+        public string Version => typeof(Bridge).Assembly.GetName().Version?.ToString(3) ?? "";
 
         public PluginUI PluginUI => _ui;
 
@@ -66,8 +66,6 @@ namespace StarGazer.Bridge
             {
                 _ui = new PluginUI(new ObservableCollection<object>());
                 Core = observatoryCore;
-                if(Settings.LastJournalTimestamp == DateTime.MinValue)
-                    Settings.LastJournalTimestamp = DateTime.UtcNow;
             }
             catch (Exception ex)
             {
@@ -178,14 +176,14 @@ namespace StarGazer.Bridge
                 if (options.UseInternalVocalizer)
                     e.Rendering |= NotificationRendering.NativeVocal;
 
-                if (String.IsNullOrEmpty(e.Title))
+                if (String.IsNullOrWhiteSpace(e.Title) && String.IsNullOrWhiteSpace(e.TitleSsml))
                 {
                     // Empty titles are always suppressed
                     e.Suppression |= NotificationSuppression.Title;
                     log.IsTitleSpoken = false;
                 }
 
-                if (String.IsNullOrEmpty(e.Detail))
+                if (String.IsNullOrWhiteSpace(e.Detail) && String.IsNullOrWhiteSpace(e.DetailSsml))
                 {
                     // Empty details are always suppressed
                     e.Suppression |= NotificationSuppression.Detail;

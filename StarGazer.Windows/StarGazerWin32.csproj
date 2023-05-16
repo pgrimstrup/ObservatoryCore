@@ -50,6 +50,7 @@
     <ProjectReference Include="..\StarGazer.Botanist\StarGazer.Botanist.csproj" />
     <ProjectReference Include="..\StarGazer.Bridge\StarGazer.Bridge.csproj" />
     <ProjectReference Include="..\StarGazer.Core\StarGazer.Core.csproj" />
+    <ProjectReference Include="..\StarGazer.EDSM\StarGazer.EDSM.csproj" />
     <ProjectReference Include="..\StarGazer.Explorer\StarGazer.Explorer.csproj" />
     <ProjectReference Include="..\StarGazer.Framework\StarGazer.Framework.csproj" />
     <ProjectReference Include="..\StarGazer.Herald\StarGazer.Herald.csproj" />

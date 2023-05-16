@@ -47,7 +47,7 @@ namespace StarGazer
 
         public IEnumerable<IObservatoryPlugin> ActivePlugins => _pluginManager.ActivePlugins;
 
-        public IEnumerable<IObservatoryPlugin> Initialize()
+        public async Task<IEnumerable<IObservatoryPlugin>> InitializeAsync()
         {
             if (_pluginsInitialized)
                 throw new InvalidOperationException("IObserverCore.Initializes cannot be called more than once");
@@ -60,7 +60,7 @@ namespace StarGazer
 
             // PluginManager needs Core to be created first (circular reference), so we can create PluginManager here
             _pluginManager = Services.GetRequiredService<PluginManager>();
-            _pluginManager.LoadPlugins();
+            await _pluginManager.LoadPluginsAsync();
 
             if (_settings.StartMonitor)
                 _logMonitor.Start();
@@ -344,7 +344,14 @@ namespace StarGazer
             {
                 try
                 {
-                    (plugin as IObservatoryWorker)?.JournalEvent((JournalBase)e.journalEvent);
+                    if (plugin is IStarGazerWorker sgWorker)
+                    {
+                        sgWorker.JournalEventAsync((JournalBase)e.journalEvent);
+                    }
+                    else if(plugin is IObservatoryWorker obWorker)
+                    {
+                        obWorker.JournalEvent((JournalBase)e.journalEvent);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -359,7 +366,14 @@ namespace StarGazer
             {
                 try
                 {
-                    (plugin as IObservatoryWorker)?.StatusChange((Status)e.journalEvent);
+                    if (plugin is IStarGazerWorker sgWorker)
+                    {
+                        sgWorker.StatusChangeAsync((Status)e.journalEvent);
+                    }
+                    else if (plugin is IObservatoryWorker obWorker)
+                    {
+                        obWorker.StatusChange((Status)e.journalEvent);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -392,7 +406,7 @@ namespace StarGazer
         {
             get
             {
-                string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ED Observatory", "Data");
+                string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Star Gazer", "Data");
                 if(!Directory.Exists(path))
                     Directory.CreateDirectory(path);
                 return path;
@@ -403,7 +417,7 @@ namespace StarGazer
         {
             get
             {
-                string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ED Observatory");
+                string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Star Gazer");
                 if (!Directory.Exists(path))
                     Directory.CreateDirectory(path);
                 return path;

@@ -37,7 +37,14 @@ namespace StarGazer.UI
             _logger = logger;
             _dockStateFile = Path.Combine(_core.CoreFolder, "docking_state.xml");
 
-            var plugins = _core.Initialize();
+
+        }
+
+        protected async void OnLoadedAsync(object sender, RoutedEventArgs e)
+        {
+            Ribbon.BackStageButton.Visibility = Visibility.Collapsed;
+
+            var plugins = await _core.InitializeAsync();
             foreach (var plugin in plugins.Where(p => p.PluginUI?.DataGrid != null))
             {
                 var view = _core.Services.GetRequiredService<PluginView>();
@@ -49,7 +56,7 @@ namespace StarGazer.UI
                 };
 
                 // Speaking of which, initialize the font size
-                if(_settings.GridFontSizes.TryGetValue(plugin.GetType().FullName, out var size))
+                if (_settings.GridFontSizes.TryGetValue(plugin.GetType().FullName, out var size))
                 {
                     view.DataGrid.FontSize = size;
                     view.ResetColumnRowSizes();
@@ -58,12 +65,7 @@ namespace StarGazer.UI
                 PluginViews.Add(viewModel);
             }
 
-            this.DataContext = this;
-        }
-
-        protected void OnLoadedAsync(object sender, RoutedEventArgs e)
-        {
-            Ribbon.BackStageButton.Visibility = Visibility.Collapsed;
+            LoadDockingState();
 
             if (!_settings.MainWindowBounds.IsEmpty)
             {
@@ -74,8 +76,10 @@ namespace StarGazer.UI
                 this.WindowState = (WindowState)_settings.MainWindowBounds.State;
             }
 
-            LoadDockingState();
+            this.DataContext = this;
+
             _logger.LogInformation("MainWindow load has completed");
+            await Task.CompletedTask;
         }
 
         private void LoadDockingState()

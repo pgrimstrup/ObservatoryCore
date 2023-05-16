@@ -1,14 +1,5 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Metadata;
-using System.Speech.Recognition;
+﻿using System.Collections.Concurrent;
 using System.Speech.Synthesis;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Media.Media3D;
-using System.Xml;
 using Microsoft.Extensions.Logging;
 using StarGazer.Framework;
 using StarGazer.Framework.Interfaces;

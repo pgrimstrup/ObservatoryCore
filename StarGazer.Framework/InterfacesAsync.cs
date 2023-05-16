@@ -29,7 +29,7 @@ namespace StarGazer.Framework.Interfaces
     /// <para>Work required on plugin startup — for example object instantiation — can be done in the constructor or Load() method.<br/>
     /// Be aware that saved settings will not be available until Load() is called.</para>
     /// </summary>
-    public interface IStarGazerWorker : IStarGazerPlugin, IObservatoryWorker
+    public interface IStarGazerWorker : IStarGazerPlugin
     {
         /// <summary>
         /// Method called when new journal data is processed. Most work done by worker plugins will occur here.
@@ -60,7 +60,7 @@ namespace StarGazer.Framework.Interfaces
     /// <para>Work required on plugin startup — for example object instantiation — can be done in the constructor or Load() method.<br/>
     /// Be aware that saved settings will not be available until Load() is called.</para>
     /// </summary>
-    public interface IStarGazerNotifier : IStarGazerPlugin, IObservatoryNotifier
+    public interface IStarGazerNotifier : IStarGazerPlugin
     {
         /// <summary>
         /// Method called when other plugins send notification events to StarGazer Core.
@@ -85,7 +85,7 @@ namespace StarGazer.Framework.Interfaces
     /// </summary>
     public interface IStarGazerCore : IObservatoryCore
     {
-        public IEnumerable<IObservatoryPlugin> Initialize();
+        public Task<IEnumerable<IObservatoryPlugin>> InitializeAsync();
 
         /// <summary>
         /// Send a notification out to all native notifiers and any plugins implementing IStarGazerNotifier and/or IObservatoryNotifier.

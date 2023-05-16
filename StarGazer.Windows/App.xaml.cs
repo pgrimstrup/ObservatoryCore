@@ -44,7 +44,7 @@ namespace StarGazer.UI
         {
             builder.AddLogging(logging => {
                 logging.AddFileLogging(options => {
-                    options.FileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ED Observatory", "Logs", "observatory.log");
+                    options.FileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Star Gazer", "Logs", "observatory.log");
                     options.LogLevel = LogLevel.Information;
                     options.RolloverCount = 10;
                     options.DailyRollover = true;

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using StarGazer.Framework.Interfaces;
+﻿using System.Text.Json;
 
 namespace StarGazer.Framework
 {
@@ -40,7 +34,8 @@ namespace StarGazer.Framework
             var target = Activator.CreateInstance(source.GetType());
             foreach(var prop in source.GetType().GetProperties())
             {
-                prop.SetValue(target, prop.GetValue(source, null));
+                if(prop.CanRead && prop.CanWrite)
+                    prop.SetValue(target, prop.GetValue(source, null));
             }
             return target;
         }

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using StarGazer.Framework.Interfaces;
+﻿using StarGazer.Framework.Interfaces;
 
 namespace StarGazer.UI.Services
 {
@@ -12,7 +7,8 @@ namespace StarGazer.UI.Services
         public IDictionary<string, string> PluginTypes => new Dictionary<string, string> {
             { "Bridge", "StarGazer.Bridge.Bridge, StarGazer.Bridge" },
             { "Explorer", "StarGazer.Explorer.ExplorerWorker, StarGazer.Explorer" },
-            { "Herald", "StarGazer.Herald.HeraldNotifier, StarGazer.Herald" }
+            { "Herald", "StarGazer.Herald.HeraldNotifier, StarGazer.Herald" },
+            { "EDSM", "StarGazer.EDSM.EdsmWorker, StarGazer.EDSM" }
         };
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using System.Windows;
 using Concentus.Oggfile;
 using Concentus.Structs;
 using Microsoft.Extensions.Logging;

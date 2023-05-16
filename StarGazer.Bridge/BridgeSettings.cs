@@ -49,9 +49,5 @@ namespace StarGazer.Bridge
             }
         };
 
-
-        [SettingIgnore]
-        public DateTime LastJournalTimestamp { get; set; }
-
     }
 }

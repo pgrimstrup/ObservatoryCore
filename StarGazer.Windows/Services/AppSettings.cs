@@ -1,5 +1,4 @@
 ﻿using System.Text.Json.Serialization;
-using StarGazer;
 using StarGazer.Framework.Interfaces;
 
 namespace StarGazer.UI.Services

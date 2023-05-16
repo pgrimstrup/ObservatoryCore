@@ -99,6 +99,7 @@ namespace StarGazer.UI.Views
                 {
                     DataGrid.FontSize = fontSize;
                     ResetColumnWidths();
+                    ResetColumnRowSizes();
                     FontSizeChanged?.Invoke(this, EventArgs.Empty);
                 }
                 e.Handled = true;

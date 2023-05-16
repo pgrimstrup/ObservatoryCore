@@ -6,7 +6,6 @@ namespace StarGazer.Bridge
 {
     internal class CurrentGameState
     {
-        public bool EDSMEnabled { get; set; } 
         public ulong ShipId { get; set; }
         public string? ShipType { get; set; } 
         public string? ShipName { get; set; } 
@@ -19,10 +18,7 @@ namespace StarGazer.Bridge
         public double FuelScooped { get; set; }
 
         // Transient properties for use by EDSM
-        public ulong SystemAddress { get; set; }
         public string? SystemName { get; set; } 
-        public (double x, double y, double z)? SystemCoordinates { get; set; } 
-        public long StationId { get; set; } 
         public string? StationName { get; set; }
 
         // Tracked during FSDTarget for later use
@@ -67,11 +63,11 @@ namespace StarGazer.Bridge
                     ShipName = loadout.ShipName;
                     break;
                 case Undocked undocked:
-                    StationId = 0;
                     StationName = null;
                     break;
                 case Location location:
-                    SetLocation(location.SystemAddress, location.StarSystem, location.StarPos, location.MarketID, location.StationName);
+                    SystemName = location.StarSystem;
+                    StationName = location.StationName;
                     break;
                 case FSDTarget fsdTarget:
                     AssignFSDTarget(fsdTarget);
@@ -80,15 +76,8 @@ namespace StarGazer.Bridge
                     AssignFSDJump(fsdJump);
                     break;
                 case Docked docked:
-                    SetLocation(docked.SystemAddress, docked.StarSystem, null, docked.MarketID, docked.StationName);
-                    break;
-                case QuitACrew quitACrew:
-                    EDSMEnabled = true;
-                    ClearLocation();
-                    break;
-                case JoinACrew joinACrew:
-                    EDSMEnabled = joinACrew.Captain == Commander;
-                    ClearLocation();
+                    SystemName = docked.StarSystem;
+                    StationName = docked.StationName;
                     break;
                 case Status status:
                     AssignStatus(status);
@@ -106,45 +95,6 @@ namespace StarGazer.Bridge
                 FuelMain = journal.Total,
                 FuelReservoir = Fuel.FuelReservoir
             };
-        }
-
-        void ClearLocation()
-        {
-            SystemAddress = 0;
-            SystemName = null;
-            SystemCoordinates = null;
-            StationId = 0;
-            StationName = null;
-        }
-
-        void SetLocation(ulong systemAddress, string? systemName, (double x, double y, double z)? systemCoordinates, long? stationId, string? stationName)
-        {
-            if (systemName != SystemName)
-                SystemCoordinates = null;
-
-            if(systemName != "ProvingGroup" && systemName != "CQC")
-            {
-                SystemName = systemName;
-                if (systemAddress > 0)
-                    SystemAddress = systemAddress;
-                if(systemCoordinates != null)
-                    SystemCoordinates = systemCoordinates;
-            }
-            else
-            {
-                SystemAddress = 0;
-                SystemName = null;
-                SystemCoordinates = null;
-            }
-
-            if (stationId.HasValue)
-            {
-                StationId = stationId.Value;
-            }
-            if (!String.IsNullOrEmpty(stationName))
-            {
-                StationName = stationName;
-            }
         }
 
 
@@ -185,7 +135,6 @@ namespace StarGazer.Bridge
 
         void AssignFSDJump(FSDJump jump)
         {
-            SetLocation(jump.SystemAddress, jump.StarSystem, jump.StarPos, null, null);
             ScanPercent = 0;
             ScannedBodies.Clear();
             BodySignals.Clear();
