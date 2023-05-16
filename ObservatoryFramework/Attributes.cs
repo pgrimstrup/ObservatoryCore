@@ -6,10 +6,6 @@ using System.Threading.Tasks;
 
 namespace Observatory.Framework
 {
-    // These Attribute classes are all named incorrectly. They do not have the "Attribute" suffix to their class name.
-    // They are kept to maintain backward compatibility with other plugins.
-    // THey will be flagged as obsolete and replaced with DataAnnotationAttributes.
-
     /// <summary>
     /// Specifies text to display as the name of the setting in the UI instead of the property name.
     /// </summary>
@@ -37,29 +33,18 @@ namespace Observatory.Framework
         }
     }
 
-    public class SettingDependsOn: Attribute
-    {
-        public string DependsOn { get; set; }
-
-        public SettingDependsOn(string dependsOn)
-        {
-            DependsOn = dependsOn;
-        }   
-    }
-
-
     /// <summary>
     /// Indicates that the property should not be displayed to the user in the UI.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-    public class SettingIgnore: Attribute
+    public class SettingIgnore : Attribute
     { }
 
     /// <summary>
     /// Indicates numeric properly should use a slider control instead of a numeric textbox with roller.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-    public class SettingNumericUseSlider: Attribute
+    public class SettingNumericUseSlider : Attribute
     { }
 
     /// <summary>
@@ -68,54 +53,32 @@ namespace Observatory.Framework
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
     public class SettingBackingValue : Attribute
     {
+        private string property;
+
         /// <summary>
         /// Specify backing value used by Dictionary&lt;string, object&gt; to indicate selected option.
         /// </summary>
         /// <param name="property">Property name for backing value.</param>
         public SettingBackingValue(string property)
         {
-            this.BackingProperty = property;
+            this.property = property;
         }
 
         /// <summary>
         /// Accessor to get/set backing value property name.
         /// </summary>
-        public string BackingProperty { get; set; }
-    }
-
-    /// <summary>
-    /// Instead of the SettingBackingValueAttribute, a method name on the Plugin can be provided that
-    /// will return the Dictionary of values to be used to populate the drop down list. The
-    /// Setting field is used to store the selected value. This attribute will always convert the 
-    /// setting to a ComboBox selection. 
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-    public class SettingGetItemsMethod: Attribute
-    {
-        public SettingGetItemsMethod(string methodName)
+        public string BackingProperty
         {
-            this.MethodName = methodName;
+            get => property;
+            set => property = value;
         }
-
-        public string MethodName { get; set; }
-    }
-
-    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-    public class SettingPluginAction : Attribute
-    {
-        public SettingPluginAction(string methodName)
-        {
-            this.MethodName = methodName;
-        }
-
-        public string MethodName { get; set; }
     }
 
     /// <summary>
     /// Specify bounds for numeric inputs.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-    public class SettingNumericBounds: Attribute
+    public class SettingNumericBounds : Attribute
     {
         private double minimum;
         private double maximum;

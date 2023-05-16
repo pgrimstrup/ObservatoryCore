@@ -1,5 +1,4 @@
 ﻿using System;
-using Observatory.Framework.Files.Journal;
 
 namespace Observatory.Framework
 {
@@ -55,14 +54,6 @@ namespace Observatory.Framework
         /// Specify window Y position as a percentage from upper left corner (overrides Core setting). Default -1.0 (use Core setting).
         /// </summary>
         public double YPos = -1.0;
-
-        public string VoiceName;
-        public string VoiceStyle;
-        public string VoiceRate;
-        public int? VoiceVolume;
-        public Guid Id;
-        public bool IsCancelled;
-
         /// <summary>
         /// Specifies the desired renderings of the notification. Defaults to <see cref="NotificationRendering.All"/>.
         /// </summary>

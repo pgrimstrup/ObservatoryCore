@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,11 +9,8 @@ namespace Observatory.Framework
     /// <summary>
     /// Class permitting plugins to provide their UI, if any, to Observatory Core.
     /// </summary>
-    public class PluginUI : INotifyPropertyChanged
+    public class PluginUI
     {
-        ObservableCollection<object> _dataGrid;
-        object _selectedItem;
-
         /// <summary>
         /// Type of UI used by plugin.
         /// </summary>
@@ -30,31 +26,7 @@ namespace Observatory.Framework
         /// <para>Collection bound to DataGrid used byu plugins with UIType.Basic.</para>
         /// <para>Objects in collection should be of a class defined within the plugin consisting of string properties.<br/>Each object is a single row, and the property names are used as column headers.</para>
         /// </summary>
-        public ObservableCollection<object> DataGrid
-        {
-            get => _dataGrid;
-            set
-            {
-                if(_dataGrid != value)
-                {
-                    _dataGrid = value;
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DataGrid)));
-                }
-            }
-        }
-
-        public object SelectedItem
-        {
-            get => _selectedItem;
-            set
-            {
-                if(_selectedItem != value)
-                {
-                    _selectedItem = value;
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedItem)));
-                }
-            }
-        }
+        public ObservableCollection<object> DataGrid;
 
         /// <summary>
         /// Instantiate PluginUI of UIType.Basic.
@@ -80,8 +52,6 @@ namespace Observatory.Framework
             PluginUIType = uiType;
             this.UI = UI;
         }
-
-        public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
         /// Options for plugin UI types.

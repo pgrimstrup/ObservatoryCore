@@ -1,0 +1,51 @@
+﻿<syncfusion:RibbonWindow x:Class="StarGazer.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:StarGazer.UI"
+        xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+        mc:Ignorable="d" Icon="graphics-design.ico"
+        Title="Elite Observatory" Height="450" Width="800" ResizeMode="CanResizeWithGrip" 
+        Loaded="OnLoadedAsync">
+	<Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="24"></RowDefinition>
+        </Grid.RowDefinitions>
+
+        <syncfusion:Ribbon x:Name="Ribbon" EnableSimplifiedLayoutMode="True" LayoutMode="Simplified">
+            <syncfusion:RibbonTab Caption="Home" IsChecked="True">
+                <syncfusion:RibbonBar Header="" ShowInMoreCommands="False" IsLauncherButtonVisible="False">
+                    <syncfusion:RibbonButton SizeForm="Large" Label="Settings" Click="OnSettingsClick" ToolTip="Change application and plugin settings"></syncfusion:RibbonButton>
+                    <syncfusion:DropDownButton SizeForm="Large" Label="Theme" IsDropDownOpenChanged="OnThemeMenuOpenedChanged">
+                        <syncfusion:DropDownMenuItem Header="Fluent Dark" Click="OnThemeClick" CommandParameter="FluentDark"></syncfusion:DropDownMenuItem>
+                        <syncfusion:DropDownMenuItem Header="Fluent Light" Click="OnThemeClick" CommandParameter="FluentLight"></syncfusion:DropDownMenuItem>
+                        <syncfusion:DropDownMenuItem Header="Material Dark" Click="OnThemeClick" CommandParameter="MaterialDark"></syncfusion:DropDownMenuItem>
+                        <syncfusion:DropDownMenuItem Header="Material Light" Click="OnThemeClick" CommandParameter="MaterialLight"></syncfusion:DropDownMenuItem>
+                        <syncfusion:DropDownMenuItem Header="Windows 11 Dark" Click="OnThemeClick" CommandParameter="Windows11Dark"></syncfusion:DropDownMenuItem>
+                        <syncfusion:DropDownMenuItem Header="Windows 11 Light" Click="OnThemeClick" CommandParameter="Windows11Light"></syncfusion:DropDownMenuItem>
+                    </syncfusion:DropDownButton>
+                    <syncfusion:RibbonButton SizeForm="Large" Label="Read Current" Click="OnReadCurrentClick" ToolTip="Read Journal entry for the current system"></syncfusion:RibbonButton>
+                    <syncfusion:RibbonButton SizeForm="Large" Label="Read All" Click="OnReadAllClick" ToolTip="Read all Journal entries"></syncfusion:RibbonButton>
+                    <syncfusion:RibbonButton SizeForm="Large" Label="Reset Layout" Click="OnResetLayoutClick" ToolTip="Reset UI layout"></syncfusion:RibbonButton>
+                </syncfusion:RibbonBar>
+            </syncfusion:RibbonTab>
+            <syncfusion:RibbonTab Caption="Support">
+                <syncfusion:RibbonBar Header="Support">
+                    <syncfusion:RibbonButton SizeForm="Large" Label="Documentation"></syncfusion:RibbonButton>
+                    <syncfusion:RibbonButton SizeForm="Large" Label="Plugin Development"></syncfusion:RibbonButton>
+                    <syncfusion:RibbonButton SizeForm="Large" Label="Git Project"></syncfusion:RibbonButton>
+                    <syncfusion:RibbonButton SizeForm="Large" Label="Donate"></syncfusion:RibbonButton>
+                </syncfusion:RibbonBar>
+            </syncfusion:RibbonTab>
+        </syncfusion:Ribbon>
+
+        <syncfusion:DocumentContainer x:Name="Documents" Grid.Row="1" Margin="4" Mode="TDI" ShowDragAdorner="True" AddTabDocumentAtLast="True">
+        </syncfusion:DocumentContainer>
+        
+		<StatusBar Grid.Row="2"/>
+
+	</Grid>
+</syncfusion:RibbonWindow>
