@@ -12,6 +12,7 @@ namespace StarGazer.Herald
 {
     class HeraldQueue
     {
+        private BlockingCollection<VoiceNotificationArgs> textToSpeech;
         private BlockingCollection<VoiceNotificationArgs> notifications;
         private SpeechRequestManager speechManager;
         //private Player audioPlayer;
@@ -20,16 +21,21 @@ namespace StarGazer.Herald
         private CancellationTokenSource CancellationToken;
         private ManualResetEvent continueProcessing = new ManualResetEvent(true);
 
+        private Task _textToSpeechTask;
+        private Task _notificationTask;
+
         public HeraldQueue(SpeechRequestManager speechManager, ILogger errorLogger, IAudioPlayback playback)
         {
             this.speechManager = speechManager;
-            notifications = new();
+            notifications = new BlockingCollection<VoiceNotificationArgs>();
+            textToSpeech = new BlockingCollection<VoiceNotificationArgs>();
             audioPlayer = playback;
             ErrorLogger = errorLogger;
             CancellationToken = new CancellationTokenSource();
 
-            // Fire and Forget the queue processing task
-            Task.Run(ProcessQueueAsync);
+            // Fire and Forget the queue processing tasks
+            _notificationTask = Task.Run(ProcessNotifications);
+            _textToSpeechTask = Task.Run(ProcessTextToSpeech);
         }
 
         internal void Enqueue(VoiceNotificationArgs notification)
@@ -53,7 +59,7 @@ namespace StarGazer.Herald
             if (String.IsNullOrWhiteSpace(notification.VoiceStyle))
                 throw new ArgumentException(nameof(notification.VoiceStyle));
 
-            notifications.Add(notification);
+            textToSpeech.Add(notification);
         }
 
         public void Cancel()
@@ -61,10 +67,67 @@ namespace StarGazer.Herald
             CancellationToken.Cancel();
         }
 
-        private async Task ProcessQueueAsync()
+        /// <summary>
+        /// Notifications are added to the TextToSpeech queue first. The Title and Detail are 
+        /// immediately downloaded so it is ready for playback when needed.
+        /// Once the speech files have been downloaded, the item is added to the notifications
+        /// queue which then plays the speech file.
+        /// </summary>
+        /// <returns></returns>
+        private async Task ProcessTextToSpeech()
         {
             string lastTitle = null;
             DateTime lastTitleTime = DateTime.Now;
+            CancellationToken cancelToken = CancellationToken.Token;
+            while (!Environment.HasShutdownStarted && !cancelToken.IsCancellationRequested)
+            {
+                if (textToSpeech.TryTake(out var item, 100, cancelToken))
+                {
+                    try
+                    {
+                        if (item.IsCancelled)
+                            continue;
+
+                        // Determine whether the title should be played. 
+                        if (!String.IsNullOrWhiteSpace(item.Title))
+                        {
+                            if (lastTitle != null && item.Title == lastTitle && DateTime.Now.Subtract(lastTitleTime).TotalSeconds < 30)
+                                item.Suppression |= NotificationSuppression.Title;
+
+                            lastTitle = item.Title;
+                            lastTitleTime = DateTime.Now;
+                        }
+
+                        if (!item.Suppression.HasFlag(NotificationSuppression.Title))
+                        {
+                            // Download the speech file for the title if needed
+                            await TextToSpeechTitle(item);
+                        }
+
+                        if (!item.Suppression.HasFlag(NotificationSuppression.Detail))
+                        {
+                            // Download the speech file for the detail if needed
+                            await TextToSpeechDetail(item);
+                        }
+
+                        // Add to the notifications queue
+                        notifications.Add(item);
+                    }
+                    catch (Exception ex)
+                    {
+                        ErrorLogger.LogError(ex, $"Failed to fetch/play notification: {item?.Title} - {item?.Detail}");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// This handler simply plays the speech file for the Title and Detail. If the file doesn't exist due
+        /// to a change in the text (via the Update method), then it will be downloaded.
+        /// </summary>
+        /// <returns></returns>
+        private async Task ProcessNotifications()
+        {
             CancellationToken cancelToken = CancellationToken.Token;
             while (!Environment.HasShutdownStarted && !cancelToken.IsCancellationRequested)
             {
@@ -78,25 +141,17 @@ namespace StarGazer.Herald
                             continue;
 
                         await audioPlayer.SetVolume(item.VoiceVolume.GetValueOrDefault(75));
-                        ErrorLogger.LogDebug("Processing notification: {0} - {1}", item.Title, item.Detail);
-
-                        if (!String.IsNullOrWhiteSpace(item.Title))
-                        {
-                            if (lastTitle != null && item.Title == lastTitle && DateTime.Now.Subtract(lastTitleTime).TotalSeconds < 30)
-                                item.Suppression |= NotificationSuppression.Title;
-
-                            lastTitle = item.Title;
-                            lastTitleTime = DateTime.Now;
-                        }
 
                         if (!item.Suppression.HasFlag(NotificationSuppression.Title))
                         {
+                            // Get the speech file (should already exist) and play
                             var fileInfo = await TextToSpeechTitle(item);
                             await PlayAudioFileAsync(fileInfo);
                         }
 
                         if (!item.Suppression.HasFlag(NotificationSuppression.Detail))
                         {
+                            // Get the speech file (should already exist) and play
                             var fileInfo = await TextToSpeechDetail(item);
                             await PlayAudioFileAsync(fileInfo);
                         }
@@ -135,8 +190,6 @@ namespace StarGazer.Herald
         {
             if (fileInfo != null && fileInfo.Exists)
             {
-                ErrorLogger.LogDebug($"Playing audio file: {fileInfo.FullName}");
-
                 try
                 {
                     await audioPlayer.PlayAsync(fileInfo.FullName);
@@ -152,7 +205,6 @@ namespace StarGazer.Herald
                     await audioPlayer.StopAsync();
                 }
             }
-            speechManager.CommitCache();
         }
 
         internal void CancelNotification(Guid id)
@@ -171,24 +223,24 @@ namespace StarGazer.Herald
             }
         }
 
-        internal void UpdateNotification(Guid id, VoiceNotificationArgs notificationEventArgs)
+        internal void UpdateNotification(Guid id, VoiceNotificationArgs updated)
         {
             continueProcessing.Reset();
             try
             {
                 foreach (var item in notifications.Where(i => i.Id == id))
                 {
-                    item.Title = notificationEventArgs.Title;
-                    item.TitleSsml = notificationEventArgs.TitleSsml;
-                    item.Detail = notificationEventArgs.Detail;
-                    item.DetailSsml = notificationEventArgs.DetailSsml;
-                    item.Rendering = notificationEventArgs.Rendering;
-                    item.Suppression = notificationEventArgs.Suppression;
-                    item.VoiceRate = notificationEventArgs.VoiceRate;
-                    item.VoiceStyle = notificationEventArgs.VoiceStyle;
-                    item.VoiceName = notificationEventArgs.VoiceName;
-                    item.VoiceVolume = notificationEventArgs.VoiceVolume;
-                    item.IsCancelled = notificationEventArgs.IsCancelled;
+                    item.Title = updated.Title;
+                    item.TitleSsml = updated.TitleSsml;
+                    item.Detail = updated.Detail;
+                    item.DetailSsml = updated.DetailSsml;
+                    item.Rendering = updated.Rendering;
+                    item.Suppression = updated.Suppression;
+                    item.VoiceRate = updated.VoiceRate;
+                    item.VoiceStyle = updated.VoiceStyle;
+                    item.VoiceName = updated.VoiceName;
+                    item.VoiceVolume = updated.VoiceVolume;
+                    item.IsCancelled = updated.IsCancelled;
                 }
             }
             finally

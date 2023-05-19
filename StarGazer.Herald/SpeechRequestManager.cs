@@ -73,7 +73,6 @@ namespace StarGazer.Herald
                 }
             }
 
-
             if (audioFileInfo == null || !audioFileInfo.Exists)
             {
                 try
@@ -99,8 +98,11 @@ namespace StarGazer.Herald
                 }
             }
 
-            if(audioFileInfo != null)
+            if (audioFileInfo != null)
+            {
                 UpdateAndPruneCache(audioFileInfo);
+                await CommitCache();
+            }
 
             return audioFileInfo;
         }
@@ -236,47 +238,37 @@ namespace StarGazer.Herald
             }
         }
 
-        internal async void CommitCache()
+        internal async Task CommitCache()
         {
-            System.Diagnostics.Stopwatch stopwatch = new();
-            stopwatch.Start();
-
-            // Race condition isn't a concern anymore, but should check this anyway to be safe.
-            // (Maybe someone is poking at the file with notepad?)
-            while (!IsFileWritable(CacheIndexFile) && stopwatch.ElapsedMilliseconds < 1000)
-                await Task.Delay(100); // Task.Factory.StartNew(() => System.Threading.Thread.Sleep(100));
-
-            // 1000ms should be more than enough for a conflicting title or detail to complete,
-            // if we're still waiting something else is locking the file, just give up.
-            if (stopwatch.ElapsedMilliseconds < 1000)
-            {
-                File.WriteAllText(CacheIndexFile, JsonSerializer.Serialize(cacheIndex, new JsonSerializerOptions { WriteIndented = true}));
-            }
-
-            stopwatch.Stop();
-        }
-
-        private static bool IsFileWritable(string path)
-        {
+            // If we can't open the file for writing, just ignore for now. We will try again later.
+            // Worst case, the index is recreated when the app restarts.
             try
             {
-                using FileStream fs = File.OpenWrite(path);
-                fs.Close();
-                return true;
+                using (var file = File.Open(CacheIndexFile, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
+                {
+                    file.SetLength(0);
+                    using (var writer = new StreamWriter(file))
+                    {
+                        var json = JsonSerializer.Serialize(cacheIndex, new JsonSerializerOptions { WriteIndented = true });
+                        await writer.WriteAsync(json);
+                        await writer.FlushAsync();
+                    }
+                }
             }
-            catch
+            catch (IOException ex)
             {
-                return false;
+                // ignore
+                _logger.LogWarning($"Unable to write to CacheIndexFile {CacheIndexFile}. {ex.ToString()}");
             }
         }
 
-        internal void ClearCache()
+        internal async Task ClearCache()
         {
             foreach (var file in GetCacheFiles())
                 file.Delete();
 
             cacheIndex.Clear();
-            CommitCache();
+            await CommitCache();
         }
 
         private class CacheData

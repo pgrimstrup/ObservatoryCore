@@ -185,8 +185,7 @@ namespace StarGazer.Herald
 
         public async Task ClearVoiceCache(object _)
         {
-            _speech.ClearCache();
-            await Task.CompletedTask;
+            await _speech.ClearCache();
         }
 
         public void OnNotificationEvent(NotificationArgs args)
