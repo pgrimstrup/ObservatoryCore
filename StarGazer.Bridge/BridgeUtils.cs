@@ -1,7 +1,5 @@
-﻿using System.Numerics;
-using System.Text;
+﻿using System.Text;
 using Observatory.Framework.Files.Journal;
-using Observatory.Framework.Files.ParameterTypes;
 
 namespace StarGazer.Bridge
 {
