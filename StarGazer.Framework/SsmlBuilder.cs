@@ -15,6 +15,7 @@ namespace StarGazer.Framework
         static ConcurrentDictionary<string, string> BodyNameCharacterReplacements = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         static ConcurrentDictionary<string, string> BodyTypeReplacements = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
+        public event EventHandler Changed;
 
         static SsmlBuilder()
         {
@@ -52,6 +53,8 @@ namespace StarGazer.Framework
             BodyTypeReplacements.TryAdd("III", "3");
             BodyTypeReplacements.TryAdd("IV", "4");
             BodyTypeReplacements.TryAdd("V", "5");
+            foreach (var item in BodyNameWordReplacements)
+                BodyTypeReplacements.TryAdd(item.Key, item.Value);
         }
 
         public SsmlBuilder()
@@ -66,10 +69,44 @@ namespace StarGazer.Framework
         public string CommaBreakSsml => $"<break time=\"{CommaBreak}ms\"/>";
         public string PeriodBreakSsml => $"<break time=\"{PeriodBreak}ms\"/>";
 
+        public void Replace(string text, string replacement)
+        {
+            for(int i = 0; i < _textFragments.Count; i++)
+                if (_textFragments[i].Contains(text))
+                    _textFragments[i] = _textFragments[i].Replace(text, replacement);
+
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void InsertEmoji(string emoji)
+        {
+            if(_textFragments.Count > 0 && _textFragments[0].Length > 0)
+            {
+                string first = _textFragments[0];
+                if (Char.IsAscii(first[0]))
+                {
+                    _textFragments[0] = $"{emoji} {first}";
+                }
+                else
+                {
+                    int index = first.IndexOf(' ');
+                    if (index < 0)
+                        _textFragments[0] = $"{emoji} {first}";
+                    else
+                        _textFragments[0] = first.Insert(index, emoji);
+                }
+            }
+            else
+            {
+                _textFragments.Insert(0, emoji);
+            }
+        }
+
         public SsmlBuilder Append(string text)
         {
             _textFragments.Add(text.Trim());
             _ssmlFragments.Add(text.Trim());
+            Changed?.Invoke(this, EventArgs.Empty);
             return this;
         }
 
@@ -80,6 +117,7 @@ namespace StarGazer.Framework
                 _textFragments.Add(name.Trim());
                 _ssmlFragments.Add(ReplaceWords(name.Trim(), BodyNameWordReplacements, BodyNameCharacterReplacements, true));
             }
+            Changed?.Invoke(this, EventArgs.Empty);
             return this;
         }
 
@@ -87,18 +125,21 @@ namespace StarGazer.Framework
         {
             _textFragments.Add(name.Trim());
             _ssmlFragments.Add(ReplaceWords(name.Trim(), BodyTypeReplacements));
+            Changed?.Invoke(this, EventArgs.Empty);
             return this;
         }
 
         public SsmlBuilder AppendSsml(string ssml)
         {
             _ssmlFragments.Add(ssml);
+            Changed?.Invoke(this, EventArgs.Empty);
             return this;
         }
 
         public SsmlBuilder AppendUnspoken(string text)
         {
             _textFragments.Add(text);
+            Changed?.Invoke(this, EventArgs.Empty);
             return this;
         }
 
@@ -106,6 +147,7 @@ namespace StarGazer.Framework
         {
             _textFragments.Add(text.Trim());
             _ssmlFragments.Add($"<say-as interpret-as=\"digits\">{text.Trim()}</say-as>");
+            Changed?.Invoke(this, EventArgs.Empty);
             return this;
         }
 
@@ -121,6 +163,7 @@ namespace StarGazer.Framework
                 _ssmlFragments.Add($"{value / 1000.0:n1} thousand");
             else
                 _ssmlFragments.Add($"{value:g}");
+            Changed?.Invoke(this, EventArgs.Empty);
             return this;
         }
 
@@ -136,6 +179,7 @@ namespace StarGazer.Framework
                 _ssmlFragments.Add($"{value / 1000.0:n1} thousand");
             else
                 _ssmlFragments.Add($"{value:n0}");
+            Changed?.Invoke(this, EventArgs.Empty);
             return this;
         }
 
@@ -143,6 +187,7 @@ namespace StarGazer.Framework
         {
             _textFragments.Add(text.Trim());
             _ssmlFragments.Add($"<say-as interpret-as=\"characters\">{text.Trim()}</say-as>");
+            Changed?.Invoke(this, EventArgs.Empty);
             return this;
         }
 
@@ -150,12 +195,14 @@ namespace StarGazer.Framework
         {
             _textFragments.Add(text.Trim());
             _ssmlFragments.Add($"<emphasis level=\"{emphasis.ToString().ToLower()}\">{text.Trim()}</emphasis>");
+            Changed?.Invoke(this, EventArgs.Empty);
             return this;
         }
 
         public SsmlBuilder AppendBreak(int milliseconds)
         {
             _ssmlFragments.Add($"<break time=\"{milliseconds}ms\" />");
+            Changed?.Invoke(this, EventArgs.Empty);
             return this;
         }
 
@@ -173,6 +220,7 @@ namespace StarGazer.Framework
             else if (!_ssmlFragments.Last().EndsWith('.'))
                 _ssmlFragments[_ssmlFragments.Count - 1] += ".";
 
+            Changed?.Invoke(this, EventArgs.Empty);
             return this;
         }
 
@@ -181,6 +229,7 @@ namespace StarGazer.Framework
             EndParagraph();
             _ssmlFragments.Add("<p>");
             _inParagraph = true;
+            Changed?.Invoke(this, EventArgs.Empty);
             return this;
         }
 
@@ -190,6 +239,7 @@ namespace StarGazer.Framework
             {
                 _ssmlFragments.Add("</p>");
                 _inParagraph = false;
+                Changed?.Invoke(this, EventArgs.Empty);
             }
             return this;
         }
@@ -207,10 +257,20 @@ namespace StarGazer.Framework
             var words = text.Split();
             for (int i = 0; i < words.Length; i++)
             {
-                if (replacements.TryGetValue(words[i], out var replacement))
-                    words[i] = replacement;
-                if (Int32.TryParse(words[i], out int number) && number >= 100)
-                    words[i] = $"<say-as interpret-as=\"digits\">{words[i]}</say-as>";
+                var parts = words[i].Split('-');
+                for(int p = 0; p < parts.Length; p++)
+                {
+                    if (replacements.TryGetValue(parts[p], out var replacement))
+                        parts[p] = replacement;
+                    else if (Int32.TryParse(parts[p], out int number))
+                    {
+                        if (number >= 100)
+                            parts[p] = $"<say-as interpret-as=\"digits\">{parts[p]}</say-as>";
+                    }
+                    else if (parts[p].ShouldBeSpeltOut())
+                        parts[p] = $"<say-as interpret-as=\"characters\">{parts[p]}</say-as>";
+                }
+                words[i] = String.Join("-", parts);
             }
             text = string.Join(" ", words);
 

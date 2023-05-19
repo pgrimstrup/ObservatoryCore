@@ -6,7 +6,6 @@ namespace StarGazer.Bridge.Events
     {
         public void HandleEvent(NavRoute journal)
         {
-            LogInfo("NavRoute: NavRoute event occurred");
         }
     }
 }

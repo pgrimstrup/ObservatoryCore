@@ -9,6 +9,8 @@ namespace StarGazer.Bridge
 {
     internal static class Emojis
     {
+        public static string CheckMark => Char.ConvertFromUtf32(0x2705); // green check mark
+
         /// <summary>
         /// Orange circle
         /// </summary>

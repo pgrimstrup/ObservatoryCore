@@ -11,28 +11,26 @@ namespace StarGazer.Bridge.Events
             // We get this event when entering supercruise if we have a destination locked
             if (!String.IsNullOrEmpty(journal.StarSystem))
             {
-                LogInfo($"StartJump: {journal.Event} to {journal.StarSystem} (star class {journal.StarClass})");
-
                 var log = new BridgeLog(journal);
                 if (GameState.NextDestinationTimeToSpeak > DateTime.Now)
                     log.TextOnly();
 
                 log.TitleSsml.Append("Flight Operations");
 
-                var scoopable = journal.StarClass.IsScoopable() ? ", scoopable" : ", non-scoopable";
+                var fuelStar = journal.StarClass.IsFuelStar() ? ", a fuel star" : "";
                 log.DetailSsml
                     .Append("Jumping to")
                         .AppendBodyName(journal.StarSystem)
                         .Append($". Destination star is a")
                         .AppendBodyType(GetStarTypeName(journal.StarClass))
-                        .Append($"{scoopable}.");
+                        .Append($"{fuelStar}.");
 
                 if (GameState.RemainingJumpsInRoute > 0 && (GameState.RemainingJumpsInRoute < 5 || (GameState.RemainingJumpsInRoute % 5) == 0))
                 {
-                    if (GameState.RemainingJumpsInRouteToSpeak < DateTime.Now)
+                    if (GameState.RemainingJumpsInRouteTimeToSpeak < DateTime.Now)
                     {
                         log.DetailSsml.Append($"There are {GameState.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
-                        GameState.RemainingJumpsInRouteToSpeak = DateTime.Now.Add(SpokenDestinationInterval * 2);
+                        GameState.RemainingJumpsInRouteTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval * 2);
                     }
                 }
 

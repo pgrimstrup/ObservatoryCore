@@ -64,18 +64,18 @@ namespace StarGazer.EDSM
             // Get the most recent version of the ignore list
             _core = core;
 
-            try
-            {
-                var ignores = await _core.HttpClient.GetFromJsonAsync<string[]>(GetDiscardList);
-                if (ignores != null)
-                    _settings.JournalDiscardList = ignores;
-                else
-                    _core.GetPluginErrorLogger(this).Invoke(null, "EDSM Journal Discard list is empty");
-            }
-            catch(Exception ex)
-            {
-                _core.GetPluginErrorLogger(this).Invoke(ex, $"Getting EDSM Journal Discard: {GetDiscardList}");
-            }
+            //try
+            //{
+            //    var ignores = await _core.HttpClient.GetFromJsonAsync<string[]>(GetDiscardList);
+            //    if (ignores != null)
+            //        _settings.JournalDiscardList = ignores;
+            //    else
+            //        _core.GetPluginErrorLogger(this).Invoke(null, "EDSM Journal Discard list is empty");
+            //}
+            //catch(Exception ex)
+            //{
+            //    _core.GetPluginErrorLogger(this).Invoke(ex, $"Getting EDSM Journal Discard: {GetDiscardList}");
+            //}
 
             await Task.CompletedTask;
         }

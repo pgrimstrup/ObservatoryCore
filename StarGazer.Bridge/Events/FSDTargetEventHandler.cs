@@ -8,7 +8,6 @@ namespace StarGazer.Bridge.Events
     {
         public void HandleEvent(FSDTarget journal)
         {
-            LogInfo($"FSDTarget: {journal.Event} to {journal.Name} ({journal.StarClass})");
             GameState.Assign(journal);
 
             // This event is received mid-jump when auto-plotting to the next star system in the route
@@ -21,15 +20,17 @@ namespace StarGazer.Bridge.Events
                 var log = new BridgeLog(journal);
                 log.TitleSsml.Append("Flight Operations");
 
-                var scoopable = journal.StarClass.IsScoopable() ? ", scoopable" : ", non-scoopable";
+                var fuelStar = journal.StarClass.IsFuelStar() ? ", a fuel star" : "";
                 log.DetailSsml
                     .Append("Course laid in to")
                         .AppendBodyName(journal.Name)
                         .Append($". Destination star is a")
                         .AppendBodyType(GetStarTypeName(journal.StarClass))
-                        .Append($"{scoopable}.");
+                        .Append($"{fuelStar}.");
 
-                if (GameState.RemainingJumpsInRoute > 0 && (GameState.RemainingJumpsInRoute < 5 || (GameState.RemainingJumpsInRoute % 5) == 0))
+                if(GameState.RemainingJumpsInRoute == 1)
+                    log.DetailSsml.Append($"This is the final jump in the current flight plan.");
+                else if (GameState.RemainingJumpsInRoute > 1 && (GameState.RemainingJumpsInRoute < 5 || (GameState.RemainingJumpsInRoute % 5) == 0))
                     log.DetailSsml.Append($"There are {GameState.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
 
                 if (journal.StarClass.IsNeutronStar() || journal.StarClass.IsWhiteDwarf() || journal.StarClass.IsBlackHole())

@@ -6,8 +6,6 @@ namespace StarGazer.Bridge.Events
     {
         public void HandleEvent(FuelScoop journal)
         {
-            LogInfo($"{journal.Event}: Scooped {journal.Scooped:n2} tons, {journal.Total:n2}/{GameState.FuelCapacity}");
-
             // Accumulate fuel scooping until we get a status change
             GameState.Assign(journal);
 

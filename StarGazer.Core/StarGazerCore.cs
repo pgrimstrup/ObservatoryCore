@@ -340,17 +340,21 @@ namespace StarGazer
 
         public void OnJournalEvent(object sender, JournalEventArgs e)
         {
+            JournalBase journal = (JournalBase)e.journalEvent;
+
+            _logger.LogInformation($"{journal.Event}: {journal.Json}");
+
             foreach (var plugin in _pluginManager.ActivePlugins)
             {
                 try
                 {
                     if (plugin is IStarGazerWorker sgWorker)
                     {
-                        sgWorker.JournalEventAsync((JournalBase)e.journalEvent);
+                        sgWorker.JournalEventAsync(journal);
                     }
                     else if(plugin is IObservatoryWorker obWorker)
                     {
-                        obWorker.JournalEvent((JournalBase)e.journalEvent);
+                        obWorker.JournalEvent(journal);
                     }
                 }
                 catch (Exception ex)

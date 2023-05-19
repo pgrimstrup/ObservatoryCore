@@ -7,8 +7,6 @@ namespace StarGazer.Bridge.Events
     {
         public void HandleEvent(SAAScanComplete journal)
         {
-            LogInfo($"{journal.Event}: {journal.BodyName}");
-
             var log = new BridgeLog(journal);
             log.IsTitleSpoken = true;
             log.TitleSsml.AppendBodyName(GetBodyName(journal.BodyName));
@@ -43,6 +41,14 @@ namespace StarGazer.Bridge.Events
 
                 log.DetailSsml.Append($", {article}{terraformable}");
                 log.DetailSsml.AppendBodyType(scan.PlanetClass);
+            }
+
+            foreach (BridgeLog entry in Bridge.Instance.PluginUI.DataGrid)
+            {
+                if (entry.EventName == nameof(Scan) && entry.Title == GetBodyName(journal.BodyName))
+                {
+                    entry.DetailSsml.InsertEmoji(Emojis.CheckMark);
+                }
             }
 
             Bridge.Instance.LogEvent(log);

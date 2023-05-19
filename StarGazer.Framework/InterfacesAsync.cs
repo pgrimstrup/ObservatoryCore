@@ -128,6 +128,7 @@ namespace StarGazer.Framework.Interfaces
         public string CoreFolder { get; }
         public void SavePluginSettings(IObservatoryPlugin plugin);
         public void LoadPluginSettings(IObservatoryPlugin plugin);
+        public void LoadCoreSettings();
         public void SaveCoreSettings();
     }
 }

@@ -100,8 +100,6 @@ namespace StarGazer.Bridge.Events
             {
                 if (_lastSystemId != status.Destination.System || _lastBodyId != status.Destination.Body)
                 {
-                    LogInfo($"Status: Destination changed to {status.Destination.Name}");
-
                     var log = new BridgeLog(status);
                     log.SpokenOnly();
                     log.TitleSsml.Append("Flight Operations");
@@ -127,13 +125,13 @@ namespace StarGazer.Bridge.Events
                     var log = new BridgeLog(status);
                     log.SpokenOnly();
 
-                    var scoopable = GameState.NextStarClass.IsScoopable() ? ", scoopable" : ", non-scoopable";
+                    var fuelStar = GameState.NextStarClass.IsFuelStar() ? ", a fuel star" : "";
                     log.DetailSsml
                         .Append("Preparing to jump to")
                         .AppendBodyName(GameState.NextSystemName)
                         .Append($". Destination star is a")
                         .AppendBodyType(GetStarTypeName(GameState.NextStarClass))
-                        .Append($"{scoopable}.");
+                        .Append($"{fuelStar}.");
 
                     if (GameState.RemainingJumpsInRoute > 0 && (GameState.RemainingJumpsInRoute < 5 || (GameState.RemainingJumpsInRoute % 5) == 0))
                         log.DetailSsml.Append($"There are {GameState.RemainingJumpsInRoute} jumps remaining in the current flight plan.");

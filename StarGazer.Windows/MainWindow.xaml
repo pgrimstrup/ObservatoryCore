@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:StarGazer.UI"
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
         mc:Ignorable="d" Icon="graphics-design.ico"
-        Title="Elite Observatory" Height="450" Width="800" ResizeMode="CanResizeWithGrip" 
+        Title="StarGazer" Height="450" Width="800" ResizeMode="CanResizeWithGrip" 
         Loaded="OnLoadedAsync">
 	<Grid>
         <Grid.RowDefinitions>
@@ -29,7 +29,8 @@
                     </syncfusion:DropDownButton>
                     <syncfusion:RibbonButton SizeForm="Large" Label="Read Current" Click="OnReadCurrentClick" ToolTip="Read Journal entry for the current system"></syncfusion:RibbonButton>
                     <syncfusion:RibbonButton SizeForm="Large" Label="Read All" Click="OnReadAllClick" ToolTip="Read all Journal entries"></syncfusion:RibbonButton>
-                    <syncfusion:RibbonButton SizeForm="Large" Label="Reset Layout" Click="OnResetLayoutClick" ToolTip="Reset UI layout"></syncfusion:RibbonButton>
+					<syncfusion:RibbonButton SizeForm="Large" Label="Reset Layout" Click="OnResetLayoutClick" ToolTip="Reset UI layout"></syncfusion:RibbonButton>
+					<syncfusion:RibbonButton SizeForm="Large" Label="Plugins Folder" Click="OnPluginsFolderClick" ToolTip="Show Plugins Folder"></syncfusion:RibbonButton>
                 </syncfusion:RibbonBar>
             </syncfusion:RibbonTab>
             <syncfusion:RibbonTab Caption="Support">
@@ -42,7 +43,9 @@
             </syncfusion:RibbonTab>
         </syncfusion:Ribbon>
 
-        <syncfusion:DocumentContainer x:Name="Documents" Grid.Row="1" Margin="4" Mode="TDI" ShowDragAdorner="True" AddTabDocumentAtLast="True">
+		<Label x:Name="lblLoading" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="16pt">Charging FSD...</Label>
+		
+        <syncfusion:DocumentContainer x:Name="Documents" Grid.Row="1" Margin="4" Mode="TDI" ShowDragAdorner="True" AddTabDocumentAtLast="True" Visibility="Hidden">
         </syncfusion:DocumentContainer>
         
 		<StatusBar Grid.Row="2"/>

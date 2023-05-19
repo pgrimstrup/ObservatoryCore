@@ -1,10 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using Observatory.Framework.Files.Journal;
 using StarGazer.Framework;
 
 namespace StarGazer.Bridge
 {
-    internal class BridgeLog
+    internal class BridgeLog : INotifyPropertyChanged
     {
         internal string EventName = "";
         internal bool IsSpoken = true;
@@ -14,6 +15,8 @@ namespace StarGazer.Bridge
         internal DateTime EventTimeUTC;
         internal SsmlBuilder TitleSsml;
         internal SsmlBuilder DetailSsml;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         [Display(Name = "Time")]
         public string EventTime => EventTimeUTC.ToString();
@@ -39,6 +42,9 @@ namespace StarGazer.Bridge
                 CommaBreak = Bridge.Instance.Settings.SpokenCommaDelay,
                 PeriodBreak = Bridge.Instance.Settings.SpokenPeriodDelay
             };
+
+            TitleSsml.Changed += (sender, e) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Title)));
+            DetailSsml.Changed += (sender, e) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Detail)));
         }
 
         public void Send()

@@ -1,4 +1,5 @@
 ﻿using Observatory.Framework.Files.Journal;
+using StarGazer.Framework;
 
 namespace StarGazer.Bridge.Events
 {
@@ -15,22 +16,9 @@ namespace StarGazer.Bridge.Events
 
             if (!String.IsNullOrEmpty(journal.StarType))
             {
-                LogInfo($"{journal.Event}: {journal.BodyName}, StarType {journal.StarType}");
-
-                if(GetBodyName(journal.BodyName) == "Star A" && !journal.WasDiscovered && GameState.FirstDiscoverySpoken == DateTime.MinValue)
-                {
-                    var first = new BridgeLog(journal);
-                    first.SpokenOnly().DetailSsml
-                        .AppendEmphasis("Commander,", Framework.EmphasisType.Moderate)
-                        .Append("we are the first to discover this system.");
-                    Bridge.Instance.LogEvent(first);
-
-                    if (!Bridge.Instance.Core.IsLogMonitorBatchReading)
-                        GameState.FirstDiscoverySpoken = DateTime.Now;
-                }
-
+                // Otherwise, stars are text-logged only and not spoken
                 var log = new BridgeLog(journal);
-                log.IsTitleSpoken = true;
+                log.TextOnly();
 
                 if (Int32.TryParse(GetBodyName(journal.BodyName), out int bodyNumber))
                     log.TitleSsml.AppendBodyName(GetBodyName(journal.BodyName));
@@ -44,71 +32,97 @@ namespace StarGazer.Bridge.Events
                 else
                     log.DetailSsml.AppendUnspoken(Emojis.Solar);
 
-                var scoopable = journal.StarType.IsScoopable() ? ", scoopable" : ", non-scoopable";
+                var fuelStar = journal.StarType.IsFuelStar() ? ", a fuel star" : "";
                 log.DetailSsml
                     .AppendBodyType(GetStarTypeName(journal.StarType))
-                    .Append($"{scoopable}.");
+                    .Append($"{fuelStar}.");
 
-                var estimatedValue = BodyValueEstimator.GetStarValue(journal.StarType, !journal.WasDiscovered);
-                if (estimatedValue >= Bridge.Instance.Settings.HighValueBody)
-                {
-                    log.DetailSsml.AppendUnspoken(Emojis.HighValue);
-                    log.DetailSsml.Append($"Estimated value");
-                    log.DetailSsml.AppendNumber(estimatedValue);
-                    log.DetailSsml.Append("credits.");
-                }
-                else
-                {
-                    log.DetailSsml.AppendUnspoken($"Estimated value {estimatedValue:n0} credits.");
-                }
-
-                Bridge.Instance.LogEvent(log);
+                log.Send();
             }
             else if (!String.IsNullOrEmpty(journal.PlanetClass)) // ignore belt clusters
             {
-                LogInfo($"{journal.Event}: {journal.BodyName} is PlanetClass {journal.PlanetClass}");
+                var k_value = BodyValueEstimator.GetKValueForBody(journal.PlanetClass, !String.IsNullOrEmpty(journal.TerraformState));
+                var estimatedValue = BodyValueEstimator.GetBodyValue(k_value, journal.MassEM, !journal.WasDiscovered, true, !journal.WasMapped, true);
+                int bioCount = 0;
+                int geoCount = 0;
+
+                if (signals != null)
+                {
+                    List<string> list = new List<string>();
+                    foreach (var signal in signals.Signals)
+                    {
+                        list.Add($"{signal.Count} {signal.Type_Localised}");
+                        if (signal.Type_Localised.StartsWith("Geo", StringComparison.OrdinalIgnoreCase))
+                            geoCount += signal.Count;
+                        if (signal.Type_Localised.StartsWith("Bio", StringComparison.OrdinalIgnoreCase))
+                            bioCount += signal.Count;
+                    }
+                }
+
+                List<string> emojies = new List<string>();
+                if (journal.PlanetClass.IsEarthlike())
+                    emojies.Add(Emojis.Earthlike);
+                else if (journal.PlanetClass.IsWaterWorld())
+                    emojies.Add(Emojis.WaterWorld);
+                else if (journal.PlanetClass.IsHighMetalContent())
+                    emojies.Add(Emojis.HighMetalContent);
+                else if (journal.PlanetClass.IsIcyBody())
+                    emojies.Add(Emojis.IcyBody);
+                else if (journal.PlanetClass.IsGasGiant())
+                    emojies.Add(Emojis.GasGiant);
+                else if (journal.PlanetClass.IsAmmoniaWorld())
+                    emojies.Add(Emojis.Ammonia);
+                else
+                    emojies.Add(Emojis.OtherBody);
+
+                if (!String.IsNullOrEmpty(journal.TerraformState))
+                    emojies.Add(Emojis.Terraformable);
+
+                if (estimatedValue >= Bridge.Instance.Settings.HighValueBody)
+                    emojies.Add(Emojis.HighValue);
+
+                if (bioCount > 0)
+                    emojies.Add(Emojis.BioSignals);
+                if (geoCount > 0)
+                    emojies.Add(Emojis.GeoSignals);
+
 
                 var log = new BridgeLog(journal);
                 log.IsTitleSpoken = true;
                 log.TitleSsml.AppendBodyName(GetBodyName(journal.BodyName));
 
-                if (journal.PlanetClass.IsEarthlike())
-                    log.DetailSsml.AppendUnspoken(Emojis.Earthlike);
-                else if (journal.PlanetClass.IsWaterWorld())
-                    log.DetailSsml.AppendUnspoken(Emojis.WaterWorld);
-                else if (journal.PlanetClass.IsHighMetalContent())
-                    log.DetailSsml.AppendUnspoken(Emojis.HighMetalContent);
-                else if (journal.PlanetClass.IsIcyBody())
-                    log.DetailSsml.AppendUnspoken(Emojis.IcyBody);
-                else if (journal.PlanetClass.IsGasGiant())
-                    log.DetailSsml.AppendUnspoken(Emojis.GasGiant);
-                else if (journal.PlanetClass.IsAmmoniaWorld())
-                    log.DetailSsml.AppendUnspoken(Emojis.Ammonia);
-                else
-                    log.DetailSsml.AppendUnspoken(Emojis.OtherBody);
-
-                if (!String.IsNullOrEmpty(journal.TerraformState))
-                    log.DetailSsml.AppendUnspoken(Emojis.Terraformable);
+                if (emojies.Count > 0)
+                    log.DetailSsml.AppendUnspoken(String.Join("", emojies));
 
                 if (!String.IsNullOrEmpty(journal.TerraformState))
                     log.DetailSsml.Append($"{journal.TerraformState}");
 
                 log.DetailSsml.AppendBodyType(journal.PlanetClass);
+
                 if (journal.Landable)
                 {
                     if (!String.IsNullOrEmpty(journal.Atmosphere))
-                        log.DetailSsml.Append($", landable with {journal.Atmosphere}.");
+                        log.DetailSsml.Append($", landable with {journal.Atmosphere}");
                     else
-                        log.DetailSsml.Append(", landable no atmosphere.");
+                        log.DetailSsml.Append(", landable no atmosphere");
                 }
-                else
-                    log.DetailSsml.EndSentence();
+                log.DetailSsml.EndSentence();
 
-                var k_value = BodyValueEstimator.GetKValueForBody(journal.PlanetClass, !String.IsNullOrEmpty(journal.TerraformState));
-                var estimatedValue = BodyValueEstimator.GetBodyValue(k_value, journal.MassEM, !journal.WasDiscovered, true, !journal.WasMapped, true);
+                if (bioCount > 0 || geoCount > 0)
+                {
+                    log.DetailSsml.Append("Sensors found");
+                    if (bioCount > 0)
+                        log.DetailSsml.Append($"{bioCount} biological");
+                    if (bioCount > 0 && geoCount > 0)
+                        log.DetailSsml.Append("and");
+                    if (geoCount > 0)
+                        log.DetailSsml.Append($"{geoCount} geological");
+                    log.DetailSsml.Append("signal".Plural(bioCount + geoCount));
+                    log.DetailSsml.EndSentence();
+                }
+
                 if (estimatedValue >= Bridge.Instance.Settings.HighValueBody)
                 {
-                    log.DetailSsml.AppendUnspoken(Emojis.HighValue);
                     log.DetailSsml.Append($"Estimated value");
                     log.DetailSsml.AppendNumber(estimatedValue);
                     log.DetailSsml.Append("credits.");
@@ -118,35 +132,29 @@ namespace StarGazer.Bridge.Events
                     log.DetailSsml.AppendUnspoken($"Estimated value {estimatedValue:n0} credits.");
                 }
 
-                if (signals != null)
-                {
-                    List<string> list = new List<string>();
-                    bool hasBio = false;
-                    bool hasGeo = false;
-                    foreach (var signal in signals.Signals)
-                    {
-                        list.Add($"{signal.Count} {signal.Type_Localised}");
-                        if (signal.Type_Localised.StartsWith("Geo", StringComparison.OrdinalIgnoreCase))
-                            hasGeo = true;
-                        if (signal.Type_Localised.StartsWith("Bio", StringComparison.OrdinalIgnoreCase))
-                            hasBio = true;
-                    }
+                log.Send();
+            }
 
-                    int total = signals.Signals.Sum(s => s.Count);
-                    string signalsText = total == 1 ? "signal" : "signals";
+            if(GameState.AutoCompleteScanCount > 0 && GameState.ScannedBodies.Count == GameState.AutoCompleteScanCount)
+            {
+                CreateOrrery(out int starCount, out int planetCount, out Scan primaryStar);
+                string stars = $"{starCount} {Stars(starCount)}";
+                string andPlanets = "";
+                if (planetCount > 0)
+                    andPlanets = $" and {planetCount} {Planets(planetCount)}";
 
-                    if (hasBio)
-                        log.DetailSsml.AppendUnspoken(Emojis.BioSignals);
-                    if (hasGeo)
-                        log.DetailSsml.AppendUnspoken(Emojis.GeoSignals);
+                var log = new BridgeLog(journal);
+                log.TitleSsml.Append("Science Station");
+                log.DetailSsml
+                    .Append($"System Scan Complete")
+                    .AppendEmphasis("Commander.", EmphasisType.Moderate);
 
-                    if (list.Count <= 2)
-                        log.DetailSsml.Append($"Sensors found {String.Join(" and ", list)} {signalsText}.");
-                    else
-                        log.DetailSsml.Append($"Sensors found {String.Join(", ", list.Take(list.Count - 1))} and {list.Last()} {signalsText}.");
-                }
+                if (primaryStar.WasDiscovered)
+                    log.DetailSsml.Append($"We've discovered {stars}{andPlanets}.");
+                else
+                    log.DetailSsml.Append($"We are the first to discover this system consisting of {stars}{andPlanets}.");
 
-                Bridge.Instance.LogEvent(log);
+                log.Send();
             }
         }
     }

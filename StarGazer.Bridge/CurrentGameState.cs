@@ -22,18 +22,18 @@ namespace StarGazer.Bridge
         public string? StationName { get; set; }
 
         // Tracked during FSDTarget for later use
-        public string? NextSystemName { get; set; } 
-        public string? NextStarClass { get; set; } 
+        public string NextSystemName { get; set; } = "";
+        public string NextStarClass { get; set; } = "";
         public int RemainingJumpsInRoute { get; set; }
 
-        public DateTime FirstDiscoverySpoken { get; set; }
-        public DateTime RemainingJumpsInRouteToSpeak { get; set; }
+        public DateTime RemainingJumpsInRouteTimeToSpeak { get; set; }
         public DateTime NextDestinationTimeToSpeak { get; set; }
 
         public int ScanPercent { get; set; }
 
         // List of Detailed/Auto scans of each body in the system as they occur
         public Dictionary<string, Scan> ScannedBodies { get; } = new Dictionary<string, Scan>();
+        public int AutoCompleteScanCount { get; set; }
 
         // List of Signals detected on each body in the system. We get these before the Detailed scan completes,
         // so we track them until the Scan has finished
@@ -136,6 +136,11 @@ namespace StarGazer.Bridge
         void AssignFSDJump(FSDJump jump)
         {
             ScanPercent = 0;
+            SystemName = jump.StarSystem;
+            StationName = null;
+            NextDestinationTimeToSpeak = DateTime.Now;
+            RemainingJumpsInRouteTimeToSpeak = DateTime.Now;
+            AutoCompleteScanCount = 0;
             ScannedBodies.Clear();
             BodySignals.Clear();
         }

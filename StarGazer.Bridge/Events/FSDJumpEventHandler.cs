@@ -6,8 +6,6 @@ namespace StarGazer.Bridge.Events
     {
         public void HandleEvent(FSDJump journal)
         {
-            LogInfo($"FSDJump: Jump complete from {Bridge.Instance.GameState.SystemName} to {journal.StarSystem}, Distance {journal.JumpDist:n2} LY");
-
             var log = new BridgeLog(journal);
             log.TitleSsml.Append("Flight Operations");
 

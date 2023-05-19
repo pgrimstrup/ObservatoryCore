@@ -26,6 +26,17 @@ namespace StarGazer.Framework
             return value.Trim(chars);
         }
 
+        public static bool ShouldBeSpeltOut(this string word)
+        {
+            if (word == null || word.Length < 2 || word.Length > 3)
+                return false;
+
+            if (word == word.ToUpper() && word.IndexOfAny("1234567890".ToCharArray()) < 0)
+                return true;
+
+            return false;
+        }
+
         public static object SimpleClone(this object source)
         {
             if (source == null)

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
@@ -37,12 +38,21 @@ namespace StarGazer.UI
             _logger = logger;
             _dockStateFile = Path.Combine(_core.CoreFolder, "docking_state.xml");
 
-
+            _core.LoadCoreSettings();
+            if (!_settings.MainWindowBounds.IsEmpty)
+            {
+                this.Left = _settings.MainWindowBounds.X;
+                this.Top = _settings.MainWindowBounds.Y;
+                this.Width = _settings.MainWindowBounds.Width;
+                this.Height = _settings.MainWindowBounds.Height;
+            }
         }
 
         protected async void OnLoadedAsync(object sender, RoutedEventArgs e)
         {
             Ribbon.BackStageButton.Visibility = Visibility.Collapsed;
+            if (!_settings.MainWindowBounds.IsEmpty)
+                this.WindowState = (WindowState)_settings.MainWindowBounds.State;
 
             var plugins = await _core.InitializeAsync();
             foreach (var plugin in plugins.Where(p => p.PluginUI?.DataGrid != null))
@@ -67,16 +77,9 @@ namespace StarGazer.UI
 
             LoadDockingState();
 
-            if (!_settings.MainWindowBounds.IsEmpty)
-            {
-                this.Left = _settings.MainWindowBounds.X;
-                this.Top = _settings.MainWindowBounds.Y;
-                this.Width = _settings.MainWindowBounds.Width;
-                this.Height = _settings.MainWindowBounds.Height;
-                this.WindowState = (WindowState)_settings.MainWindowBounds.State;
-            }
-
             this.DataContext = this;
+            lblLoading.Visibility = Visibility.Hidden;
+            Documents.Visibility = Visibility.Visible;
 
             _logger.LogInformation("MainWindow load has completed");
             await Task.CompletedTask;
@@ -198,6 +201,18 @@ namespace StarGazer.UI
             await logMonitor.ReadCurrentAsync();
 
             this.Cursor = Cursors.Arrow;
+        }
+
+        private void OnPluginsFolderClick(object sender, RoutedEventArgs e)
+        {
+            ProcessStartInfo info = new ProcessStartInfo {
+                Verb = "open",
+                FileName = _core.PluginStorageFolder,
+                WorkingDirectory = _core.PluginStorageFolder,
+                UseShellExecute = true
+            };
+
+            Process.Start(info);
         }
     }
 }

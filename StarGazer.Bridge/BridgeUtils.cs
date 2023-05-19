@@ -1,4 +1,7 @@
-﻿using System.Text;
+﻿using System.Numerics;
+using System.Text;
+using Observatory.Framework.Files.Journal;
+using Observatory.Framework.Files.ParameterTypes;
 
 namespace StarGazer.Bridge
 {
@@ -37,8 +40,25 @@ namespace StarGazer.Bridge
         public static bool IsGasGiant(this string? bodyType) => !String.IsNullOrWhiteSpace(bodyType) 
             && bodyType.Contains($"Gas Giant", StringComparison.OrdinalIgnoreCase);
 
-        public static bool IsScoopable(this string? starClass) => !String.IsNullOrWhiteSpace(starClass)
+        public static bool IsFuelStar(this string? starClass) => !String.IsNullOrWhiteSpace(starClass)
             && starClass.IndexOfAny("KGBFOAM".ToCharArray()) == 0;
+
+        public static bool IsStar(this Scan scan) => !String.IsNullOrEmpty(scan.StarType) && scan.StarType != "Y";
+        public static bool IsBeltCluster(this Scan scan) => String.IsNullOrEmpty(scan.StarType) && scan.Radius == 0;
+
+        public static string Plural(this string word, int count)
+        {
+            if (String.IsNullOrWhiteSpace(word))
+                return word;
+
+            if(count == 1)
+                return word;
+
+            if (word.EndsWith("y"))
+                return word.Substring(0, word.Length - 1) + "ies";
+
+            return word + "s";
+        }
 
         public static string ReplaceRomanNumerals(this string text)
         {
