@@ -9,10 +9,14 @@ namespace StarGazer.Bridge.Events
             var log = new BridgeLog(journal);
             log.TitleSsml.Append("Flight Operations");
 
+            string arrivedAt = "Arrived at";
+            if (String.IsNullOrEmpty(GameState.NextSystemName))
+                arrivedAt = "We have reached our destination, system";
+
             log.DetailSsml
                 .Append($"Jump completed")
                 .AppendEmphasis("Commander.", Framework.EmphasisType.Moderate)
-                .Append("Arrived at")
+                .Append(arrivedAt)
                 .AppendBodyName(journal.StarSystem)
                 .Append(". We travelled")
                 .AppendNumber(Math.Round(journal.JumpDist, 2))

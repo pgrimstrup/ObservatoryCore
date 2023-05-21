@@ -1,5 +1,8 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace StarGazer.Framework
 {
@@ -10,51 +13,20 @@ namespace StarGazer.Framework
         readonly List<string> _textFragments = new List<string>();
         readonly List<string> _ssmlFragments = new List<string>();
         bool _inParagraph;
+        // Letters followed by a Number - 2 groups
+        Regex _alphaNumeric = new Regex("([a-zA-Z]+)([0-9]+)", RegexOptions.IgnoreCase);
 
-        static ConcurrentDictionary<string, string> BodyNameWordReplacements = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        static ConcurrentDictionary<string, string> BodyNameCharacterReplacements = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        static ConcurrentDictionary<string, string> BodyTypeReplacements = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        static ConcurrentDictionary<string, string> BodyTypeWordReplacements = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         public event EventHandler Changed;
 
         static SsmlBuilder()
         {
-            BodyNameWordReplacements.TryAdd("A", "<say-as interpret-as=\"characters\">A</say-as>");
-            BodyNameWordReplacements.TryAdd("B", "<say-as interpret-as=\"characters\">B</say-as>");
-            BodyNameWordReplacements.TryAdd("C", "<say-as interpret-as=\"characters\">C</say-as>");
-            BodyNameWordReplacements.TryAdd("D", "<say-as interpret-as=\"characters\">D</say-as>");
-            BodyNameWordReplacements.TryAdd("E", "<say-as interpret-as=\"characters\">E</say-as>");
-            BodyNameWordReplacements.TryAdd("F", "<say-as interpret-as=\"characters\">F</say-as>");
-            BodyNameWordReplacements.TryAdd("G", "<say-as interpret-as=\"characters\">G</say-as>");
-            BodyNameWordReplacements.TryAdd("H", "<say-as interpret-as=\"characters\">H</say-as>");
-            BodyNameWordReplacements.TryAdd("I", "<say-as interpret-as=\"characters\">I</say-as>");
-            BodyNameWordReplacements.TryAdd("J", "<say-as interpret-as=\"characters\">J</say-as>");
-            BodyNameWordReplacements.TryAdd("K", "<say-as interpret-as=\"characters\">K</say-as>");
-            BodyNameWordReplacements.TryAdd("L", "<say-as interpret-as=\"characters\">L</say-as>");
-            BodyNameWordReplacements.TryAdd("M", "<say-as interpret-as=\"characters\">M</say-as>");
-            BodyNameWordReplacements.TryAdd("N", "<say-as interpret-as=\"characters\">N</say-as>");
-            BodyNameWordReplacements.TryAdd("O", "<say-as interpret-as=\"characters\">O</say-as>");
-            BodyNameWordReplacements.TryAdd("P", "<say-as interpret-as=\"characters\">P</say-as>");
-            BodyNameWordReplacements.TryAdd("Q", "<say-as interpret-as=\"characters\">Q</say-as>");
-            BodyNameWordReplacements.TryAdd("R", "<say-as interpret-as=\"characters\">R</say-as>");
-            BodyNameWordReplacements.TryAdd("S", "<say-as interpret-as=\"characters\">S</say-as>");
-            BodyNameWordReplacements.TryAdd("T", "<say-as interpret-as=\"characters\">T</say-as>");
-            BodyNameWordReplacements.TryAdd("U", "<say-as interpret-as=\"characters\">U</say-as>");
-            BodyNameWordReplacements.TryAdd("V", "<say-as interpret-as=\"characters\">V</say-as>");
-            BodyNameWordReplacements.TryAdd("W", "<say-as interpret-as=\"characters\">W</say-as>");
-            BodyNameWordReplacements.TryAdd("X", "<say-as interpret-as=\"characters\">X</say-as>");
-            BodyNameWordReplacements.TryAdd("Y", "<say-as interpret-as=\"characters\">Y</say-as>");
-            BodyNameWordReplacements.TryAdd("Z", "<say-as interpret-as=\"characters\">Z</say-as>");
-            BodyNameCharacterReplacements.TryAdd("-", " dash ");
-            BodyNameCharacterReplacements.TryAdd(".", " dot ");
-
-            BodyTypeReplacements.TryAdd("I", "1");
-            BodyTypeReplacements.TryAdd("II", "2");
-            BodyTypeReplacements.TryAdd("III", "3");
-            BodyTypeReplacements.TryAdd("IV", "4");
-            BodyTypeReplacements.TryAdd("V", "5");
-            foreach (var item in BodyNameWordReplacements)
-                BodyTypeReplacements.TryAdd(item.Key, item.Value);
+            BodyTypeWordReplacements.TryAdd("I", "1");
+            BodyTypeWordReplacements.TryAdd("II", "2");
+            BodyTypeWordReplacements.TryAdd("III", "3");
+            BodyTypeWordReplacements.TryAdd("IV", "4");
+            BodyTypeWordReplacements.TryAdd("V", "5");
         }
 
         public SsmlBuilder()
@@ -85,21 +57,18 @@ namespace StarGazer.Framework
                 string first = _textFragments[0];
                 if (Char.IsAscii(first[0]))
                 {
-                    _textFragments[0] = $"{emoji} {first}";
+                    _textFragments.Insert(0, emoji);
                 }
                 else
                 {
-                    int index = first.IndexOf(' ');
-                    if (index < 0)
-                        _textFragments[0] = $"{emoji} {first}";
-                    else
-                        _textFragments[0] = first.Insert(index, emoji);
+                    _textFragments[0] = $"{first}{emoji}";
                 }
             }
             else
             {
                 _textFragments.Insert(0, emoji);
             }
+            Changed?.Invoke(this, EventArgs.Empty);
         }
 
         public SsmlBuilder Append(string text)
@@ -115,7 +84,7 @@ namespace StarGazer.Framework
             if (!String.IsNullOrEmpty(name))
             {
                 _textFragments.Add(name.Trim());
-                _ssmlFragments.Add(ReplaceWords(name.Trim(), BodyNameWordReplacements, BodyNameCharacterReplacements, true));
+                _ssmlFragments.Add(ReplaceWords(name.Replace("-", " dash ").Replace(".", " dot ").Trim()));
             }
             Changed?.Invoke(this, EventArgs.Empty);
             return this;
@@ -124,7 +93,8 @@ namespace StarGazer.Framework
         public SsmlBuilder AppendBodyType(string name)
         {
             _textFragments.Add(name.Trim());
-            _ssmlFragments.Add(ReplaceWords(name.Trim(), BodyTypeReplacements));
+
+            _ssmlFragments.Add(ReplaceWords(name.Trim(), BodyTypeWordReplacements));
             Changed?.Invoke(this, EventArgs.Empty);
             return this;
         }
@@ -244,37 +214,51 @@ namespace StarGazer.Framework
             return this;
         }
 
-        private string ReplaceWords(string text, IDictionary<string, string> replacements, IDictionary<string, string> characterReplacements = null, bool spellOutNumbers = false)
+        // All single-letter words are spelt out.
+        // All-lowercase or mixed-case words are spoken as given.
+        // All-uppercase words are spelt out, as are words in the form Alpha-Number (AB01)
+        // This means that the word "a" is always spelt out as the alphabet letter and not the noun-article.
+        // The numbers 10 to 99 are spoken unless prefixed with a zero, all other numbers are spelt out.
+        private string ReplaceWords(string text, IDictionary<string, string> replacements = null)
         {
-            if (characterReplacements != null)
-            {
-                foreach (var key in characterReplacements.Keys)
-                {
-                    text = text.Replace(key, characterReplacements[key]);
-                }
-            }
-
             var words = text.Split();
             for (int i = 0; i < words.Length; i++)
             {
                 var parts = words[i].Split('-');
                 for(int p = 0; p < parts.Length; p++)
                 {
-                    if (replacements.TryGetValue(parts[p], out var replacement))
-                        parts[p] = replacement;
-                    else if (Int32.TryParse(parts[p], out int number))
+                    Match match = _alphaNumeric.Match(parts[p]);
+                    if (match.Success)
                     {
-                        if (number >= 100)
-                            parts[p] = $"<say-as interpret-as=\"digits\">{parts[p]}</say-as>";
+                        // Spell out the letters, but only spell out the numbers if it isn't 10 to 99
+                        if (!match.Groups[2].Value.StartsWith("0") &&  Int32.TryParse(match.Groups[2].Value, out int num))
+                        {
+                            if (num < 10 || num >= 100)
+                                parts[p] = $"<say-as interpret-as=\"characters\">{parts[p]}</say-as>";
+                            else
+                                parts[p] = $"<say-as interpret-as=\"characters\">{match.Groups[1].Value}</say-as> {num}";
+                        }
+                        else
+                        {
+                            // Number if prefixed with '0', so spell out the number "AB00" -> "A B zero zero"
+                            parts[p] = $"<say-as interpret-as=\"characters\">{parts[p]}</say-as>";
+                        }
+                    }
+                    else if(replacements != null && replacements.TryGetValue(parts[p], out string replacement))
+                    {
+                        // Simple replacement
+                        parts[p] = replacement;
                     }
                     else if (parts[p].ShouldBeSpeltOut())
+                    {
+                        // Single letter, all upper case, or a combination of alpha-numeric that didn't match the regex
                         parts[p] = $"<say-as interpret-as=\"characters\">{parts[p]}</say-as>";
+                    }
                 }
                 words[i] = String.Join("-", parts);
             }
-            text = string.Join(" ", words);
 
-            return text;
+            return string.Join(" ", words);
         }
 
         public override string ToString()

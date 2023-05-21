@@ -60,6 +60,17 @@ namespace StarGazer.Bridge
                     }
         }
 
+        public IEnumerable<BridgeLog> Logs
+        {
+            get
+            {
+                if (Core.IsLogMonitorBatchReading)
+                    return _batchReadEvents.OfType<BridgeLog>();
+                else
+                    return PluginUI.DataGrid.OfType<BridgeLog>();
+            }
+        }
+
         public void Load(IObservatoryCore observatoryCore)
         {
             try

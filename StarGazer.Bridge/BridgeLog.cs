@@ -25,6 +25,9 @@ namespace StarGazer.Bridge
 
         public string Detail => DetailSsml.ToString();
 
+        public string? EstimatedValue { get; set; }
+        public string? Distance { get; set; }
+
         public BridgeLog(JournalBase journal) : this()
         {
             EventTimeUTC = journal.TimestampDateTime;

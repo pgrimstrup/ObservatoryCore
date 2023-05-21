@@ -243,6 +243,9 @@ namespace StarGazer.Bridge.Events
                 case "k_orangegiant":
                     name = "Type-K orange giant star";
                     break;
+                case "l":
+                    name = "Type-L brown dwarf star";
+                    break;
                 case "m":
                     name = "Type-M red dwarf star";
                     break;

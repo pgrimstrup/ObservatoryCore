@@ -29,7 +29,11 @@ namespace StarGazer.Bridge.Events
                 {
                     if (GameState.RemainingJumpsInRouteTimeToSpeak < DateTime.Now)
                     {
-                        log.DetailSsml.Append($"There are {GameState.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
+                        if (GameState.RemainingJumpsInRoute == 1)
+                            log.DetailSsml.Append($"This is the final jump in the current flight plan.");
+                        else
+                            log.DetailSsml.Append($"There are {GameState.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
+
                         GameState.RemainingJumpsInRouteTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval * 2);
                     }
                 }

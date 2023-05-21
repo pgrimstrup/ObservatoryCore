@@ -10,8 +10,9 @@ namespace StarGazer.Bridge.Events
         {
             GameState.Assign(journal);
 
-            // This event is received mid-jump when auto-plotting to the next star system in the route
-            if (GameState.Status.HasFlag(StatusFlags.FSDJump))
+            // This event is received mid-jump when auto-plotting to the next star system in the route.
+            // It also occurs when the ship is returning from orbit while on the surface.
+            if (GameState.Status.HasFlag(StatusFlags.FSDJump) || !GameState.Status.HasFlag(StatusFlags.MainShip))
                 return;
 
             // Manually selected the next destination system

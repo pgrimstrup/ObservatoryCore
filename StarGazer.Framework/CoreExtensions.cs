@@ -28,13 +28,37 @@ namespace StarGazer.Framework
 
         public static bool ShouldBeSpeltOut(this string word)
         {
-            if (word == null || word.Length < 2 || word.Length > 3)
+            if (String.IsNullOrWhiteSpace(word))
                 return false;
 
-            if (word == word.ToUpper() && word.IndexOfAny("1234567890".ToCharArray()) < 0)
+            // "a" -> "A" (as the alphabet letter, not the article)
+            if (word.Length == 1)
                 return true;
 
-            return false;
+            // "01" -> "Zero One"
+            // "10" -> "Ten"
+            // "101" -> "One Zero One"
+            // "AB01" -> "A B Zero One"
+            // "AB10" -> "A B Ten"
+            // "AB101" -> "A B One Zero One"
+
+            char[] numbers = "1234567890".ToCharArray();
+            int numIndex = word.IndexOfAny(numbers);
+            if(numIndex < 0)
+            {
+                // No numbers, just letters. If its all uppercase, then spell it out
+                return word == word.ToUpper();
+            }
+            else if(numIndex == 0 && Int32.TryParse(word, out int num))
+            {
+                // Its just a number. 0..9 and 100+ are all spelt out
+                return num < 10 || num >= 100;
+            }
+            else
+            {
+                // Combination of numbers and letters
+                return true;
+            }
         }
 
         public static object SimpleClone(this object source)

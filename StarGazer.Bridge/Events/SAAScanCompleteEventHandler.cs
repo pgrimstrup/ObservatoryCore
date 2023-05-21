@@ -43,11 +43,11 @@ namespace StarGazer.Bridge.Events
                 log.DetailSsml.AppendBodyType(scan.PlanetClass);
             }
 
-            foreach (BridgeLog entry in Bridge.Instance.PluginUI.DataGrid)
+            foreach (BridgeLog entry in Bridge.Instance.Logs)
             {
                 if (entry.EventName == nameof(Scan) && entry.Title == GetBodyName(journal.BodyName))
                 {
-                    entry.DetailSsml.InsertEmoji(Emojis.CheckMark);
+                    entry.DetailSsml.InsertEmoji(Emojis.Mapped);
                 }
             }
 

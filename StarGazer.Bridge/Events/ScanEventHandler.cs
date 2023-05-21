@@ -37,6 +37,10 @@ namespace StarGazer.Bridge.Events
                     .AppendBodyType(GetStarTypeName(journal.StarType))
                     .Append($"{fuelStar}.");
 
+                if (journal.DistanceFromArrivalLS < 1)
+                    log.Distance = "Primary Star";
+                else
+                    log.Distance = $"{journal.DistanceFromArrivalLS:n0} LS";
                 log.Send();
             }
             else if (!String.IsNullOrEmpty(journal.PlanetClass)) // ignore belt clusters
@@ -127,11 +131,9 @@ namespace StarGazer.Bridge.Events
                     log.DetailSsml.AppendNumber(estimatedValue);
                     log.DetailSsml.Append("credits.");
                 }
-                else
-                {
-                    log.DetailSsml.AppendUnspoken($"Estimated value {estimatedValue:n0} credits.");
-                }
 
+                log.EstimatedValue = $"{estimatedValue:n0} Cr";
+                log.Distance = $"{journal.DistanceFromArrivalLS:n0} LS";
                 log.Send();
             }
 
