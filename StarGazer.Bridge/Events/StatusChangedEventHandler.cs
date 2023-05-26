@@ -81,7 +81,7 @@ namespace StarGazer.Bridge.Events
                     DoMasslock(newStatus);
 
                 // Sometimes get a change to LandingGear when already landed
-                if (HasShipStatusChanged(StatusFlags.LandingGear,  newStatus))
+                if (HasShipStatusChanged(StatusFlags.LandingGear, newStatus))
                     DoLandingGear(newStatus);
             }
 
@@ -118,28 +118,41 @@ namespace StarGazer.Bridge.Events
 
         private void CheckJumpDestination(Status status)
         {
-            if(status.Flags.HasFlag(StatusFlags.FSDCharging) && status.Flags2.HasFlag(StatusFlags2.FsdHyperdriveCharging))
+            if (status.Flags.HasFlag(StatusFlags.FSDCharging) && status.Flags2.HasFlag(StatusFlags2.FsdHyperdriveCharging))
             {
-                if(GameState.NextDestinationTimeToSpeak <= DateTime.Now && !String.IsNullOrWhiteSpace(GameState.NextSystemName))
+                if (GameState.NextDestinationTimeToSpeak > DateTime.Now || String.IsNullOrWhiteSpace(GameState.NextSystemName))
+                    return;
+
+                var log = new BridgeLog(status);
+                log.SpokenOnly();
+
+                var fuelStar = GameState.NextStarClass.IsFuelStar() ? ", a fuel star" : "";
+                log.DetailSsml
+                    .Append("Preparing to jump to")
+                    .AppendBodyName(GameState.NextSystemName)
+                    .Append($". Destination star is a")
+                    .AppendBodyType(GetStarTypeName(GameState.NextStarClass))
+                    .Append($"{fuelStar}.");
+
+                if (GameState.RemainingJumpsInRoute == 1)
+                    log.DetailSsml.Append($"This is the final jump in the current flight plan.");
+                else if (GameState.RemainingJumpsInRoute > 1 && GameState.RemainingJumpsInRouteTimeToSpeak < DateTime.Now && (GameState.RemainingJumpsInRoute < 5 || (GameState.RemainingJumpsInRoute % 5) == 0))
                 {
-                    var log = new BridgeLog(status);
-                    log.SpokenOnly();
-
-                    var fuelStar = GameState.NextStarClass.IsFuelStar() ? ", a fuel star" : "";
-                    log.DetailSsml
-                        .Append("Preparing to jump to")
-                        .AppendBodyName(GameState.NextSystemName)
-                        .Append($". Destination star is a")
-                        .AppendBodyType(GetStarTypeName(GameState.NextStarClass))
-                        .Append($"{fuelStar}.");
-
-                    if (GameState.RemainingJumpsInRoute > 0 && (GameState.RemainingJumpsInRoute < 5 || (GameState.RemainingJumpsInRoute % 5) == 0))
-                        log.DetailSsml.Append($"There are {GameState.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
-
-                    Bridge.Instance.LogEvent(log);
-                    if (!Bridge.Instance.Core.IsLogMonitorBatchReading)
-                        GameState.NextDestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval); 
+                    log.DetailSsml.Append($"There are {GameState.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
+                    GameState.RemainingJumpsInRouteTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval * 2);
                 }
+
+                if (GameState.NextStarClass.IsNeutronStar() || GameState.NextStarClass.IsWhiteDwarf() || GameState.NextStarClass.IsBlackHole())
+                {
+                    log.DetailSsml
+                        .Append("That is a hazardous star type")
+                        .AppendEmphasis("Commander,", EmphasisType.Moderate)
+                        .Append("we should throttle down before exiting jump");
+                }
+
+                log.Send();
+                if (!Bridge.Instance.Core.IsLogMonitorBatchReading)
+                    GameState.NextDestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval);
             }
         }
 
@@ -202,11 +215,11 @@ namespace StarGazer.Bridge.Events
 
             double fuelLevel = GameState.Fuel.FuelMain / GameState.FuelCapacity;
             FuelWarnings newWarning = FuelWarnings.Plenty;
-            foreach((double level, FuelWarnings warning, string message) item in FuelWarning)
+            foreach ((double level, FuelWarnings warning, string message) item in FuelWarning)
             {
-                if(fuelLevel <= item.level)
+                if (fuelLevel <= item.level)
                 {
-                    if(_shipFuelWarnings < item.warning)
+                    if (_shipFuelWarnings < item.warning)
                     {
                         log = new BridgeLog(status);
                         log.SpokenOnly()

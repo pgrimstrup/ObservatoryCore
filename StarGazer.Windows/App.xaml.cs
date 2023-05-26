@@ -43,18 +43,17 @@ namespace StarGazer.UI
         private void ConfigureServices(ServiceCollection builder)
         {
             builder.AddLogging(logging => {
+#if DEBUG
+                logging.SetMinimumLevel(LogLevel.Debug);
+                logging.AddDebugLogging();
+#else
+                logging.SetMinimumLevel(LogLevel.Information);
+#endif
                 logging.AddFileLogging(options => {
                     options.FileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Star Gazer", "Logs", "observatory.log");
-                    options.LogLevel = LogLevel.Information;
                     options.RolloverCount = 10;
                     options.DailyRollover = true;
-#if DEBUG
-                    options.LogLevel = LogLevel.Debug;
-#endif
                 });
-#if DEBUG
-                logging.AddDebugLogging();
-#endif
             });
 
             // Register pages

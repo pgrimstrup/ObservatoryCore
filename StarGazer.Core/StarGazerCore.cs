@@ -341,8 +341,7 @@ namespace StarGazer
         public void OnJournalEvent(object sender, JournalEventArgs e)
         {
             JournalBase journal = (JournalBase)e.journalEvent;
-
-            _logger.LogInformation($"{journal.Event}: {journal.Json}");
+            _logger.LogDebug($"{journal.Event}: {journal.Json}");
 
             foreach (var plugin in _pluginManager.ActivePlugins)
             {
@@ -366,22 +365,25 @@ namespace StarGazer
 
         public void OnStatusUpdate(object sender, JournalEventArgs e)
         {
+            Status status = (Status)e.journalEvent;
+            _logger.LogDebug($"{status.Event}: {status.Json}");
+
             foreach (var plugin in _pluginManager.ActivePlugins)
             {
                 try
                 {
                     if (plugin is IStarGazerWorker sgWorker)
                     {
-                        sgWorker.StatusChangeAsync((Status)e.journalEvent);
+                        sgWorker.StatusChangeAsync(status);
                     }
                     else if (plugin is IObservatoryWorker obWorker)
                     {
-                        obWorker.StatusChange((Status)e.journalEvent);
+                        obWorker.StatusChange(status);
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"Plugin {plugin.Name}, EventType {e.journalEvent} exception while handling status update");
+                    _logger.LogError(ex, $"Plugin {plugin.Name}, EventType {status.Event} exception while handling status update");
                 }
             }
         }

@@ -12,7 +12,6 @@ namespace StarGazer.Bridge.Events
                 return;
 
             GameState.ScannedBodies.Add(journal.BodyName, journal);
-            GameState.BodySignals.TryGetValue(journal.BodyName, out var signals);
 
             if (!String.IsNullOrEmpty(journal.StarType))
             {
@@ -47,21 +46,8 @@ namespace StarGazer.Bridge.Events
             {
                 var k_value = BodyValueEstimator.GetKValueForBody(journal.PlanetClass, !String.IsNullOrEmpty(journal.TerraformState));
                 var estimatedValue = BodyValueEstimator.GetBodyValue(k_value, journal.MassEM, !journal.WasDiscovered, true, !journal.WasMapped, true);
-                int bioCount = 0;
-                int geoCount = 0;
 
-                if (signals != null)
-                {
-                    List<string> list = new List<string>();
-                    foreach (var signal in signals.Signals)
-                    {
-                        list.Add($"{signal.Count} {signal.Type_Localised}");
-                        if (signal.Type_Localised.StartsWith("Geo", StringComparison.OrdinalIgnoreCase))
-                            geoCount += signal.Count;
-                        if (signal.Type_Localised.StartsWith("Bio", StringComparison.OrdinalIgnoreCase))
-                            bioCount += signal.Count;
-                    }
-                }
+                BridgeUtils.CountSignals(journal.BodyName, out int bioCount, out int geoCount, out int otherCount);
 
                 List<string> emojies = new List<string>();
                 if (journal.PlanetClass.IsEarthlike())
@@ -112,18 +98,7 @@ namespace StarGazer.Bridge.Events
                 }
                 log.DetailSsml.EndSentence();
 
-                if (bioCount > 0 || geoCount > 0)
-                {
-                    log.DetailSsml.Append("Sensors found");
-                    if (bioCount > 0)
-                        log.DetailSsml.Append($"{bioCount} biological");
-                    if (bioCount > 0 && geoCount > 0)
-                        log.DetailSsml.Append("and");
-                    if (geoCount > 0)
-                        log.DetailSsml.Append($"{geoCount} geological");
-                    log.DetailSsml.Append("signal".Plural(bioCount + geoCount));
-                    log.DetailSsml.EndSentence();
-                }
+                BridgeUtils.AppendSignalInfo(journal.BodyName, log);
 
                 if (estimatedValue >= Bridge.Instance.Settings.HighValueBody)
                 {

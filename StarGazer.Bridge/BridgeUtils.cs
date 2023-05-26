@@ -1,5 +1,7 @@
-﻿using System.Text;
+﻿using System.Reflection.Metadata.Ecma335;
+using System.Text;
 using Observatory.Framework.Files.Journal;
+using Observatory.Framework.Files.ParameterTypes;
 
 namespace StarGazer.Bridge
 {
@@ -140,6 +142,56 @@ namespace StarGazer.Bridge
             return sb.ToString();
         }
 
+        internal static void CountSignals(string bodyName, out int bioCount, out int geoCount, out int otherCount)
+        {
+            bioCount = 0;
+            geoCount = 0;
+            otherCount = 0;
 
+            if(Bridge.Instance.GameState.BodySignals.TryGetValue(bodyName, out var signals))
+            { 
+                List<string> list = new List<string>();
+                foreach (var signal in signals.Signals)
+                {
+                    list.Add($"{signal.Count} {signal.Type_Localised}");
+                    if (signal.Type_Localised.StartsWith("Geo", StringComparison.OrdinalIgnoreCase))
+                        geoCount += signal.Count;
+                    else if (signal.Type_Localised.StartsWith("Bio", StringComparison.OrdinalIgnoreCase))
+                        bioCount += signal.Count;
+                    else
+                        otherCount += signal.Count;
+                }
+            }
+        }
+
+        internal static void AppendSignalInfo(string bodyName, BridgeLog log)
+        {
+            if (Bridge.Instance.GameState.BodySignals.TryGetValue(bodyName, out var signals))
+            {
+                int totalSignalCount = signals.Signals.Sum(s => s.Count);
+                if(totalSignalCount > 0)
+                {
+                    List<string> signalText = new List<string>();
+                    foreach (var signal in signals.Signals)
+                    {
+                        if (signal.Count > 0)
+                            signalText.Add($"{signal.Count} {signal.Type_Localised}");
+                    }
+
+                    string lastSignalText = signalText.Last();
+                    signalText.RemoveAt(signalText.Count - 1);
+
+                    log.DetailSsml.Append("Sensors found");
+                    if (signalText.Count > 0)
+                    {
+                        log.DetailSsml.Append(String.Join(", ", signalText));
+                        log.DetailSsml.Append("and");
+                    }
+
+                    log.DetailSsml.Append(lastSignalText);
+                    log.DetailSsml.Append("signal".Plural(totalSignalCount) + ".");
+                }
+            }
+        }
     }
 }

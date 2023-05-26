@@ -16,7 +16,7 @@ namespace StarGazer.Bridge.Events
     internal class BaseEventHandler
     {
         protected Random R = new Random();
-        protected TimeSpan SpokenDestinationInterval = TimeSpan.FromSeconds(60);
+        protected TimeSpan SpokenDestinationInterval = TimeSpan.FromSeconds(90);
 
         public static CurrentGameState GameState => Bridge.Instance.GameState;
 

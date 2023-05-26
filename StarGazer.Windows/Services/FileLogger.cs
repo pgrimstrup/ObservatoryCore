@@ -9,7 +9,6 @@ namespace StarGazer.UI.Services
     {
         public string Name { get; set; }
         public string FileName { get; set; }
-        public LogLevel LogLevel { get; set; }
         public bool DailyRollover { get; set; }
         public int RolloverCount { get; set; }
 
@@ -37,17 +36,11 @@ namespace StarGazer.UI.Services
             return null;
         }
 
-        public bool IsEnabled(LogLevel logLevel)
-        {
-            return logLevel >= _options.LogLevel;
-        }
+        public bool IsEnabled(LogLevel logLevel) => true;
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
-            if (IsEnabled(logLevel))
-            {
-                _writer.Log(logLevel, eventId, state, exception, formatter);
-            }
+            _writer.Log(logLevel, eventId, state, exception, formatter);
         }
     }
 

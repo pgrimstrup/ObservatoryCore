@@ -18,6 +18,9 @@ namespace StarGazer.Bridge.Events
             // Manually selected the next destination system
             if (!String.IsNullOrEmpty(journal.Name))
             {
+                if (GameState.NextDestinationTimeToSpeak > DateTime.Now || journal.Name != GameState.NextSystemName)
+                    return;
+
                 var log = new BridgeLog(journal);
                 log.TitleSsml.Append("Flight Operations");
 
@@ -29,21 +32,24 @@ namespace StarGazer.Bridge.Events
                         .AppendBodyType(GetStarTypeName(journal.StarClass))
                         .Append($"{fuelStar}.");
 
-                if(GameState.RemainingJumpsInRoute == 1)
+                if (GameState.RemainingJumpsInRoute == 1)
                     log.DetailSsml.Append($"This is the final jump in the current flight plan.");
-                else if (GameState.RemainingJumpsInRoute > 1 && (GameState.RemainingJumpsInRoute < 5 || (GameState.RemainingJumpsInRoute % 5) == 0))
+                else if (GameState.RemainingJumpsInRoute > 1 && GameState.RemainingJumpsInRouteTimeToSpeak < DateTime.Now && (GameState.RemainingJumpsInRoute < 5 || (GameState.RemainingJumpsInRoute % 5) == 0))
+                {
                     log.DetailSsml.Append($"There are {GameState.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
+                    GameState.RemainingJumpsInRouteTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval * 2);
+                }
 
                 if (journal.StarClass.IsNeutronStar() || journal.StarClass.IsWhiteDwarf() || journal.StarClass.IsBlackHole())
                 {
                     log.DetailSsml
                         .AppendEmphasis("Commander,", EmphasisType.Moderate)
-                        .Append("this is a hazardous star type.")
-                        .AppendEmphasis("Caution is advised", EmphasisType.Strong)
+                        .Append("that is a hazardous star type.")
+                        .AppendEmphasis("Caution is advised", EmphasisType.Moderate)
                         .Append("on exiting jump");
                 }
 
-                Bridge.Instance.LogEvent(log);
+                log.Send();
                 if(!Bridge.Instance.Core.IsLogMonitorBatchReading)
                     GameState.NextDestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval);
             }

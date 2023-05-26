@@ -9,11 +9,11 @@ namespace StarGazer.Bridge.Events
         {
 
             // We get this event when entering supercruise if we have a destination locked
-            if (!String.IsNullOrEmpty(journal.StarSystem))
+            if (!String.IsNullOrWhiteSpace(journal.StarSystem))
             {
                 var log = new BridgeLog(journal);
                 if (GameState.NextDestinationTimeToSpeak > DateTime.Now)
-                    log.TextOnly();
+                    log.TextOnly(); // Still need to log the event
 
                 log.TitleSsml.Append("Flight Operations");
 
@@ -25,23 +25,17 @@ namespace StarGazer.Bridge.Events
                         .AppendBodyType(GetStarTypeName(journal.StarClass))
                         .Append($"{fuelStar}.");
 
-                if (GameState.RemainingJumpsInRoute > 0 && (GameState.RemainingJumpsInRoute < 5 || (GameState.RemainingJumpsInRoute % 5) == 0))
+                if (GameState.RemainingJumpsInRoute == 1)
+                    log.DetailSsml.Append($"This is the final jump in the current flight plan.");
+                else if (GameState.RemainingJumpsInRoute > 1 && GameState.RemainingJumpsInRouteTimeToSpeak < DateTime.Now && (GameState.RemainingJumpsInRoute < 5 || (GameState.RemainingJumpsInRoute % 5) == 0))
                 {
-                    if (GameState.RemainingJumpsInRouteTimeToSpeak < DateTime.Now)
-                    {
-                        if (GameState.RemainingJumpsInRoute == 1)
-                            log.DetailSsml.Append($"This is the final jump in the current flight plan.");
-                        else
-                            log.DetailSsml.Append($"There are {GameState.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
-
-                        GameState.RemainingJumpsInRouteTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval * 2);
-                    }
+                    log.DetailSsml.Append($"There are {GameState.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
+                    GameState.RemainingJumpsInRouteTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval * 2);
                 }
 
-                Bridge.Instance.LogEvent(log);
+                log.Send();
                 if (!Bridge.Instance.Core.IsLogMonitorBatchReading)
                     GameState.NextDestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval);
-
 
                 if (journal.StarClass.IsNeutronStar() || journal.StarClass.IsWhiteDwarf())
                 {
@@ -51,7 +45,7 @@ namespace StarGazer.Bridge.Events
                     log.DetailSsml.AppendEmphasis("Commander,", EmphasisType.Moderate);
                     log.DetailSsml.Append("this is a dangerous star type.");
                     log.DetailSsml.AppendEmphasis("Throttle down now.", EmphasisType.Strong);
-                    Bridge.Instance.LogEvent(log);
+                    log.Send();
                 }
             }
         }
