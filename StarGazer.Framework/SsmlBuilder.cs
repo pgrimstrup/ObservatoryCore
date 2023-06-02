@@ -176,6 +176,25 @@ namespace StarGazer.Framework
             return this;
         }
 
+        // Like EndSentence, but with a comma instead
+        public SsmlBuilder AppendBreak()
+        {
+            if (_textFragments.Count == 0)
+                _textFragments.Add(",");
+            else if (!_textFragments.Last().EndsWith(','))
+                _textFragments[_textFragments.Count - 1] += ",";
+
+            if (_ssmlFragments.Count == 0)
+                _ssmlFragments.Add(",");
+            else if (_ssmlFragments.Last().StartsWith('<'))
+                _ssmlFragments.Add(",");
+            else if (!_ssmlFragments.Last().EndsWith(','))
+                _ssmlFragments[_ssmlFragments.Count - 1] += ",";
+
+            Changed?.Invoke(this, EventArgs.Empty);
+            return this;
+        }
+
         public SsmlBuilder EndSentence()
         {
             if (_textFragments.Count == 0)

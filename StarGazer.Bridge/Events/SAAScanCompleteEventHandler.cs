@@ -7,40 +7,83 @@ namespace StarGazer.Bridge.Events
     {
         public void HandleEvent(SAAScanComplete journal)
         {
-            var log = new BridgeLog(journal);
-            log.IsTitleSpoken = true;
-            log.TitleSsml.AppendBodyName(GetBodyName(journal.BodyName));
+            var textOnly = new BridgeLog(journal);
+            var spokenOnly = new BridgeLog(journal);
+            textOnly.TextOnly();
+            spokenOnly.SpokenOnly();
+            textOnly.TitleSsml.AppendBodyName(GetBodyName(journal.BodyName));
+            spokenOnly.TitleSsml.AppendBodyName(GetBodyName(journal.BodyName));
 
-            log.DetailSsml.AppendUnspoken(Emojis.Probe);
+            textOnly.DetailSsml.AppendUnspoken(Emojis.Probe);
             if (journal.ProbesUsed <= journal.EfficiencyTarget)
-                log.DetailSsml.Append($"Surface Scan complete, with efficiency bonus, using only {journal.ProbesUsed} probes")
-                    .AppendEmphasis("Commander.", EmphasisType.Moderate);
-            else
-                log.DetailSsml.Append($"Surface Scan complete using {journal.ProbesUsed} probes")
-                    .AppendEmphasis("Commander.", EmphasisType.Moderate);
-
-            if (journal.Mappers == null || journal.Mappers.Count == 0)
             {
-                log.DetailSsml.AppendEmphasis("Commander,", EmphasisType.Moderate);
-                log.DetailSsml.Append($"we are the first to map");
-                log.DetailSsml.AppendBodyName(GetBodyName(journal.BodyName));
+                textOnly.DetailSsml
+                    .Append($"Surface Scan complete, with efficiency bonus, using only {journal.ProbesUsed} probes.");
+                spokenOnly.DetailSsml
+                    .Append($"Surface Scan complete, with efficiency bonus, using only {journal.ProbesUsed} probes")
+                    .AppendEmphasis("Commander.", EmphasisType.Moderate);
             }
             else
             {
-                log.DetailSsml.AppendBodyName(GetBodyName(journal.BodyName)).Append("is");
+                textOnly.DetailSsml
+                    .Append($"Surface Scan complete using {journal.ProbesUsed} probes.");
+                spokenOnly.DetailSsml
+                    .Append($"Surface Scan complete using {journal.ProbesUsed} probes")
+                    .AppendEmphasis("Commander.", EmphasisType.Moderate);
+            }
+
+            if (journal.Mappers == null || journal.Mappers.Count == 0)
+            {
+                spokenOnly.DetailSsml.AppendEmphasis("Commander,", EmphasisType.Moderate);
+                spokenOnly.DetailSsml.Append($"we are the first to map");
+                spokenOnly.DetailSsml.AppendBodyName(GetBodyName(journal.BodyName)).AppendBreak();
+            }
+            else
+            {
+                spokenOnly.DetailSsml.AppendBodyName(GetBodyName(journal.BodyName)).AppendBreak();
             }
 
             if (GameState.ScannedBodies.TryGetValue(journal.BodyName, out Scan? scan))
             {
-                string article = "a ";
-                string terraformable = "";
-                if (!String.IsNullOrEmpty(scan.TerraformState))
-                    terraformable = "terraformable ";
-                else if (scan.PlanetClass.IndexOfAny("aeiou".ToCharArray()) == 0)
-                    article = "an ";
+                textOnly.DetailSsml
+                    .AppendBodyName(GetBodyName(journal.BodyName))
+                    .Append(",");
 
-                log.DetailSsml.Append($", {article}{terraformable}");
-                log.DetailSsml.AppendBodyType(scan.PlanetClass);
+                if (!String.IsNullOrWhiteSpace(scan.TerraformState))
+                {
+                    textOnly.DetailSsml.Append(ArticleFor(scan.TerraformState)).Append(scan.TerraformState).AppendBodyType(scan.PlanetClass);
+                    spokenOnly.DetailSsml.Append(ArticleFor(scan.TerraformState)).Append(scan.TerraformState).AppendBodyType(scan.PlanetClass);
+                }
+                else
+                {
+                    textOnly.DetailSsml.Append(ArticleFor(scan.PlanetClass)).AppendBodyType(scan.PlanetClass);
+                    spokenOnly.DetailSsml.Append(ArticleFor(scan.PlanetClass)).AppendBodyType(scan.PlanetClass);
+                }
+
+                if (scan.Landable)
+                {
+                    textOnly.DetailSsml.AppendBreak().Append("landable,");
+                    spokenOnly.DetailSsml.AppendBreak().Append("landable");
+                }
+
+                if (String.IsNullOrWhiteSpace(scan.Atmosphere))
+                {
+                    textOnly.DetailSsml.Append("no atmosphere");
+                    spokenOnly.DetailSsml.Append("with no atmosphere");
+                }
+                else
+                {
+                    textOnly.DetailSsml.Append(scan.Atmosphere);
+                    spokenOnly.DetailSsml.Append("with " + scan.Atmosphere);
+                }
+
+                double gravity = Math.Round(scan.SurfaceGravity / 9.804, 2);
+                textOnly.DetailSsml.Append($", surface gravity {gravity} G.");
+                spokenOnly.DetailSsml.Append($"and surface gravity {gravity} G.");
+            }
+            else
+            {
+                spokenOnly.DetailSsml.Append("hmm. Interesting, this body doesn't appear in our system scan.");
             }
 
             foreach (BridgeLog entry in Bridge.Instance.Logs)
@@ -51,7 +94,8 @@ namespace StarGazer.Bridge.Events
                 }
             }
 
-            Bridge.Instance.LogEvent(log);
+            Bridge.Instance.LogEvent(textOnly);
+            Bridge.Instance.LogEvent(spokenOnly);
         }
     }
 }

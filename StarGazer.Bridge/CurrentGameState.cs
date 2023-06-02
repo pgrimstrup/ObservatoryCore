@@ -21,13 +21,14 @@ namespace StarGazer.Bridge
         public string? SystemName { get; set; } 
         public string? StationName { get; set; }
 
-        // Tracked during FSDTarget for later use
-        public string NextSystemName { get; set; } = "";
-        public string NextStarClass { get; set; } = "";
-        public int RemainingJumpsInRoute { get; set; }
+        // Tracked during FSDTarget or Status Change of Destination for later use
+        public string DestinationName { get; set; } = "";
+        public string DestinationStationName { get; set; } = "";
+        public string DestinationStarClass { get; set; } = "";
+        public DateTime DestinationTimeToSpeak { get; set; }
 
+        public int RemainingJumpsInRoute { get; set; }
         public DateTime RemainingJumpsInRouteTimeToSpeak { get; set; }
-        public DateTime NextDestinationTimeToSpeak { get; set; }
 
         public int ScanPercent { get; set; }
 
@@ -128,9 +129,14 @@ namespace StarGazer.Bridge
 
         void AssignFSDTarget(FSDTarget target)
         {
+            if (target.Name != DestinationName)
+                DestinationTimeToSpeak = DateTime.Now;
+            if(target.RemainingJumpsInRoute != RemainingJumpsInRoute)
+                RemainingJumpsInRouteTimeToSpeak = DateTime.Now;
+
             RemainingJumpsInRoute = target.RemainingJumpsInRoute;
-            NextSystemName = target.Name;
-            NextStarClass = target.StarClass;
+            DestinationName = target.Name;
+            DestinationStarClass = target.StarClass;
         }
 
         void AssignFSDJump(FSDJump jump)
@@ -138,11 +144,16 @@ namespace StarGazer.Bridge
             ScanPercent = 0;
             SystemName = jump.StarSystem;
             StationName = null;
-            NextDestinationTimeToSpeak = DateTime.Now;
-            RemainingJumpsInRouteTimeToSpeak = DateTime.Now;
             AutoCompleteScanCount = 0;
             ScannedBodies.Clear();
             BodySignals.Clear();
+
+            // Clear destination if needed
+            if(DestinationName == jump.StarSystem)
+            {
+                DestinationName = "";
+                DestinationStarClass = "";
+            }
         }
 
     }

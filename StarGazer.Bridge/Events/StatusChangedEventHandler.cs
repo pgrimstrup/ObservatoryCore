@@ -26,8 +26,11 @@ namespace StarGazer.Bridge.Events
 
         FuelWarnings _shipFuelWarnings;
         FuelWarnings _srvFuelWarnings;
-        ulong _lastSystemId;
-        int _lastBodyId;
+
+        private bool HasStatusChanged(Status newStatus)
+        {
+            return GameState.Status != newStatus.Flags || GameState.Status2 != newStatus.Flags2;
+        }
 
         private bool HasShipStatusChanged(StatusFlags flag, Status newStatus)
         {
@@ -43,11 +46,21 @@ namespace StarGazer.Bridge.Events
             return false;
         }
 
-        private bool HasOnFootStatusChanged(StatusFlags2 flag, Status oldStatus, Status newStatus)
+        private bool HasOnFootStatusChanged(StatusFlags2 flag, Status newStatus)
         {
-            if (oldStatus.Flags2.HasFlag(StatusFlags2.OnFoot) && newStatus.Flags2.HasFlag(StatusFlags2.OnFoot))
-                return (oldStatus.Flags2 & flag) != (newStatus.Flags2 & flag);
+            if (GameState.Status2.HasFlag(StatusFlags2.OnFoot) && newStatus.Flags2.HasFlag(StatusFlags2.OnFoot))
+                return (GameState.Status2 & flag) != (newStatus.Flags2 & flag);
             return false;
+        }
+
+        private bool IsHyperdriveCharging(StatusFlags flags, StatusFlags2 flags2)
+        {
+            return flags.HasFlag(StatusFlags.FSDCharging) && flags2.HasFlag(StatusFlags2.FsdHyperdriveCharging);
+        }
+
+        private bool IsSupercruiseCharging(StatusFlags flags, StatusFlags2 flags2)
+        {
+            return flags.HasFlag(StatusFlags.FSDCharging) && !flags2.HasFlag(StatusFlags2.FsdHyperdriveCharging);
         }
 
 
@@ -67,10 +80,11 @@ namespace StarGazer.Bridge.Events
             if (GameState.Status == newStatus.Flags && GameState.Status2 == newStatus.Flags2)
                 return;
 
-            if (GameState.Status != newStatus.Flags)
+            if (HasStatusChanged(newStatus))
+            {
                 LogInfo($"StatusChanged: Flags : {GameState.Status} -> {newStatus.Flags}");
-            if (GameState.Status2 != newStatus.Flags2)
-                LogInfo($"StatusChanged: Flags2: {GameState.Status2} -> {newStatus.Flags2}");
+                LogInfo($"             : Flags2: {GameState.Status2} -> {newStatus.Flags2}");
+            }
 
             // Seems to be a bug, we get the masslock flag sometimes when we shouldn't
             if (!newStatus.Flags.HasFlag(StatusFlags.FSDJump) &&
@@ -98,41 +112,54 @@ namespace StarGazer.Bridge.Events
 
             if (status.Destination.Body > 0 && GameState.Status != 0)
             {
-                if (_lastSystemId != status.Destination.System || _lastBodyId != status.Destination.Body)
+                if (GameState.DestinationName != status.Destination.Name)
                 {
-                    var log = new BridgeLog(status);
-                    log.SpokenOnly();
-                    log.TitleSsml.Append("Flight Operations");
+                    GameState.DestinationName = status.Destination.Name;
+                    GameState.DestinationStarClass = "";
 
+                    var log = new BridgeLog(status);
+                    log.TitleSsml.Append("Flight Operations");
                     log.DetailSsml
                         .Append("Course laid in to")
-                        .AppendBodyName(GetBodyName(status.Destination.Name));
+                        .AppendBodyName(GetBodyName(GameState.DestinationName));
 
-                    Bridge.Instance.LogEvent(log);
+                    log.Send();
+                    GameState.DestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval);
                 }
             }
-
-            _lastSystemId = status.Destination.System;
-            _lastBodyId = status.Destination.Body;
         }
 
         private void CheckJumpDestination(Status status)
         {
-            if (status.Flags.HasFlag(StatusFlags.FSDCharging) && status.Flags2.HasFlag(StatusFlags2.FsdHyperdriveCharging))
+            if (IsSupercruiseCharging(status.Flags, status.Flags2) && !IsSupercruiseCharging(GameState.Status, GameState.Status2))
             {
-                if (GameState.NextDestinationTimeToSpeak > DateTime.Now || String.IsNullOrWhiteSpace(GameState.NextSystemName))
-                    return;
+                BridgeLog log = new BridgeLog(status);
+                log.SpokenOnly();
+                log.DetailSsml.Append("Preparing for supercruise.");
+                log.Send();
+            }
 
-                var log = new BridgeLog(status);
+            // Only process if we have changed state to charging FSD for Hyperdrive Jump
+            if (IsHyperdriveCharging(status.Flags, status.Flags2) && !IsHyperdriveCharging(GameState.Status, GameState.Status2))
+            {
+                BridgeLog log = new BridgeLog(status);
                 log.SpokenOnly();
 
-                var fuelStar = GameState.NextStarClass.IsFuelStar() ? ", a fuel star" : "";
-                log.DetailSsml
-                    .Append("Preparing to jump to")
-                    .AppendBodyName(GameState.NextSystemName)
-                    .Append($". Destination star is a")
-                    .AppendBodyType(GetStarTypeName(GameState.NextStarClass))
-                    .Append($"{fuelStar}.");
+                if (GameState.DestinationTimeToSpeak > DateTime.Now || String.IsNullOrWhiteSpace(GameState.DestinationName))
+                {
+                    log.DetailSsml.Append("Preparing to jump.");
+                }
+                else
+                {
+                    var fuelStar = GameState.DestinationStarClass.IsFuelStar() ? ", a fuel star" : "";
+                    log.DetailSsml
+                        .Append("Preparing to jump to")
+                        .AppendBodyName(GameState.DestinationName)
+                        .EndSentence()
+                        .Append($"Destination star is a")
+                        .AppendBodyType(GetStarTypeName(GameState.DestinationStarClass))
+                        .Append($"{fuelStar}.");
+                }
 
                 if (GameState.RemainingJumpsInRoute == 1)
                     log.DetailSsml.Append($"This is the final jump in the current flight plan.");
@@ -142,17 +169,22 @@ namespace StarGazer.Bridge.Events
                     GameState.RemainingJumpsInRouteTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval * 2);
                 }
 
-                if (GameState.NextStarClass.IsNeutronStar() || GameState.NextStarClass.IsWhiteDwarf() || GameState.NextStarClass.IsBlackHole())
+                if (GameState.DestinationStarClass.IsNeutronStar() || GameState.DestinationStarClass.IsWhiteDwarf() || GameState.DestinationStarClass.IsBlackHole())
                 {
                     log.DetailSsml
                         .Append("That is a hazardous star type")
-                        .AppendEmphasis("Commander,", EmphasisType.Moderate)
-                        .Append("we should throttle down before exiting jump");
+                        .AppendEmphasis("Commander.", EmphasisType.Moderate)
+                        .Append("We should throttle down before exiting jump.");
                 }
 
                 log.Send();
                 if (!Bridge.Instance.Core.IsLogMonitorBatchReading)
-                    GameState.NextDestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval);
+                {
+                    if (String.IsNullOrWhiteSpace(GameState.DestinationName) && !String.IsNullOrWhiteSpace(status.Destination.Name))
+                        GameState.DestinationTimeToSpeak = DateTime.Now;
+                    else
+                        GameState.DestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval);
+                }
             }
         }
 

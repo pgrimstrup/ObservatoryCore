@@ -7,10 +7,10 @@ namespace StarGazer.Bridge.Events
         public void HandleEvent(SupercruiseEntry journal)
         {
             var log = new BridgeLog(journal);
+            log.SpokenOnly();
             log.TitleSsml.Append("Flight Operations");
-            log.DetailSsml.Append($"Supercruise engaged");
-
-            Bridge.Instance.LogEvent(log);
+            log.DetailSsml.Append($"FSD online, supercruising");
+            log.Send();
         }
     }
 }

@@ -8,17 +8,18 @@ namespace StarGazer.Bridge.Events
     {
         public void HandleEvent(FSDTarget journal)
         {
+            string previousDestination = GameState.DestinationName;
             GameState.Assign(journal);
 
             // This event is received mid-jump when auto-plotting to the next star system in the route.
-            // It also occurs when the ship is returning from orbit while on the surface.
+            // It also occurs when the ship is returning from orbit while on the surface (ie, Cmdr not in MainShip)
             if (GameState.Status.HasFlag(StatusFlags.FSDJump) || !GameState.Status.HasFlag(StatusFlags.MainShip))
                 return;
 
             // Manually selected the next destination system
             if (!String.IsNullOrEmpty(journal.Name))
             {
-                if (GameState.NextDestinationTimeToSpeak > DateTime.Now || journal.Name != GameState.NextSystemName)
+                if (GameState.DestinationTimeToSpeak > DateTime.Now || previousDestination == journal.Name)
                     return;
 
                 var log = new BridgeLog(journal);
@@ -37,7 +38,8 @@ namespace StarGazer.Bridge.Events
                 else if (GameState.RemainingJumpsInRoute > 1 && GameState.RemainingJumpsInRouteTimeToSpeak < DateTime.Now && (GameState.RemainingJumpsInRoute < 5 || (GameState.RemainingJumpsInRoute % 5) == 0))
                 {
                     log.DetailSsml.Append($"There are {GameState.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
-                    GameState.RemainingJumpsInRouteTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval * 2);
+                    if (!Bridge.Instance.Core.IsLogMonitorBatchReading)
+                        GameState.RemainingJumpsInRouteTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval * 2);
                 }
 
                 if (journal.StarClass.IsNeutronStar() || journal.StarClass.IsWhiteDwarf() || journal.StarClass.IsBlackHole())
@@ -51,7 +53,7 @@ namespace StarGazer.Bridge.Events
 
                 log.Send();
                 if(!Bridge.Instance.Core.IsLogMonitorBatchReading)
-                    GameState.NextDestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval);
+                    GameState.DestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval);
             }
         }
     }

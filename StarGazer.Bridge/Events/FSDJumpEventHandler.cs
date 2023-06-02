@@ -12,7 +12,7 @@ namespace StarGazer.Bridge.Events
             log.TitleSsml.Append("Flight Operations");
 
             string arrivedAt = "Arrived at";
-            if (String.IsNullOrEmpty(GameState.NextSystemName) && !Bridge.Instance.Core.IsLogMonitorBatchReading)
+            if (String.IsNullOrEmpty(GameState.DestinationName) && !Bridge.Instance.Core.IsLogMonitorBatchReading)
                 arrivedAt = "We have reached our destination, system";
 
             log.DetailSsml

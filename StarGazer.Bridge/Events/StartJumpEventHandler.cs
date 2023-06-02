@@ -12,7 +12,7 @@ namespace StarGazer.Bridge.Events
             if (!String.IsNullOrWhiteSpace(journal.StarSystem))
             {
                 var log = new BridgeLog(journal);
-                if (GameState.NextDestinationTimeToSpeak > DateTime.Now)
+                if (GameState.DestinationTimeToSpeak > DateTime.Now)
                     log.TextOnly(); // Still need to log the event
 
                 log.TitleSsml.Append("Flight Operations");
@@ -35,9 +35,18 @@ namespace StarGazer.Bridge.Events
 
                 log.Send();
                 if (!Bridge.Instance.Core.IsLogMonitorBatchReading)
-                    GameState.NextDestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval);
+                    GameState.DestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval);
 
-                if (journal.StarClass.IsNeutronStar() || journal.StarClass.IsWhiteDwarf())
+                if (!log.IsSpoken)
+                {
+                    // Tell the user we are jumping while the countdown is running at least
+                    log = new BridgeLog(journal);
+                    log.SpokenOnly();
+                    log.DetailSsml.Append("FSD Online, jumping.");
+                    log.Send();
+                }
+
+                if (journal.StarClass.IsNeutronStar() || journal.StarClass.IsWhiteDwarf() || journal.StarClass.IsBlackHole())
                 {
                     log = new BridgeLog(journal);
                     log.SpokenOnly();
