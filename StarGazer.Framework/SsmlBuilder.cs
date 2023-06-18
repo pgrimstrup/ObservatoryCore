@@ -126,9 +126,13 @@ namespace StarGazer.Framework
             _textFragments.Add($"{value}");
 
             if (value >= 1000000000)
-                _ssmlFragments.Add($"{value / 1000000000.0:n2} billion");
+                _ssmlFragments.Add($"{value / 1000000000.0:n1} billion");
+            else if (value >= 100000000)
+                _ssmlFragments.Add($"{value / 1000000.0:n0} million");
             else if (value >= 1000000)
-                _ssmlFragments.Add($"{value / 1000000.0:n2} million");
+                _ssmlFragments.Add($"{value / 1000000.0:n1} million");
+            else if (value >= 10000)
+                _ssmlFragments.Add($"{value / 1000.0:n0} thousand");
             else if (value >= 1000)
                 _ssmlFragments.Add($"{value / 1000.0:n1} thousand");
             else
@@ -137,21 +141,25 @@ namespace StarGazer.Framework
             return this;
         }
 
-        public SsmlBuilder AppendNumber(long value)
-        {
-            _textFragments.Add($"{value:n0}");
+        //public SsmlBuilder AppendNumber(long value)
+        //{
+        //    _textFragments.Add($"{value:n0}");
 
-            if (value >= 1000000000)
-                _ssmlFragments.Add($"{value / 1000000000.0:n1} billion");
-            else if (value >= 1000000)
-                _ssmlFragments.Add($"{value / 1000000.0:n1} million");
-            else if (value >= 1000)
-                _ssmlFragments.Add($"{value / 1000.0:n1} thousand");
-            else
-                _ssmlFragments.Add($"{value:n0}");
-            Changed?.Invoke(this, EventArgs.Empty);
-            return this;
-        }
+        //    if (value >= 1000000000)
+        //        _ssmlFragments.Add($"{value / 1000000000.0:n1} billion");
+        //    else if (value >= 10000000)
+        //        _ssmlFragments.Add($"{value / 1000000.0:n0} million");
+        //    else if (value >= 1000000)
+        //        _ssmlFragments.Add($"{value / 1000000.0:n1} million");
+        //    else if (value >= 10000)
+        //        _ssmlFragments.Add($"{value / 1000.0:n0} thousand");
+        //    else if (value >= 1000)
+        //        _ssmlFragments.Add($"{value / 1000.0:n1} thousand");
+        //    else
+        //        _ssmlFragments.Add($"{value:n0}");
+        //    Changed?.Invoke(this, EventArgs.Empty);
+        //    return this;
+        //}
 
         public SsmlBuilder AppendCharacters(string text)
         {

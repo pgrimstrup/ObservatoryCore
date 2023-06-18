@@ -52,8 +52,6 @@ namespace StarGazer.Herald
             // Validate notification - all fields must be filled
             if (String.IsNullOrWhiteSpace(notification.VoiceName))
                 throw new ArgumentException(nameof(notification.VoiceName));
-            if (String.IsNullOrWhiteSpace(notification.VoiceRate))
-                throw new ArgumentException(nameof(notification.VoiceRate));
             if (notification.VoiceVolume == null)
                 throw new ArgumentException(nameof(notification.VoiceVolume));
             if (String.IsNullOrWhiteSpace(notification.VoiceStyle))

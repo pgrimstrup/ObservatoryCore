@@ -7,6 +7,7 @@ namespace StarGazer.Bridge.Events
         public void HandleEvent(ApproachBody journal)
         {
             var log = new BridgeLog(journal);
+            log.SpokenOnly();
             log.TitleSsml.Append("Flight Operations");
 
             log.DetailSsml.AppendUnspoken(Emojis.Approaching);

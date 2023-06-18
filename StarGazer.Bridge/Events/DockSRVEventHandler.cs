@@ -8,6 +8,7 @@ namespace StarGazer.Bridge.Events
         public void HandleEvent(DockSRV journal)
         {
             var log = new BridgeLog(journal);
+            log.SpokenOnly();
             log.TitleSsml.Append("Away Team");
             log.DetailSsml.Append($"{journal.SRVType_Localised} returned to docking bay")
                 .AppendEmphasis("Commander.", EmphasisType.Moderate);

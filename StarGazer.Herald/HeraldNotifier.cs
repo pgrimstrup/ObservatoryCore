@@ -28,7 +28,8 @@ namespace StarGazer.Herald
             _defaultSettings = new Lazy<HeraldSettings>(() => {
                 return new HeraldSettings() {
                     SelectedVoice = "English (Australia) A, Female",
-                    SelectedRate = "Default",
+                    SelectedRate = 0,
+                    SelectedPitch = 0,
                     SelectedStyle = "Standard",
                     Volume = 75,
                     Enabled = false,
@@ -80,27 +81,15 @@ namespace StarGazer.Herald
 
         public string DefaultVoiceName => _voices.Value.FirstOrDefault(v => v.Description == _heraldSettings.SelectedVoice && v.Category == DefaultVoiceStyle)?.Name;
         public string DefaultVoiceStyle => (string)_voiceStyles.Value[_heraldSettings.SelectedStyle];
-        public string DefaultVoiceRate => (string)_voiceRates.Value[_heraldSettings.SelectedRate];
         public int DefaultVoiceVolume => _heraldSettings.Volume;
+
+        public string DefaultVoiceRate => "1.00";
+        public string DefaultVoicePitch => "0.00";
 
         public object Settings
         {
             get => _heraldSettings;
-            set
-            {
-                // Need to perform migration here, older
-                // version settings object not fully compatible.
-                var savedSettings = (HeraldSettings)value;
-                if (string.IsNullOrWhiteSpace(savedSettings.SelectedRate))
-                {
-                    _heraldSettings.SelectedVoice = savedSettings.SelectedVoice;
-                    _heraldSettings.Enabled = savedSettings.Enabled;
-                }
-                else
-                {
-                    _heraldSettings = savedSettings;
-                }
-            }
+            set => _heraldSettings = (HeraldSettings)value;
         }
 
         public void Load(IObservatoryCore core)
@@ -163,17 +152,30 @@ namespace StarGazer.Herald
         {
             if (testSettings is HeraldSettings settings)
             {
-                var rate = (string)_voiceRates.Value[settings.SelectedRate];
+                // The full speed range is just stupid, so we will limit the speed range
+                // 0 to 50 -> 0.50 to 1.00
+                // 51 to 100 -> 1.00 to 2.00
+                double rate =  settings.SelectedRate;
+                if (rate < 50)
+                    rate = Math.Round(0.50 + rate / 100.0, 2);
+                else if (rate > 50)
+                    rate = 1 + Math.Round((rate - 50) / 50.0, 2);
+                else
+                    rate = 1;
+
+                // 0 to 100 -> -20 to +20
+                double pitch = Math.Round((settings.SelectedPitch - 50) / 2.5, 2);
                 var style = (string)_voiceStyles.Value[settings.SelectedStyle];
                 var voice = _voices.Value.FirstOrDefault(v => v.Description == settings.SelectedVoice && v.Category == style);
 
-                Debug.WriteLine($"Testing Herald Voice settings using voice {voice?.Name} at {rate}");
+                Debug.WriteLine($"Testing Herald Voice settings using voice {voice?.Name} at Rate {rate}, Pitch {pitch}");
 
                 var notificationEventArgs = new VoiceNotificationArgs {
                     Suppression = NotificationSuppression.Title,
                     Detail = $"This is a test of the Herald Voice Notifier, using the {settings.SelectedVoice} voice.",
                     VoiceName = voice?.Name,
-                    VoiceRate = rate,
+                    VoiceRate = rate.ToString(),
+                    VoicePitch = pitch.ToString(),
                     VoiceStyle = style,
                     VoiceVolume = settings.Volume
                 };
@@ -195,9 +197,10 @@ namespace StarGazer.Herald
                 if (args is VoiceNotificationArgs voiceNotificationArgs)
                 {
                     voiceNotificationArgs.VoiceName ??= DefaultVoiceName;
-                    voiceNotificationArgs.VoiceRate ??= DefaultVoiceRate;
                     voiceNotificationArgs.VoiceStyle ??= DefaultVoiceStyle;
                     voiceNotificationArgs.VoiceVolume ??= DefaultVoiceVolume;
+                    voiceNotificationArgs.VoiceRate ??= DefaultVoiceRate;
+                    voiceNotificationArgs.VoicePitch ??= DefaultVoicePitch;
                     _heraldQueue.Enqueue(voiceNotificationArgs);
                 }
                 else
@@ -235,6 +238,8 @@ namespace StarGazer.Herald
                     voiceNotificationArgs.VoiceRate ??= DefaultVoiceRate;
                     voiceNotificationArgs.VoiceStyle ??= DefaultVoiceStyle;
                     voiceNotificationArgs.VoiceVolume ??= DefaultVoiceVolume;
+                    voiceNotificationArgs.VoiceRate ??= DefaultVoiceRate;
+                    voiceNotificationArgs.VoicePitch ??= DefaultVoicePitch;
                     _heraldQueue.UpdateNotification(id, voiceNotificationArgs);
                 }
                 else
@@ -249,6 +254,7 @@ namespace StarGazer.Herald
                         Suppression = args.Suppression,
                         VoiceName = DefaultVoiceName,
                         VoiceRate = DefaultVoiceRate,
+                        VoicePitch = DefaultVoicePitch,
                         VoiceStyle = DefaultVoiceStyle,
                         VoiceVolume = DefaultVoiceVolume
                     });

@@ -37,8 +37,9 @@ namespace StarGazer.Herald.TextToSpeech
 
             if (float.TryParse(args.VoiceRate, out var rate))
                 request.AudioConfig.SpeakingRate = rate;
-            else
-                request.AudioConfig.SpeakingRate = 1;
+
+            if (float.TryParse(args.VoicePitch, out var pitch))
+                request.AudioConfig.Pitch = pitch;
 
             if (speech.StartsWith("<speak"))
             {
@@ -63,7 +64,7 @@ namespace StarGazer.Herald.TextToSpeech
             else
                 request.Input.Text = speech;
 
-            _logger.LogDebug($"Google Text-to-Speech Request: Voice={request.Voice.Name}, Rate={request.AudioConfig.SpeakingRate}, Encoding={request.AudioConfig.AudioEncoding}\r\n{speech}");
+            _logger.LogDebug($"Google Text-to-Speech Request: Voice={request.Voice.Name}, Rate={request.AudioConfig.SpeakingRate}, Pitch={request.AudioConfig.Pitch}, Encoding={request.AudioConfig.AudioEncoding}\r\n{speech}");
             var response = await _http.PostAsJsonAsync($"{ApiEndPoint}{ApiTextToSpeech}?key={ApiKey}", request);
 
             response.EnsureSuccessStatusCode();

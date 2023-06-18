@@ -11,16 +11,17 @@ namespace StarGazer.Bridge.Events
             if (!GameState.Status.HasFlag(StatusFlags.MainShip))
                 return;
 
-            if (GameState.BodySignals.TryGetValue(journal.BodyName, out var signals))
+            int totalCount = journal.Signals.Sum(s => s.Count);
+            if (totalCount > 0)
             {
-                if(signals.Signals.Sum(s => s.Count) > 0)
-                {
-                    var log = new BridgeLog(journal);
-                    log.TitleSsml.AppendBodyName(GetBodyName(journal.BodyName));
+                var log = new BridgeLog(journal);
+                log.SpokenOnly();
+                log.TitleSsml.AppendBodyName(GetBodyName(journal.BodyName));
+                BridgeUtils.AppendSignalInfo(journal.BodyName, journal.Signals, log);
+                log.Send();
 
-                    BridgeUtils.AppendSignalInfo(journal.BodyName, log);
-                    Bridge.Instance.LogEvent(log);
-                }
+                var scanEntry = FindLogEntry(nameof(Scan), log.Title);
+                UpdateSignals(scanEntry, journal.BodyName, journal.Signals);
             }
         }
     }

@@ -8,6 +8,7 @@ namespace StarGazer.Bridge.Events
         public void HandleEvent(Liftoff journal)
         {
             var log = new BridgeLog(journal);
+            log.SpokenOnly();
             log.TitleSsml.Append("Flight Operations");
             log.DetailSsml.AppendUnspoken(Emojis.Liftoff);
             if (GameState.Status.HasFlag(StatusFlags.SRV))

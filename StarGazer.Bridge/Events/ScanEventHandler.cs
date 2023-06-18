@@ -1,4 +1,5 @@
-﻿using Observatory.Framework.Files.Journal;
+﻿using System.Numerics;
+using Observatory.Framework.Files.Journal;
 using StarGazer.Framework;
 
 namespace StarGazer.Bridge.Events
@@ -18,11 +19,7 @@ namespace StarGazer.Bridge.Events
                 // Otherwise, stars are text-logged only and not spoken
                 var log = new BridgeLog(journal);
                 log.TextOnly();
-
-                if (Int32.TryParse(GetBodyName(journal.BodyName), out int bodyNumber))
-                    log.TitleSsml.AppendBodyName(GetBodyName(journal.BodyName));
-                else
-                    log.TitleSsml.AppendBodyName(GetBodyName(journal.BodyName));
+                log.TitleSsml.AppendBodyName(GetBodyName(journal.BodyName));
 
                 if (journal.StarType.IsBlackHole())
                     log.DetailSsml.AppendUnspoken(Emojis.BlackHole);
@@ -37,17 +34,36 @@ namespace StarGazer.Bridge.Events
                     .Append($"{fuelStar}.");
 
                 if (journal.DistanceFromArrivalLS < 1)
+                {
+                    if (journal.WasDiscovered)
+                        log.DetailSsml.Append("Previously discovered primary star.");
+                    else
+                        log.DetailSsml.Append("First discovery of primary star.");
+                }
+
+                if (journal.DistanceFromArrivalLS < 1)
                     log.Distance = "Primary Star";
                 else
                     log.Distance = $"{journal.DistanceFromArrivalLS:n0} LS";
+
+                log.Discovered = journal.WasDiscovered ? Emojis.AlreadyDiscovered + "Yes" : Emojis.FirstDiscovery + "First";
                 log.Send();
+
+                // If this is the primary star, and it is NotDiscovered, then alert CMDR that this is a first discovery system.
+                if (journal.DistanceFromArrivalLS < 1 && !journal.WasDiscovered)
+                {
+                    log = new BridgeLog();
+                    log.SpokenOnly();
+                    log.DetailSsml
+                        .AppendEmphasis("Commander,", EmphasisType.Moderate)
+                        .Append("star charts indicate that we are the first to discover this system.");
+                    log.Send();
+                }
             }
             else if (!String.IsNullOrEmpty(journal.PlanetClass)) // ignore belt clusters
             {
                 var k_value = BodyValueEstimator.GetKValueForBody(journal.PlanetClass, !String.IsNullOrEmpty(journal.TerraformState));
                 var estimatedValue = BodyValueEstimator.GetBodyValue(k_value, journal.MassEM, !journal.WasDiscovered, true, !journal.WasMapped, true);
-
-                BridgeUtils.CountSignals(journal.BodyName, out int bioCount, out int geoCount, out int otherCount);
 
                 List<string> emojies = new List<string>();
                 if (journal.PlanetClass.IsEarthlike())
@@ -68,15 +84,7 @@ namespace StarGazer.Bridge.Events
                 if (!String.IsNullOrEmpty(journal.TerraformState))
                     emojies.Add(Emojis.Terraformable);
 
-                if (estimatedValue >= Bridge.Instance.Settings.HighValueBody)
-                    emojies.Add(Emojis.HighValue);
-
-                if (bioCount > 0)
-                    emojies.Add(Emojis.BioSignals);
-                if (geoCount > 0)
-                    emojies.Add(Emojis.GeoSignals);
-
-
+                BridgeLog? spokenOnly = null;
                 var log = new BridgeLog(journal);
                 log.IsTitleSpoken = true;
                 log.TitleSsml.AppendBodyName(GetBodyName(journal.BodyName));
@@ -84,54 +92,58 @@ namespace StarGazer.Bridge.Events
                 if (emojies.Count > 0)
                     log.DetailSsml.AppendUnspoken(String.Join("", emojies));
 
+                if (journal.Landable)
+                    log.DetailSsml.Append("Landable");
+
                 if (!String.IsNullOrEmpty(journal.TerraformState))
                     log.DetailSsml.Append($"{journal.TerraformState}");
 
-                log.DetailSsml.AppendBodyType(journal.PlanetClass);
+                log.DetailSsml
+                    .AppendBodyType(journal.PlanetClass);
 
-                if (journal.Landable)
+                if (!String.IsNullOrEmpty(journal.Atmosphere))
+                    log.DetailSsml.Append($"with {journal.Atmosphere}.");
+                else if (journal.Landable)
+                    log.DetailSsml.Append("with no atmosphere."); // Only for landable bodies, let's make this explicit
+                else
+                    log.DetailSsml.Append("."); // Non-landable, so don't care
+
+                if (GameState.BodySignals.TryGetValue(journal.BodyName, out var signals))
                 {
-                    if (!String.IsNullOrEmpty(journal.Atmosphere))
-                        log.DetailSsml.Append($", landable with {journal.Atmosphere}");
-                    else
-                        log.DetailSsml.Append(", landable no atmosphere");
-                }
-                log.DetailSsml.EndSentence();
+                    UpdateSignals(log, journal.BodyName, signals.Signals);
 
-                BridgeUtils.AppendSignalInfo(journal.BodyName, log);
+                    spokenOnly ??= new BridgeLog(journal).SpokenOnly();
+                    BridgeUtils.AppendSignalInfo(journal.BodyName, signals.Signals, spokenOnly);
+                }
 
                 if (estimatedValue >= Bridge.Instance.Settings.HighValueBody)
-                {
-                    log.DetailSsml.Append($"Estimated value");
-                    log.DetailSsml.AppendNumber(estimatedValue);
-                    log.DetailSsml.Append("credits.");
-                }
+                    log.Mapped = Emojis.HighValue;
+                
+                if (journal.WasMapped)
+                    log.Mapped += Emojis.AlreadyMapped + "Yes";
+                else
+                    log.Mapped += Emojis.Unmapped;
 
+                log.Discovered = journal.WasDiscovered ? Emojis.AlreadyDiscovered + "Yes" : Emojis.FirstDiscovery + "First";
                 log.EstimatedValue = $"{estimatedValue:n0} Cr";
                 log.Distance = $"{journal.DistanceFromArrivalLS:n0} LS";
                 log.Send();
+
+                if (estimatedValue >= Bridge.Instance.Settings.HighValueBody)
+                {
+                    spokenOnly ??= new BridgeLog(journal).SpokenOnly();
+                    spokenOnly.DetailSsml.Append($"Estimated value");
+                    spokenOnly.DetailSsml.AppendNumber(estimatedValue);
+                    spokenOnly.DetailSsml.Append("credits.");
+                }
+
+                spokenOnly?.Send();
             }
 
-            if(GameState.AutoCompleteScanCount > 0 && GameState.ScannedBodies.Count == GameState.AutoCompleteScanCount)
+            if (GameState.AutoCompleteScanCount > 0 && GameState.ScannedBodies.Count == GameState.AutoCompleteScanCount)
             {
-                CreateOrrery(out int starCount, out int planetCount, out Scan primaryStar);
-                string stars = $"{starCount} {Stars(starCount)}";
-                string andPlanets = "";
-                if (planetCount > 0)
-                    andPlanets = $" and {planetCount} {Planets(planetCount)}";
-
-                var log = new BridgeLog(journal);
-                log.TitleSsml.Append("Science Station");
-                log.DetailSsml
-                    .Append($"System Scan Complete")
-                    .AppendEmphasis("Commander.", EmphasisType.Moderate);
-
-                if (primaryStar.WasDiscovered)
-                    log.DetailSsml.Append($"We've discovered {stars}{andPlanets}.");
-                else
-                    log.DetailSsml.Append($"We are the first to discover this system consisting of {stars}{andPlanets}.");
-
-                log.Send();
+                SendScanComplete(journal);
+                GameState.ScanPercent = 100;
             }
         }
     }

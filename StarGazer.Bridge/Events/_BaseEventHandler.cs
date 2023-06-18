@@ -4,11 +4,13 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Formats.Asn1;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Observatory.Framework.Files.Journal;
 using Observatory.Framework.Files.ParameterTypes;
+using StarGazer.Framework;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace StarGazer.Bridge.Events
@@ -20,10 +22,10 @@ namespace StarGazer.Bridge.Events
 
         public static CurrentGameState GameState => Bridge.Instance.GameState;
 
-        protected string Stars(int count) => "star".Plural(count);
-        protected string Planets(int count) => "planet".Plural(count);
-        protected string Bodies(int count) => "body".Plural(count);
-        protected string NonBodies(int count) => "non-bodies".Plural(count);
+        public string Stars(int count) => "star".CountAndPlural(count);
+        public string Planets(int count) => "planet".CountAndPlural(count);
+        public string Bodies(int count) => "body".CountAndPlural(count);
+        public string NonBodies(int count) => "non-bodies".CountAndPlural(count);
 
 
         enum BodyType
@@ -47,8 +49,9 @@ namespace StarGazer.Bridge.Events
             public int BodyId;
             public string? Name;
             public BodyType Type;
+            public bool WasDiscovered;
 
-            public Body? Parent 
+            public Body? Parent
             {
                 get => _parent;
                 set => SetParent(value);
@@ -57,9 +60,10 @@ namespace StarGazer.Bridge.Events
             public List<Body> Children { get; } = new List<Body>();
 
             // Create a barycenter body
-            public Body(int id)
+            public Body(int id, bool wasDiscovered)
             {
                 BodyId = id;
+                WasDiscovered = wasDiscovered;
                 Type = BodyType.Null;
             }
 
@@ -68,6 +72,7 @@ namespace StarGazer.Bridge.Events
             {
                 BodyId = scan.BodyID;
                 Name = scan.BodyName;
+                WasDiscovered = scan.WasDiscovered;
                 Type = scan.IsStar() ? BodyType.Star : (scan.IsBeltCluster() ? BodyType.BeltCluster : BodyType.Unknown);
             }
 
@@ -90,19 +95,19 @@ namespace StarGazer.Bridge.Events
                         _parent.Children.Add(this);
 
                         // We can detect Stars and Binary-Stars early
-                        if(_parent.Type == BodyType.Null && (Type == BodyType.Star || Type == BodyType.BinaryStar))
+                        if (_parent.Type == BodyType.Null && (Type == BodyType.Star || Type == BodyType.BinaryStar))
                             _parent.Type = BodyType.BinaryStar;
                     }
                 }
             }
 
-             // Bottom-up, checks children last
+            // Bottom-up, checks children last
             public void FindMoons()
             {
-                if(Parent != null && (Type == BodyType.Unknown || Type == BodyType.Null))
+                if (Parent != null && (Type == BodyType.Unknown || Type == BodyType.Null))
                 {
                     // Initially flagged as planet (or null), we can only keep that status if our parent is a star/binary-star
-                    if(Parent.Type == BodyType.Star || Parent.Type == BodyType.BinaryStar || Parent.Type == BodyType.BinaryPlanet)
+                    if (Parent.Type == BodyType.Star || Parent.Type == BodyType.BinaryStar || Parent.Type == BodyType.BinaryPlanet)
                     {
                         if (Type == BodyType.Null)
                             Type = BodyType.BinaryPlanet;
@@ -115,41 +120,43 @@ namespace StarGazer.Bridge.Events
                             Type = BodyType.BinaryMoon;
                         else
                             Type = BodyType.Moon;
-                    } 
+                    }
                 }
 
                 // Check all children last
-                foreach(var child in Children)
+                foreach (var child in Children)
                     child.FindMoons();
             }
 
             public override string ToString()
             {
-                if(Parent == null)
+                if (Parent == null)
                     return $"{BodyId}, {Type}: {Name}";
                 return $"{BodyId}, {Type}: {Name} -> {Parent.BodyId}, {Parent.Type}: {Parent.Name}";
             }
         }
 
-        public void CreateOrrery(out int starCount, out int planetCount, out Scan primaryStar)
+        public void CreateOrrery(out int starCount, out int planetCount, out int discoveredStarCount, out int discoveredPlanetCount)
         {
             starCount = 0;
             planetCount = 0;
+            discoveredStarCount = 0;
+            discoveredPlanetCount = 0;
 
             Dictionary<int, Body> system = new Dictionary<int, Body>();
 
-            foreach(var scan in GameState.ScannedBodies.Values.OrderBy(s => s.BodyID))
+            foreach (var scan in GameState.ScannedBodies.Values.OrderBy(s => s.BodyID))
             {
                 var body = new Body(scan);
                 system[scan.BodyID] = body;
-                if(scan.Parent != null)
+                if (scan.Parent != null)
                 {
-                    foreach(var bc in scan.Parent)
+                    foreach (var bc in scan.Parent)
                     {
                         // Make sure each parent exists, and assign the body to the appropriate parent-body
-                        if(!system.TryGetValue(bc.Body, out var parentBody))
+                        if (!system.TryGetValue(bc.Body, out var parentBody))
                         {
-                            parentBody = new Body(bc.Body);
+                            parentBody = new Body(bc.Body, false);
                             parentBody.Type = BodyType.Null;
                             system[bc.Body] = parentBody;
                         }
@@ -160,11 +167,11 @@ namespace StarGazer.Bridge.Events
                 }
 
                 // Do Rings as well here, if needed
-                if(scan.Rings != null)
+                if (scan.Rings != null)
                 {
-                    for(int i = 1; i <= scan.Rings.Count; i++)
+                    for (int i = 1; i <= scan.Rings.Count; i++)
                     {
-                        var ring = new Body(scan.BodyID + i);
+                        var ring = new Body(scan.BodyID + i, false);
                         ring.Name = scan.BodyName + " Ring " + ring.BodyId;
                         ring.Type = BodyType.Ring;
                         ring.Parent = system[scan.BodyID];
@@ -178,12 +185,9 @@ namespace StarGazer.Bridge.Events
             system[0].FindMoons();
 
             starCount = system.Values.Count(b => b.Type == BodyType.Star);
+            discoveredStarCount = system.Values.Count(b => b.Type == BodyType.Star && !b.WasDiscovered);
             planetCount = system.Values.Count(b => b.Type == BodyType.Planet);
-
-            var primaryId = system.Values.OrderBy(b => b.BodyId).FirstOrDefault(b => b.Type == BodyType.Star)?.BodyId ?? 0;
-            primaryStar = 
-                GameState.ScannedBodies.Values.FirstOrDefault(b => b.BodyID == primaryId) ??
-                GameState.ScannedBodies.Values.OrderBy(b => b.BodyID).First(); 
+            discoveredPlanetCount = system.Values.Count(b => b.Type == BodyType.Planet && !b.WasDiscovered);
         }
 
         public static string GetBodyName(string name)
@@ -356,5 +360,91 @@ namespace StarGazer.Bridge.Events
             log.DetailSsml.Append(text);
             Bridge.Instance.LogEvent(log);
         }
+
+        public void SendScanComplete(JournalBase journal)
+        {
+            CreateOrrery(out int starCount, out int planetCount, out int discoveredStars, out int discoveredPlanets);
+
+            void AddStarsAndPlanets(BridgeLog log, bool isDiscovery)
+            {
+                int stars = isDiscovery ? discoveredStars : starCount;
+                int planets = isDiscovery ? discoveredPlanets : planetCount;
+
+                if (stars > 0)
+                    log.DetailSsml.Append(Stars(stars));
+                if (stars > 0 && planets > 0)
+                    log.DetailSsml.Append("and");
+                if (planets > 0)
+                {
+                    if (isDiscovery && discoveredPlanets == 1 && planetCount == 1)
+                        log.DetailSsml.Append("the only planet");
+                    else if (isDiscovery && discoveredPlanets == planetCount)
+                        log.DetailSsml.Append("all " + Planets(planetCount));
+                    else
+                        log.DetailSsml.Append(Planets(planets));
+                }
+            }
+
+            // First the text log.
+            var log = new BridgeLog(journal);
+            log.TitleSsml.Append("Science Station");
+            log.DetailSsml.Append($"System Scan Complete.");
+
+            if(discoveredStars == 0 && discoveredPlanets == 0)
+            {
+                log.DetailSsml.Append("This system of");
+                AddStarsAndPlanets(log, false);
+                log.DetailSsml.Append("has been previously discovered.");
+
+            }
+            else if (discoveredStars == starCount && discoveredPlanets == planetCount)
+            {
+                log.DetailSsml.Append($"We are the first to discover this system consisting of");
+                AddStarsAndPlanets(log, false);
+                log.DetailSsml.Append(".");
+            }
+            else
+            {
+                log.DetailSsml.Append("We are the first to discover");
+                AddStarsAndPlanets(log, true);
+                log.DetailSsml.Append("in this system of");
+                AddStarsAndPlanets(log, false);
+                log.DetailSsml.Append(".");
+            }
+
+            log.Send();
+
+        }
+
+        protected BridgeLog? FindLogEntry(string eventName, string title)
+        {
+            return Bridge.Instance.Logs.FirstOrDefault(log => log.EventName == eventName && log.Title == title);
+        }
+
+        protected void UpdateSignals(BridgeLog? scanEntry, string bodyName, IEnumerable<Signal> signals)
+        {
+            if (scanEntry == null || String.IsNullOrEmpty(bodyName))
+                return;
+
+            int totalCount = signals.Sum(s => s.Count);
+            int bioCount = signals
+                .Where(s => s.Type_Localised.StartsWith("Bio", StringComparison.OrdinalIgnoreCase))
+                .Sum(s => s.Count);
+            int geoCount = signals
+                .Where(s => s.Type_Localised.StartsWith("Geo", StringComparison.OrdinalIgnoreCase))
+                .Sum(s => s.Count);
+            int otherCount = totalCount - bioCount - geoCount;
+
+            List<string> signalText = new List<string>();
+            if (bioCount > 0)
+                signalText.Add(Emojis.BioSignals + bioCount.ToString());
+            if (geoCount > 0)
+                signalText.Add(Emojis.GeoSignals + geoCount.ToString());
+            if (otherCount > 0)
+                signalText.Add(Emojis.OtherSignals + otherCount.ToString());
+
+            scanEntry.Signals = String.Join(" ", signalText);
+        }
+
     }
 }

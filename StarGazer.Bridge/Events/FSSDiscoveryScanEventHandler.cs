@@ -23,7 +23,9 @@ namespace StarGazer.Bridge.Events
                 log.TitleSsml.Append("Science Station");
 
                 log.DetailSsml
-                    .Append($"Discovery scan found {journal.BodyCount} {Bodies(journal.BodyCount)}")
+                    .Append($"Discovery scan found {Bodies(journal.BodyCount)}");
+
+                log.DetailSsml
                     .AppendEmphasis("Commander.", EmphasisType.Moderate)
                     .Append($"Progress is {journal.Progress * 100:n0} percent.");
 

@@ -25,8 +25,61 @@ namespace StarGazer.Bridge
 
         public string Detail => DetailSsml.ToString();
 
-        public string? EstimatedValue { get; set; }
-        public string? Distance { get; set; }
+        string? _signals;
+        string? _discovered;
+        string? _mapped;
+        string? _estimatedValue;
+        string? _distance;
+
+        public string Discovered 
+        {
+            get => _discovered ?? "";
+            set
+            {
+                _discovered = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Discovered)));
+            }
+        }
+
+        public string Mapped 
+        {
+            get => _mapped ?? "";
+            set
+            {
+                _mapped = value; 
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Mapped)));
+            }
+        }
+
+        public string Signals
+        {
+            get => _signals ?? "";
+            set
+            {
+                _signals = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Signals)));
+            }
+        }
+
+        public string EstimatedValue 
+        {
+            get => _estimatedValue ?? "";
+            set
+            {
+                _estimatedValue = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(EstimatedValue)));
+            }
+        }
+
+        public string Distance 
+        {
+            get => _distance ?? "";
+            set
+            {
+                _distance = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Distance)));
+            }
+        }
 
         public BridgeLog(JournalBase journal) : this()
         {

@@ -9,6 +9,7 @@ namespace StarGazer.Bridge.Events
         public void HandleEvent(Touchdown journal)
         {
             var log = new BridgeLog(journal);
+            log.SpokenOnly();
             log.TitleSsml.Append("Flight Operations");
             log.DetailSsml.AppendUnspoken(Emojis.Touchdown);
             if (GameState.Status.HasFlag(StatusFlags.SRV))

@@ -25,12 +25,16 @@ namespace StarGazer.Herald
         public string SelectedStyle { get; set; }
 
         [SettingDisplayName("Voice Rate")]
-        [SettingGetItemsMethod(nameof(HeraldNotifier.GetVoiceRates))]
-        public string SelectedRate { get; set; }
+        [SettingNumericUseSlider, SettingNumericBounds(0, 100, 1)]
+        public int SelectedRate { get; set; } = 50;
+
+        [SettingDisplayName("Voice Pitch")]
+        [SettingNumericUseSlider, SettingNumericBounds(0, 100, 1)]
+        public int SelectedPitch { get; set; } = 50;
 
         [SettingDisplayName("Volume")]
-        [SettingNumericUseSlider, SettingNumericBounds(0,100,1)]
-        public int Volume { get; set;}
+        [SettingNumericUseSlider, SettingNumericBounds(0, 100, 1)]
+        public int Volume { get; set; } = 75;
 
         [SettingDisplayName("Cache Size (MB)")]
         public int CacheSize { get; set; }

@@ -112,9 +112,9 @@ namespace StarGazer.Bridge.Events
 
             if (status.Destination.Body > 0 && GameState.Status != 0)
             {
-                if (GameState.DestinationName != status.Destination.Name)
+                if (GameState.DestinationName != status.Destination.SpokenName)
                 {
-                    GameState.DestinationName = status.Destination.Name;
+                    GameState.DestinationName = status.Destination.SpokenName;
                     GameState.DestinationStarClass = "";
 
                     var log = new BridgeLog(status);
@@ -180,7 +180,7 @@ namespace StarGazer.Bridge.Events
                 log.Send();
                 if (!Bridge.Instance.Core.IsLogMonitorBatchReading)
                 {
-                    if (String.IsNullOrWhiteSpace(GameState.DestinationName) && !String.IsNullOrWhiteSpace(status.Destination.Name))
+                    if (String.IsNullOrWhiteSpace(GameState.DestinationName) && !String.IsNullOrWhiteSpace(status.Destination.SpokenName))
                         GameState.DestinationTimeToSpeak = DateTime.Now;
                     else
                         GameState.DestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval);

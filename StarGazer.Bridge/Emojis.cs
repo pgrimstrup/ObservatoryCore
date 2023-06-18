@@ -75,11 +75,6 @@ namespace StarGazer.Bridge
         public static string HighValue => Char.ConvertFromUtf32(0x1F4B2); // dollar sign
 
         /// <summary>
-        /// Telescope
-        /// </summary>
-        public static string FirstDiscovery => Char.ConvertFromUtf32(0x1F52D); // telescope
-
-        /// <summary>
         /// Cactus
         /// </summary>
         public static string BioSignals => Char.ConvertFromUtf32(0x1F335);
@@ -88,6 +83,11 @@ namespace StarGazer.Bridge
         /// Rock
         /// </summary>
         public static string GeoSignals => Char.ConvertFromUtf32(0x1FAA8); // rock
+
+        /// <summary>
+        /// Satellite
+        /// </summary>
+        public static string OtherSignals => Char.ConvertFromUtf32(0x1F6F0);
 
         /// <summary>
         /// Satellite
@@ -117,5 +117,15 @@ namespace StarGazer.Bridge
         /// Military medal
         /// </summary>
         public static string Promotion => Char.ConvertFromUtf32(0x1F396);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public static string FirstDiscovery => Char.ConvertFromUtf32(0x2705); // green check mark
+
+
+        public static string Unmapped => "--"; 
+        public static string AlreadyMapped => Char.ConvertFromUtf32(0x1F537); // Blue diamond
+        public static string AlreadyDiscovered => Char.ConvertFromUtf32(0x1F537); // Blue diamond
     }
 }

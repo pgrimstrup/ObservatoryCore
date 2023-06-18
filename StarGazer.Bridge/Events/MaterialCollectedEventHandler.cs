@@ -7,6 +7,7 @@ namespace StarGazer.Bridge.Events
         public void HandleEvent(MaterialCollected journal)
         {
             var log = new BridgeLog(journal);
+            log.SpokenOnly();
             log.TitleSsml.Append("Away Team");
             log.DetailSsml.Append($"Collected {journal.Count} units of")
                 .AppendEmphasis(journal.Name_Localised ?? journal.Name, Framework.EmphasisType.Moderate);

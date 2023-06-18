@@ -59,7 +59,7 @@ namespace StarGazer.Herald
             using var sha = SHA256.Create();
 
             // Create a string based on the SSML and provided parameters. Calculate the hash based on this.
-            var uniqueness = $"{speech}|{args.VoiceName}|{args.VoiceRate}|{args.VoiceVolume}|{args.VoiceStyle}";
+            var uniqueness = $"{speech}|{args.VoiceName}|{args.VoiceRate}|{args.VoicePitch}|{args.VoiceVolume}|{args.VoiceStyle}";
             var hash = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(uniqueness))).Replace("-", string.Empty);
             var audioFilename = Path.Combine(cacheLocation.FullName, hash + ".opus");
 

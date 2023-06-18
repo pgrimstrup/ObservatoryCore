@@ -8,6 +8,7 @@ namespace StarGazer.Bridge.Events
         public void HandleEvent(LaunchSRV journal)
         {
             var log = new BridgeLog(journal);
+            log.SpokenOnly();
             log.TitleSsml.Append("Away Team");
             log.DetailSsml
                 .Append($"{journal.SRVType_Localised} deployed with {journal.Loadout} load-out")
