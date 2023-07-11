@@ -14,8 +14,12 @@ namespace StarGazer.Framework
 
         public string VoiceName;
         public string VoiceStyle;
-        public string VoiceRate;
-        public string VoicePitch;
+
+        // 0 to 100, default is 50
+        public int? VoiceRate;
+        // 0 to 100, default is 50
+        public int? VoicePitch;
+        // 0 to 100, default is 75
         public int? VoiceVolume;
 
         public VoiceNotificationArgs()

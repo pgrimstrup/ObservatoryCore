@@ -6,13 +6,11 @@ namespace StarGazer.Bridge.Events
     {
         public void HandleEvent(FSDJump journal)
         {
-            GameState.Assign(journal);
-
             var log = new BridgeLog(journal);
             log.TitleSsml.Append("Flight Operations");
 
             string arrivedAt = "Arrived at";
-            if (String.IsNullOrEmpty(GameState.DestinationName) && !Bridge.Instance.Core.IsLogMonitorBatchReading)
+            if (journal.SystemAddress == GameState.RouteDestination.SystemAddress)
                 arrivedAt = "We have reached our destination, system";
 
             log.DetailSsml
@@ -26,27 +24,12 @@ namespace StarGazer.Bridge.Events
                 .AppendNumber(Math.Round(journal.FuelUsed, 2))
             .Append("tons of fuel.");
 
-            if (!Bridge.Instance.Core.IsLogMonitorBatchReading)
-            {
-                Bridge.Instance.Core.ExecuteOnUIThread(() => {
-                    // Remove all entries up to the last Start Jump
-                    var lastJump = Bridge.Instance.PluginUI.DataGrid
-                        .OfType<BridgeLog>()
-                        .LastOrDefault(e => e.EventName == "StartJump");
-
-                    if (lastJump != null)
-                    {
-                        var keepIndex = Bridge.Instance.PluginUI.DataGrid.IndexOf(lastJump);
-                        while (keepIndex > 0 && Bridge.Instance.PluginUI.DataGrid.Count > 0)
-                        {
-                            Bridge.Instance.PluginUI.DataGrid.RemoveAt(0);
-                            keepIndex--;
-                        }
-                    }
-                });
-            }
+            Bridge.Instance.ResetLogEntries();
 
             log.Send();
+
+            // Next time we prepare or start a jump, we need to speak the destination
+            GameState.DestinationTimeToSpeak = DateTime.Now;
         }
     }
 }

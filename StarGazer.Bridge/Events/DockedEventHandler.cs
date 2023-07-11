@@ -6,9 +6,18 @@ namespace StarGazer.Bridge.Events
     {
         public void HandleEvent(Docked journal)
         {
+            if(GameState.Carriers.TryGetValue(journal.StationName, out string? carrierName))
+                GameState.CurrentLocation.Set(0, carrierName + " " + journal.StationName);
+            else
+                GameState.CurrentLocation.Set(0, journal.StationName);
+
+            string stationName = journal.StationName + " Tower";
+            if (journal.StationType == "FleetCarrier")
+                stationName = carrierName + " Flight";
+
             var log = new BridgeLog(journal);
             log.TitleSsml.Append("Flight Operations");
-            log.DetailSsml.Append($"{journal.StationName} Tower, we have completed docking.");
+            log.DetailSsml.Append($"{stationName}, we have completed docking.");
 
             Bridge.Instance.LogEvent(log);
         }

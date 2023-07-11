@@ -148,7 +148,6 @@ namespace StarGazer.UI.Views
                 case NotifyCollectionChangedAction.Add:
                     if (e.NewItems != null && e.NewItems.Count > 0)
                     {
-                        Debug.WriteLine($"CollectionChanged: NewItems {e.NewItems.Count}: Selecting {e.NewItems.Cast<object>().Last()}");
                         ResetColumnWidths();
                         SelectLastItem(pluginUI, e.NewItems.Cast<object>());
                     }
@@ -159,7 +158,6 @@ namespace StarGazer.UI.Views
                     {
                         if (e.OldItems.Contains(pluginUI.SelectedItem))
                         {
-                            Debug.WriteLine($"CollectionChanged: RemovedItems {e.OldItems.Count}: Unselecting: {e.OldItems.Cast<object>().Last()}");
                             pluginUI.SelectedItem = null;
                         }
                         ResetColumnWidths();

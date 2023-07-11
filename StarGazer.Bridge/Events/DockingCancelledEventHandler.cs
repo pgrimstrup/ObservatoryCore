@@ -6,9 +6,14 @@ namespace StarGazer.Bridge.Events
     {
         public void HandleEvent(DockingCancelled journal)
         {
+            string stationName = journal.StationName + " Tower";
+            if (journal.StationType == "FleetCarrier")
+                if (TryGetStationName(journal.StationName, out var name))
+                    stationName = name + " Flight";
+
             var log = new BridgeLog(journal);
             log.TitleSsml.Append("Flight Operations");
-            log.DetailSsml.Append($"{journal.StationName} Tower has cancelled our docking request")
+            log.DetailSsml.Append($"{stationName} has cancelled our docking request")
                 .AppendEmphasis("Commander.", Framework.EmphasisType.Moderate)
                 .Append("We'll need to resubmit another request if we want to dock.");
 

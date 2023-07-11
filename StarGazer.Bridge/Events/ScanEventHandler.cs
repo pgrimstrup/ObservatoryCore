@@ -12,6 +12,10 @@ namespace StarGazer.Bridge.Events
             if (GameState.ScannedBodies.ContainsKey(journal.BodyName))
                 return;
 
+            // Confirm the current system 
+            if (GameState.CurrentSystem.SystemAddress != journal.SystemAddress)
+                GameState.CurrentSystem.Set(journal.SystemAddress, journal.StarSystem, "", (0, 0, 0));
+
             GameState.ScannedBodies.Add(journal.BodyName, journal);
 
             if (!String.IsNullOrEmpty(journal.StarType))
@@ -35,6 +39,8 @@ namespace StarGazer.Bridge.Events
 
                 if (journal.DistanceFromArrivalLS < 1)
                 {
+                    // This can be missing as a result of a CarrierJump
+                    GameState.CurrentSystem.StarClass = journal.StarType;
                     if (journal.WasDiscovered)
                         log.DetailSsml.Append("Previously discovered primary star.");
                     else
@@ -46,7 +52,11 @@ namespace StarGazer.Bridge.Events
                 else
                     log.Distance = $"{journal.DistanceFromArrivalLS:n0} LS";
 
-                log.Discovered = journal.WasDiscovered ? Emojis.AlreadyDiscovered + "Yes" : Emojis.FirstDiscovery + "First";
+                if (journal.WasDiscovered)
+                    log.Discovered = Emojis.AlreadyDiscovered + " Yes";
+                else
+                    log.Discovered = Emojis.FirstDiscovery + " First";
+
                 log.Send();
 
                 // If this is the primary star, and it is NotDiscovered, then alert CMDR that this is a first discovery system.
@@ -63,7 +73,8 @@ namespace StarGazer.Bridge.Events
             else if (!String.IsNullOrEmpty(journal.PlanetClass)) // ignore belt clusters
             {
                 var k_value = BodyValueEstimator.GetKValueForBody(journal.PlanetClass, !String.IsNullOrEmpty(journal.TerraformState));
-                var estimatedValue = BodyValueEstimator.GetBodyValue(k_value, journal.MassEM, !journal.WasDiscovered, true, !journal.WasMapped, true);
+                var currentValue = BodyValueEstimator.GetBodyValue(k_value, journal.MassEM, !journal.WasDiscovered, false, !journal.WasMapped, false);
+                var mappedValue = BodyValueEstimator.GetBodyValue(k_value, journal.MassEM, !journal.WasDiscovered, true, !journal.WasMapped, true);
 
                 List<string> emojies = new List<string>();
                 if (journal.PlanetClass.IsEarthlike())
@@ -116,24 +127,39 @@ namespace StarGazer.Bridge.Events
                     BridgeUtils.AppendSignalInfo(journal.BodyName, signals.Signals, spokenOnly);
                 }
 
-                if (estimatedValue >= Bridge.Instance.Settings.HighValueBody)
-                    log.Mapped = Emojis.HighValue;
-                
-                if (journal.WasMapped)
-                    log.Mapped += Emojis.AlreadyMapped + "Yes";
-                else
-                    log.Mapped += Emojis.Unmapped;
+                //if (mappedValue >= Bridge.Instance.Settings.HighValueBody)
+                //    log.Discovered = Emojis.HighValue;
 
-                log.Discovered = journal.WasDiscovered ? Emojis.AlreadyDiscovered + "Yes" : Emojis.FirstDiscovery + "First";
-                log.EstimatedValue = $"{estimatedValue:n0} Cr";
+                if (journal.WasDiscovered)
+                {
+                    if (mappedValue >= Bridge.Instance.Settings.HighValueBody)
+                        log.Discovered = Emojis.HighValueAlreadyDiscovered + " High Value";
+                    else
+                        log.Discovered = Emojis.AlreadyDiscovered + " Yes";
+                }
+                else
+                {
+                    if (mappedValue >= Bridge.Instance.Settings.HighValueBody)
+                        log.Discovered = Emojis.FirstDiscovery + " High Value";
+                    else
+                        log.Discovered = Emojis.FirstDiscovery + " First";
+                }
+
+                if (journal.WasMapped)
+                    log.Mapped = Emojis.AlreadyMapped + " Yes";
+                else
+                    log.Mapped = Emojis.Unmapped + " No";
+
+                log.CurrentValue = $"{currentValue:n0} Cr";
+                log.MappedValue = $"{mappedValue:n0} Cr";
                 log.Distance = $"{journal.DistanceFromArrivalLS:n0} LS";
                 log.Send();
 
-                if (estimatedValue >= Bridge.Instance.Settings.HighValueBody)
+                if (mappedValue >= Bridge.Instance.Settings.HighValueBody)
                 {
                     spokenOnly ??= new BridgeLog(journal).SpokenOnly();
                     spokenOnly.DetailSsml.Append($"Estimated value");
-                    spokenOnly.DetailSsml.AppendNumber(estimatedValue);
+                    spokenOnly.DetailSsml.AppendNumber(mappedValue);
                     spokenOnly.DetailSsml.Append("credits.");
                 }
 

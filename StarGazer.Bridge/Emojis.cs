@@ -22,7 +22,7 @@ namespace StarGazer.Bridge
         /// <summary>
         /// White sun
         /// </summary>
-        public static string WhiteDwarf => Char.ConvertFromUtf32(0x1F323); 
+        public static string WhiteDwarf => Char.ConvertFromUtf32(0x1F323);
 
         /// <summary>
         /// Earth
@@ -37,7 +37,7 @@ namespace StarGazer.Bridge
         /// <summary>
         /// New Moon
         /// </summary>
-        public static string HighMetalContent => Char.ConvertFromUtf32(0x1F311);  
+        public static string HighMetalContent => Char.ConvertFromUtf32(0x1F311);
 
         /// <summary>
         /// Orange circle
@@ -47,7 +47,7 @@ namespace StarGazer.Bridge
         /// <summary>
         /// Ringed planet
         /// </summary>
-        public static string GasGiant => Char.ConvertFromUtf32(0x1FA90); 
+        public static string GasGiant => Char.ConvertFromUtf32(0x1FA90);
 
         /// <summary>
         /// White circle
@@ -62,7 +62,7 @@ namespace StarGazer.Bridge
         /// <summary>
         /// Rainbow
         /// </summary>
-        public static string Terraformable => Char.ConvertFromUtf32(0x1F308); 
+        public static string Terraformable => Char.ConvertFromUtf32(0x1F308);
 
         /// <summary>
         /// Blue globe
@@ -122,10 +122,12 @@ namespace StarGazer.Bridge
         /// 
         /// </summary>
         public static string FirstDiscovery => Char.ConvertFromUtf32(0x2705); // green check mark
+        public static string AlreadyDiscovered => Char.ConvertFromUtf32(0x1F7EB); // Brown square
+        public static string HighValueAlreadyDiscovered => Char.ConvertFromUtf32(0x1F7E8); // Yellow square
 
 
-        public static string Unmapped => "--"; 
-        public static string AlreadyMapped => Char.ConvertFromUtf32(0x1F537); // Blue diamond
-        public static string AlreadyDiscovered => Char.ConvertFromUtf32(0x1F537); // Blue diamond
+        public static string Unmapped => Char.ConvertFromUtf32(0x1F7E4); // Brown circle
+        public static string AlreadyMapped => Char.ConvertFromUtf32(0x1F7E1); // Yellow circle
+
     }
 }

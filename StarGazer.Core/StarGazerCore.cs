@@ -341,9 +341,9 @@ namespace StarGazer
         public void OnJournalEvent(object sender, JournalEventArgs e)
         {
             JournalBase journal = (JournalBase)e.journalEvent;
-            _logger.LogDebug($"{journal.Event}: {journal.Json}");
+            _logger.LogDebug($"{journal.Timestamp:HH:mm:ss.fff}: {journal.Event}");
 
-            foreach (var plugin in _pluginManager.ActivePlugins)
+            foreach (var plugin in _pluginManager.ActivePlugins.ToArray())
             {
                 try
                 {
@@ -363,12 +363,18 @@ namespace StarGazer
             }
         }
 
+        string _lastStatus = "";
+
         public void OnStatusUpdate(object sender, JournalEventArgs e)
         {
             Status status = (Status)e.journalEvent;
-            _logger.LogDebug($"{status.Event}: {status.Json}");
+            if (status.Json == _lastStatus)
+                return;
 
-            foreach (var plugin in _pluginManager.ActivePlugins)
+            _lastStatus = status.Json;
+            _logger.LogDebug($"{status.Timestamp:HH:mm:ss.fff}: {status.Event}");
+
+            foreach (var plugin in _pluginManager.ActivePlugins.ToArray())
             {
                 try
                 {

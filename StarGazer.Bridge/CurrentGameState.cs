@@ -1,6 +1,8 @@
-﻿using Observatory.Framework.Files;
+﻿using System.Xml.Linq;
+using Observatory.Framework.Files;
 using Observatory.Framework.Files.Journal;
 using Observatory.Framework.Files.ParameterTypes;
+using StarGazer.Bridge.Events;
 
 namespace StarGazer.Bridge
 {
@@ -17,17 +19,19 @@ namespace StarGazer.Bridge
         public FuelType Fuel { get; private set; } = new FuelType();
         public double FuelScooped { get; set; }
 
-        // Transient properties for use by EDSM
-        public string? SystemName { get; set; } 
-        public string? StationName { get; set; }
+        // Tracked after jumping into a system
+        public JumpDestination CurrentSystem { get; } = new JumpDestination();
+        public InSystemDestination CurrentLocation { get; } = new InSystemDestination();
+        public InSystemDestination TargetLocation { get; } = new InSystemDestination();
 
-        // Tracked during FSDTarget or Status Change of Destination for later use
-        public string DestinationName { get; set; } = "";
-        public string DestinationStationName { get; set; } = "";
-        public string DestinationStarClass { get; set; } = "";
+        // Tracked after jumping into a system or selecting a new destination
+        public JumpDestination JumpDestination { get; } = new JumpDestination();
+
+        // Tracked during NavRoute handler
+        public JumpDestination RouteDestination { get; } = new JumpDestination();
+        public InSystemDestination RouteDestinationLocation { get; } = new InSystemDestination();
+
         public DateTime DestinationTimeToSpeak { get; set; }
-
-        public int RemainingJumpsInRoute { get; set; }
         public DateTime RemainingJumpsInRouteTimeToSpeak { get; set; }
 
         public int ScanPercent { get; set; }
@@ -40,13 +44,16 @@ namespace StarGazer.Bridge
         // so we track them until the Scan has finished
         public Dictionary<string, FSSBodySignals> BodySignals { get; } = new Dictionary<string, FSSBodySignals>();
 
+        // List of stations detected in the system
+        public List<string> Stations { get; } = new List<string>();
+
+        // List of carriers detected in the system. Keyed by registration
+        public Dictionary<string, string> Carriers { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
         public void Assign(JournalBase journal)
         {
             switch (journal)
             {
-                case LoadGame loadGame: 
-                    AssignLoadGame(loadGame); 
-                    break;
                 case SetUserShipName setUserShipName:
                     ShipId = setUserShipName.ShipID;
                     ShipName = setUserShipName.UserShipName;
@@ -62,34 +69,58 @@ namespace StarGazer.Bridge
                 case Loadout loadout:
                     ShipId = loadout.ShipID;
                     ShipName = loadout.ShipName;
+                    FuelCapacity = loadout.FuelCapacity.Main; // assume full tank until first status update
+                    Fuel = new FuelType {
+                        FuelMain = loadout.FuelCapacity.Main,
+                        FuelReservoir = loadout.FuelCapacity.Reserve
+                    };
                     break;
                 case Undocked undocked:
-                    StationName = null;
+                    CurrentLocation.Set(CurrentLocation.SystemAddress, "");
                     break;
                 case Location location:
-                    SystemName = location.StarSystem;
-                    StationName = location.StationName;
+                    AssignLocation(location);
+                    break;
+                case LoadGame loadGame:
+                    AssignLoadGame(loadGame);
+                    break;
+                case FuelScoop fuelScoop:
+                    AssignFuelScoop(fuelScoop);
+                    break;
+                case Status status:
+                    AssignStatus(status);
                     break;
                 case FSDTarget fsdTarget:
                     AssignFSDTarget(fsdTarget);
+                    break;
+                case CarrierJump carrierJump:
+                    AssignCarrierJump(carrierJump);
                     break;
                 case FSDJump fsdJump:
                     AssignFSDJump(fsdJump);
                     break;
                 case Docked docked:
-                    SystemName = docked.StarSystem;
-                    StationName = docked.StationName;
-                    break;
-                case Status status:
-                    AssignStatus(status);
-                    break;
-                case FuelScoop fuelScoop:
-                    AssignFuelScoop(fuelScoop);
+                    // Not changing star system
+                    CurrentLocation.Set(docked.SystemAddress, docked.StationName);
                     break;
             }
         }
 
-        private void AssignFuelScoop(FuelScoop journal)
+        public void AssignLocation(Location location)
+        {
+            Bridge.Instance.ResetLogEntries();
+            CurrentSystem.Set(location.SystemAddress, location.StarSystem, "", location.StarPos);
+            var match = BaseEventHandler.CarrierNameRegex.Match(location.StationName);
+            if (match.Success && !String.IsNullOrWhiteSpace(match.Groups[1].Value))
+                Carriers[match.Groups[2].Value] = match.Groups[1].Value.Trim();
+
+            if (location.Docked)
+                CurrentLocation.Set(location.SystemAddress, location.StationName);
+            else
+                CurrentLocation.Set(location.SystemAddress, location.BodyID, location.Body);
+        }
+
+        public void AssignFuelScoop(FuelScoop journal)
         {
             FuelScooped += journal.Scooped;
             Fuel = new FuelType {
@@ -99,7 +130,7 @@ namespace StarGazer.Bridge
         }
 
 
-        void AssignStatus(Status status)
+        public void AssignStatus(Status status)
         {
             if (status.Fuel != null)
                 Fuel = new FuelType {
@@ -108,7 +139,7 @@ namespace StarGazer.Bridge
                 };
         }
 
-        void AssignLoadGame(LoadGame load)
+        public void AssignLoadGame(LoadGame load)
         {
             ShipType = String.IsNullOrWhiteSpace(load.Ship_Localised) ? load.Ship : load.Ship_Localised;
             ShipName = load.ShipName;
@@ -127,33 +158,57 @@ namespace StarGazer.Bridge
                 Status |= StatusFlags.MainShip;
         }
 
-        void AssignFSDTarget(FSDTarget target)
+        // Occurs mid-jump, before the FSDJump event
+        public void AssignFSDTarget(FSDTarget target)
         {
-            if (target.Name != DestinationName)
+            TargetLocation.Clear();
+            if (Status.HasFlag(StatusFlags.FSDJump))
+            {
+                // Let's assume we will arrive at our intended destination
+                CurrentSystem.Set(JumpDestination.SystemAddress, JumpDestination.StarSystem, JumpDestination.StarClass, JumpDestination.StarPos);
+            }
+            else
+            {
                 DestinationTimeToSpeak = DateTime.Now;
-            if(target.RemainingJumpsInRoute != RemainingJumpsInRoute)
+            }
+
+            // Setting new destination for the next jump. 
+            JumpDestination.Set(target.SystemAddress, target.Name, target.StarClass, (0, 0, 0));
+            if (target.RemainingJumpsInRoute != JumpDestination.RemainingJumpsInRoute)
                 RemainingJumpsInRouteTimeToSpeak = DateTime.Now;
 
-            RemainingJumpsInRoute = target.RemainingJumpsInRoute;
-            DestinationName = target.Name;
-            DestinationStarClass = target.StarClass;
+            JumpDestination.RemainingJumpsInRoute = target.RemainingJumpsInRoute;
         }
 
-        void AssignFSDJump(FSDJump jump)
+        // Jump completed - we have entered a new star system
+        public void AssignFSDJump(FSDJump jump)
         {
             ScanPercent = 0;
-            SystemName = jump.StarSystem;
-            StationName = null;
             AutoCompleteScanCount = 0;
             ScannedBodies.Clear();
             BodySignals.Clear();
+            Stations.Clear();
+            Carriers.Clear();
 
-            // Clear destination if needed
-            if(DestinationName == jump.StarSystem)
-            {
-                DestinationName = "";
-                DestinationStarClass = "";
-            }
+            CurrentLocation.Clear();
+            TargetLocation.Clear();
+
+            CurrentSystem.Set(jump.SystemAddress, jump.StarSystem, CurrentSystem.StarClass, jump.StarPos);
+        }
+
+        // Fleet Carrier Jump - same as FSDJump, except we don't clear current location as we are on the Fleet Carrier
+        public void AssignCarrierJump(CarrierJump jump)
+        {
+            ScanPercent = 0;
+            AutoCompleteScanCount = 0;
+            ScannedBodies.Clear();
+            BodySignals.Clear();
+            Stations.Clear();
+            Carriers.Clear();
+
+            TargetLocation.Clear();
+
+            CurrentSystem.Set(jump.SystemAddress, jump.StarSystem, CurrentSystem.StarClass, jump.StarPos);
         }
 
     }

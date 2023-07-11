@@ -13,9 +13,13 @@
         /// Localised name of the signal type.
         /// </summary>
         public string SignalName_Localised { get; init; }
+
+        public string SignalNameSpoken => String.IsNullOrEmpty(SignalName_Localised) ? SignalName : SignalName_Localised;
+
         /// <summary>
         /// Faction state or circumstance that caused this signal to appear.
         /// </summary>
+        /// 
         public string SpawningState { get; init; }
         /// <summary>
         /// Localised description of spawning state.
@@ -49,6 +53,9 @@
         /// Localised name of signal type.
         /// </summary>
         public string USSType_Localised { get; init; }
+
+        public string USSTypeSpoken => String.IsNullOrEmpty(USSType_Localised) ? USSType : USSType_Localised;
+
         /// <summary>
         /// Indicator if the signal is a station which can be docked with.
         /// </summary>

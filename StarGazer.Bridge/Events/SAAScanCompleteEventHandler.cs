@@ -69,10 +69,12 @@ namespace StarGazer.Bridge.Events
             if(entry != null && GameState.ScannedBodies.TryGetValue(journal.BodyName, out var scanned))
             {
                 var k_value = BodyValueEstimator.GetKValueForBody(scanned.PlanetClass, !String.IsNullOrEmpty(scanned.TerraformState));
-                var estimatedValue = BodyValueEstimator.GetBodyValue(k_value, scanned.MassEM, !scanned.WasDiscovered, true, !scanned.WasMapped, journal.ProbesUsed <= journal.EfficiencyTarget);
+                var currentValue = BodyValueEstimator.GetBodyValue(k_value, scanned.MassEM, !scanned.WasDiscovered, true, !scanned.WasMapped, journal.ProbesUsed <= journal.EfficiencyTarget);
+                var mappedValue = BodyValueEstimator.GetBodyValue(k_value, scanned.MassEM, !scanned.WasDiscovered, true, !scanned.WasMapped, true);
 
-                entry.Mapped = Emojis.Mapped + $"{journal.ProbesUsed}/{journal.EfficiencyTarget} Probes";
-                entry.EstimatedValue = $"{estimatedValue:n0} Cr";
+                entry.Mapped = Emojis.Mapped + $" {journal.ProbesUsed}/{journal.EfficiencyTarget}";
+                entry.CurrentValue = $"{currentValue:n0} Cr";
+                entry.MappedValue = $"{mappedValue:n0} Cr";
             }
 
             spokenOnly.Send();

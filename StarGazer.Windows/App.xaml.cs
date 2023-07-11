@@ -64,7 +64,7 @@ namespace StarGazer.UI
             // Register services
             builder.AddSingleton<IStarGazerCore, StarGazerCore>();
             builder.AddSingleton<IObservatoryCore>(services => services.GetRequiredService<IStarGazerCore>());
-            builder.AddSingleton<IVoiceNotificationQueue, VoiceNotificationQueue>();
+            builder.AddSingleton<IVoiceNotificationQueue, InbuiltVoiceNotification>();
             builder.AddSingleton<IVisualNotificationQueue, VisualNotificationQueue>();
             builder.AddSingleton<IAudioPlayback, NAudioService>();
 

@@ -8,9 +8,14 @@ namespace StarGazer.Bridge.Events
     {
         public void HandleEvent(DockingDenied journal)
         {
+            string stationName = journal.StationName + " Tower";
+            if (journal.StationType == "FleetCarrier")
+                if (TryGetStationName(journal.StationName, out var name))
+                    stationName = name + " Flight";
+
             var log = new BridgeLog(journal);
             log.TitleSsml.Append("Flight Operations");
-            log.DetailSsml.Append($"{journal.StationName} Tower has denied our docking request.");
+            log.DetailSsml.Append($"{stationName} has denied our docking request.");
 
             switch (journal.Reason)
             {

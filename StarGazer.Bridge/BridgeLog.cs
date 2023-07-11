@@ -28,8 +28,19 @@ namespace StarGazer.Bridge
         string? _signals;
         string? _discovered;
         string? _mapped;
-        string? _estimatedValue;
+        string? _currentValue;
+        string? _mappedValue;
         string? _distance;
+
+        public string Signals
+        {
+            get => _signals ?? "";
+            set
+            {
+                _signals = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Signals)));
+            }
+        }
 
         public string Discovered 
         {
@@ -51,23 +62,23 @@ namespace StarGazer.Bridge
             }
         }
 
-        public string Signals
+        public string CurrentValue
         {
-            get => _signals ?? "";
+            get => _currentValue ?? "";
             set
             {
-                _signals = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Signals)));
+                _currentValue = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentValue)));
             }
         }
 
-        public string EstimatedValue 
+        public string MappedValue 
         {
-            get => _estimatedValue ?? "";
+            get => _mappedValue ?? "";
             set
             {
-                _estimatedValue = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(EstimatedValue)));
+                _mappedValue = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MappedValue)));
             }
         }
 

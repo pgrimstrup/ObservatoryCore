@@ -71,8 +71,10 @@ namespace StarGazer.UI
             bool wasEnabled = _settings.InbuiltVoiceEnabled;
             _settings.InbuiltVoiceEnabled = true;
 
+            SsmlBuilder ssml = new SsmlBuilder();
+            ssml.Append($"This is a test of the Inbuilt Voice Notification system, using the {Model.VoiceName} voice.");
             VoiceNotificationArgs args = new VoiceNotificationArgs {
-                Detail = $"This is a test of the Inbuilt Voice Notification system, using the {Model.VoiceName} voice.",
+                DetailSsml = ssml.ToSsml(),
                 Rendering = NotificationRendering.NativeVocal,
                 VoiceName = Model.VoiceName,
                 VoiceVolume = Model.VoiceVolume,

@@ -54,7 +54,9 @@ namespace Concentus.Common
 #if DEBUG_MACROS
             if (!condition) throw new ArithmeticException("Debug macro failed validation");
 #endif
-            Debug.Assert(condition, message);
+            if (!condition)
+                throw new ArithmeticException("Debug macro failed validation");
+            //Debug.Assert(condition, message);
         }
 
 #region CELT

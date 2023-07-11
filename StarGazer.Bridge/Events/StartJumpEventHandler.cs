@@ -25,17 +25,11 @@ namespace StarGazer.Bridge.Events
                         .AppendBodyType(GetStarTypeName(journal.StarClass))
                         .Append($"{fuelStar}.");
 
-                if (GameState.RemainingJumpsInRoute == 1)
-                    log.DetailSsml.Append($"This is the final jump in the current flight plan.");
-                else if (GameState.RemainingJumpsInRoute > 1 && GameState.RemainingJumpsInRouteTimeToSpeak < DateTime.Now && (GameState.RemainingJumpsInRoute < 5 || (GameState.RemainingJumpsInRoute % 5) == 0))
-                {
-                    log.DetailSsml.Append($"There are {GameState.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
-                    GameState.RemainingJumpsInRouteTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval * 2);
-                }
+                AppendRemainingJumps(log, false);
+                AppendHazardousStarWarning(log, journal.StarClass);
 
                 log.Send();
-                if (!Bridge.Instance.Core.IsLogMonitorBatchReading)
-                    GameState.DestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval);
+                GameState.DestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval);
 
                 if (!log.IsSpoken)
                 {
@@ -43,17 +37,7 @@ namespace StarGazer.Bridge.Events
                     log = new BridgeLog(journal);
                     log.SpokenOnly();
                     log.DetailSsml.Append("FSD Online, jumping.");
-                    log.Send();
-                }
-
-                if (journal.StarClass.IsNeutronStar() || journal.StarClass.IsWhiteDwarf() || journal.StarClass.IsBlackHole())
-                {
-                    log = new BridgeLog(journal);
-                    log.SpokenOnly();
-
-                    log.DetailSsml.AppendEmphasis("Commander,", EmphasisType.Moderate);
-                    log.DetailSsml.Append("this is a dangerous star type.");
-                    log.DetailSsml.AppendEmphasis("Throttle down now.", EmphasisType.Strong);
+                    AppendHazardousStarWarning(log, journal.StarClass);
                     log.Send();
                 }
             }

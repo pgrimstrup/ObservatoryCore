@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Reflection;
 using Observatory.Framework;
 using Observatory.Framework.Files;
@@ -102,7 +103,10 @@ namespace StarGazer.Bridge
                 return new (null, null);
             });
 
-            if(handler.Instance != null && handler.Method != null)
+            // In all cases, GameState gets a preview of the journal
+            GameState.Assign(journal);
+
+            if (handler.Instance != null && handler.Method != null)
             {
                 try
                 {
@@ -115,6 +119,7 @@ namespace StarGazer.Bridge
                 }
             }
         }
+
 
         public void StatusChange(Status status)
         {
@@ -147,30 +152,34 @@ namespace StarGazer.Bridge
         internal void LogEvent(BridgeLog log, BridgeSettings? options = null)
         {
             options ??= this.Settings;
-            if (log.IsText)
+            if (Core.IsLogMonitorBatchReading)
             {
-                if (Core.IsLogMonitorBatchReading)
+                if (log.EventName == nameof(LaunchSRV))
                 {
-                    if (log.EventName == "LaunchSRV")
-                    {
-                        GameState.Status &= ~StatusFlags.MainShip;
-                        GameState.Status |= StatusFlags.SRV;
-                    }
-
-                    if (log.EventName == "DockSRV")
-                    {
-                        GameState.Status &= ~StatusFlags.SRV;
-                        GameState.Status |= StatusFlags.MainShip;
-                    }
-
-                    // Keep everythng after the last FSD Jump
-                    if (log.EventName == "StartJump")
-                        _batchReadEvents.Clear();
-                    _batchReadEvents.Add(log);
+                    GameState.Status &= ~StatusFlags.MainShip;
+                    GameState.Status |= StatusFlags.SRV;
                 }
-                else
-                    Core.AddGridItem(this, log);
+
+                if (log.EventName == nameof(DockSRV))
+                {
+                    GameState.Status &= ~StatusFlags.SRV;
+                    GameState.Status |= StatusFlags.MainShip;
+                }
+
+                if (log.EventName == nameof(CarrierJump) || log.EventName == nameof(FSDJump) || log.EventName == nameof(Location))
+                {
+                    // find the last CarrierJumpRequest and keep it
+                    var lastRequest = _batchReadEvents.OfType<BridgeLog>().LastOrDefault(b => b.EventName == nameof(CarrierJumpRequest) || b.EventName == nameof(StartJump));
+                    _batchReadEvents.Clear();
+                    if (lastRequest != null)
+                        _batchReadEvents.Add(lastRequest);
+                }
+
+                if(log.IsText)
+                    _batchReadEvents.Add(log);
             }
+            else if(log.IsText)
+                Core.AddGridItem(this, log);
 
             if (log.IsSpoken)
             {
@@ -212,6 +221,31 @@ namespace StarGazer.Bridge
                 }
 
                 Core.SendNotification(e);
+            }
+        }
+
+        internal void ResetLogEntries()
+        {
+            void Reset(IList<object> logs)
+            {
+                var lastRequest = logs
+                    .OfType<BridgeLog>()
+                    .LastOrDefault(e => e.EventName == nameof(CarrierJumpRequest) || e.EventName == nameof(StartJump));
+
+                while (logs.Count > 0 && logs[0] != lastRequest)
+                    logs.RemoveAt(0);
+            }
+
+            if (Core.IsLogMonitorBatchReading)
+            {
+                Reset(_batchReadEvents);
+            }
+            else
+            {
+                Bridge.Instance.Core.ExecuteOnUIThread(() => {
+                    // Remove all entries up to the last CarrierJumpRequest or StartJump
+                    Reset(Bridge.Instance.PluginUI.DataGrid);
+                });
             }
         }
     }

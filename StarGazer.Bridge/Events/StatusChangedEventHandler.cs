@@ -17,11 +17,11 @@ namespace StarGazer.Bridge.Events
         }
 
         public List<(double, FuelWarnings, string)> FuelWarning = new List<(double, FuelWarnings, string)> {
-            { new (0.01, FuelWarnings.Below1, "fuel level is critical. Main Fuel tank is below 1 percent.") },
-            { new (0.05, FuelWarnings.Below5, "fuel level is dangerously low. Main Fuel tank is below 5 percent.") },
-            { new (0.10, FuelWarnings.Below10, "fuel level is very low. Main Fuel tank is below 10 percent.") },
-            { new (0.25, FuelWarnings.Below25, "fuel level is low. Main Fuel tank is below 25 percent.") },
-            { new (0.50, FuelWarnings.Below50, "fuel level is down to 50 percent.") }
+            { new (0.01, FuelWarnings.Below1, "fuel level is critical. Main Fuel tank is below {0} percent.") },
+            { new (0.05, FuelWarnings.Below5, "fuel level is dangerously low. Main Fuel tank is at {0} percent.") },
+            { new (0.10, FuelWarnings.Below10, "fuel level is very low. Main Fuel tank is at {0} percent.") },
+            { new (0.25, FuelWarnings.Below25, "fuel level is low. Main Fuel tank is at {0} percent.") },
+            { new (0.50, FuelWarnings.Below50, "fuel level is down to {0} percent.") }
         };
 
         FuelWarnings _shipFuelWarnings;
@@ -110,22 +110,25 @@ namespace StarGazer.Bridge.Events
             if (status.Destination == null)
                 return;
 
-            if (status.Destination.Body > 0 && GameState.Status != 0)
+            if (GameState.Status != 0 && status.Destination.System == GameState.CurrentSystem.SystemAddress && !String.IsNullOrEmpty(status.Destination.SpokenName))
             {
-                if (GameState.DestinationName != status.Destination.SpokenName)
-                {
-                    GameState.DestinationName = status.Destination.SpokenName;
-                    GameState.DestinationStarClass = "";
+                var match =CarrierNameRegex.Match(status.Destination.SpokenName);
+                if(match.Success)
+                    GameState.Carriers[match.Groups[2].Value.Trim()] = match.Groups[1].Value.Trim();
 
-                    var log = new BridgeLog(status);
-                    log.TitleSsml.Append("Flight Operations");
-                    log.DetailSsml
-                        .Append("Course laid in to")
-                        .AppendBodyName(GetBodyName(GameState.DestinationName));
+                if (GameState.TargetLocation.IsSet && GameState.TargetLocation.Name == status.Destination.SpokenName)
+                    return;
 
-                    log.Send();
-                    GameState.DestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval);
-                }
+                GameState.TargetLocation.Set(status.Destination.System, status.Destination.Body, status.Destination.SpokenName);
+
+                var log = new BridgeLog(status);
+                log.TitleSsml.Append("Flight Operations");
+                log.DetailSsml
+                    .Append("Supercruise course laid in to")
+                    .AppendBodyName(GetBodyName(status.Destination.SpokenName));
+
+                log.Send();
+                GameState.DestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval);
             }
         }
 
@@ -145,46 +148,31 @@ namespace StarGazer.Bridge.Events
                 BridgeLog log = new BridgeLog(status);
                 log.SpokenOnly();
 
-                if (GameState.DestinationTimeToSpeak > DateTime.Now || String.IsNullOrWhiteSpace(GameState.DestinationName))
+                if (GameState.DestinationTimeToSpeak > DateTime.Now || String.IsNullOrWhiteSpace(status.Destination.SpokenName))
                 {
                     log.DetailSsml.Append("Preparing to jump.");
                 }
                 else
                 {
-                    var fuelStar = GameState.DestinationStarClass.IsFuelStar() ? ", a fuel star" : "";
                     log.DetailSsml
                         .Append("Preparing to jump to")
-                        .AppendBodyName(GameState.DestinationName)
-                        .EndSentence()
-                        .Append($"Destination star is a")
-                        .AppendBodyType(GetStarTypeName(GameState.DestinationStarClass))
-                        .Append($"{fuelStar}.");
+                        .AppendBodyName(status.Destination.SpokenName)
+                        .EndSentence();
+
+                    var fuelStar = GameState.JumpDestination.StarClass.IsFuelStar() ? ", a fuel star" : "";
+                    if (!String.IsNullOrEmpty(GameState.JumpDestination.StarClass))
+                        log.DetailSsml
+                            .Append($"Destination star is a")
+                            .AppendBodyType(GetStarTypeName(GameState.JumpDestination.StarClass))
+                            .Append($"{fuelStar}.");
+
+                    GameState.DestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval);
                 }
 
-                if (GameState.RemainingJumpsInRoute == 1)
-                    log.DetailSsml.Append($"This is the final jump in the current flight plan.");
-                else if (GameState.RemainingJumpsInRoute > 1 && GameState.RemainingJumpsInRouteTimeToSpeak < DateTime.Now && (GameState.RemainingJumpsInRoute < 5 || (GameState.RemainingJumpsInRoute % 5) == 0))
-                {
-                    log.DetailSsml.Append($"There are {GameState.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
-                    GameState.RemainingJumpsInRouteTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval * 2);
-                }
-
-                if (GameState.DestinationStarClass.IsNeutronStar() || GameState.DestinationStarClass.IsWhiteDwarf() || GameState.DestinationStarClass.IsBlackHole())
-                {
-                    log.DetailSsml
-                        .Append("That is a hazardous star type")
-                        .AppendEmphasis("Commander.", EmphasisType.Moderate)
-                        .Append("We should throttle down before exiting jump.");
-                }
+                AppendRemainingJumps(log, false);
+                AppendHazardousStarWarning(log, GameState.JumpDestination.StarClass);
 
                 log.Send();
-                if (!Bridge.Instance.Core.IsLogMonitorBatchReading)
-                {
-                    if (String.IsNullOrWhiteSpace(GameState.DestinationName) && !String.IsNullOrWhiteSpace(status.Destination.SpokenName))
-                        GameState.DestinationTimeToSpeak = DateTime.Now;
-                    else
-                        GameState.DestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval);
-                }
             }
         }
 
@@ -202,7 +190,7 @@ namespace StarGazer.Bridge.Events
                         log = new BridgeLog(status);
                         log.SpokenOnly()
                             .DetailSsml.AppendEmphasis("Commander,", EmphasisType.Moderate)
-                            .Append("SRV " + item.message);
+                            .Append("SRV " + String.Format(item.message, (int)(100 * fuelLevel)));
                     }
                     newWarning = item.warning;
                     break;
@@ -217,7 +205,6 @@ namespace StarGazer.Bridge.Events
 
         private void CheckShipFuelLevel(Status status)
         {
-            GameState.Assign(status);
             if (GameState.FuelCapacity == 0)
                 return;
 
@@ -256,7 +243,7 @@ namespace StarGazer.Bridge.Events
                         log = new BridgeLog(status);
                         log.SpokenOnly()
                             .DetailSsml.AppendEmphasis("Commander,", EmphasisType.Moderate)
-                            .Append("Ship's main " + item.message);
+                            .Append("Ship's main " + String.Format(item.message, (int)(100 * fuelLevel)));
                     }
                     newWarning = item.warning;
                     break;

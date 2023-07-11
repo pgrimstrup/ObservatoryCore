@@ -26,13 +26,13 @@ namespace StarGazer.Framework
             return value.Trim(chars);
         }
 
-        public static bool ShouldBeSpeltOut(this string word)
+        public static bool ShouldBeVerbatim(this string word)
         {
             if (String.IsNullOrWhiteSpace(word))
                 return false;
 
             // "a" -> "A" (as the alphabet letter, not the article)
-            if (word.Length == 1)
+            if (word.Length == 1 && Char.IsLetter(word[0]))
                 return true;
 
             // "01" -> "Zero One"
@@ -42,23 +42,39 @@ namespace StarGazer.Framework
             // "AB10" -> "A B Ten"
             // "AB101" -> "A B One Zero One"
 
-            char[] numbers = "1234567890".ToCharArray();
-            int numIndex = word.IndexOfAny(numbers);
-            if(numIndex < 0)
+            bool isNumeric = false;
+            bool isAlpha = false;
+            bool isSymbol = false;
+
+            // We wil ignore certain letters
+            char[] ignored = "-[]()_'.\"".ToCharArray();
+            for(int i = 0; i < word.Length; i++)
             {
-                // No numbers, just letters. If its all uppercase, then spell it out
-                return word == word.ToUpper();
+                if (ignored.Contains(word[i]))
+                    continue;
+
+                if (Char.IsNumber(word[i]))
+                    isNumeric = true;
+                else if (Char.IsLetter(word[i]))
+                    isAlpha = true;
+                else
+                    isSymbol = true;
             }
-            else if(numIndex == 0 && Int32.TryParse(word, out int num))
-            {
-                // Its just a number. 0..9 and 100+ are all spelt out
-                return num < 10 || num >= 100;
-            }
-            else
-            {
-                // Combination of numbers and letters
+
+            // Contains non-alphanumeric, spell it out
+            if (isSymbol)
                 return true;
-            }
+
+            // Contains alpha and numbers, spell it out
+            if (isAlpha && isNumeric)
+                return true;
+
+            // Its just a number. 0..9 and 100+ are all spelt out
+            if (isNumeric && Int64.TryParse(word, out long num))
+                return num < 10 || num >= 100 || word.StartsWith('0');
+
+            // Its just alpha
+            return false;
         }
 
         public static object SimpleClone(this object source)

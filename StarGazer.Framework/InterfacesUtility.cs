@@ -48,8 +48,10 @@ namespace StarGazer.Framework.Interfaces
         public string ExportStyle { get; set; }
 
         public bool InbuiltVoiceEnabled { get; set; }
+        // Volume for inbuilt voice notifier: 0 to 100
         public int VoiceVolume { get; set; }
-        public string VoiceRate { get; set; }
+        // Rate for inbuilt voice notifier: 0 to 100, default 50
+        public int VoiceRate { get; set; }
         public string VoiceName { get; set; }
         public string GoogleTextToSpeechApiKey { get; set; }
         public string AzureTextToSpeechApiKey { get; set; }

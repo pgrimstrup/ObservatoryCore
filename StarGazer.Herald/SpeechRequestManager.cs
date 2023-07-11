@@ -27,6 +27,7 @@ namespace StarGazer.Herald
         private ConcurrentDictionary<string, CacheData> cacheIndex;
         private List<Voice> voices;
         private string initialVoice;
+        private string oopsie;
 
         ITextToSpeechService _speech;
         IAudioPlayback _player;

@@ -55,21 +55,28 @@ namespace StarGazer.UI.Services
         public Task PlayAsync(string filename)
         {
             _dispatcher.Run(() => {
-                var ext = Path.GetExtension(filename).ToLower();
-                if (ext.StartsWith(".ogg") || ext.StartsWith(".opus"))
-                    _audioFile = new OggFileReader(filename);
-                else if (ext.StartsWith(".mp3"))
-                    _audioFile = new MediaFoundationReader(filename);
-                else if (ext.StartsWith(".wav"))
-                    _audioFile = new WaveFileReader(filename);
-                else
-                    _audioFile = new AudioFileReader(filename);
+                try
+                {
+                    var ext = Path.GetExtension(filename).ToLower();
+                    if (ext.StartsWith(".ogg") || ext.StartsWith(".opus"))
+                        _audioFile = new OggFileReader(filename);
+                    else if (ext.StartsWith(".mp3"))
+                        _audioFile = new MediaFoundationReader(filename);
+                    else if (ext.StartsWith(".wav"))
+                        _audioFile = new WaveFileReader(filename);
+                    else
+                        _audioFile = new AudioFileReader(filename);
 
-                _outputDevice = new WaveOut();
-                _outputDevice.PlaybackStopped += Player_PlaybackStopped;
-                _outputDevice.Init(_audioFile);
-                _outputDevice.Volume = _volume / 100.0f;
-                _outputDevice.Play();
+                    _outputDevice = new WaveOut();
+                    _outputDevice.PlaybackStopped += Player_PlaybackStopped;
+                    _outputDevice.Init(_audioFile);
+                    _outputDevice.Volume = _volume / 100.0f;
+                    _outputDevice.Play();
+                }
+                catch(Exception ex)
+                {
+                    _logger.LogError($"NAudioService.PlayAsync: {ex.Message}\r\n{ex.ToString()}");
+                }
             });
 
             FileName = filename;
@@ -93,22 +100,34 @@ namespace StarGazer.UI.Services
         public string ConvertWavToOpus(string sourceFile)
         {
             var targetFile = Path.ChangeExtension(sourceFile, ".opus");
-            using (var wavefile = new WaveFileReader(sourceFile))
-            using (var opusfile = File.OpenWrite(targetFile))
+            try
             {
-                OpusEncoder encoder = new OpusEncoder(wavefile.WaveFormat.SampleRate, wavefile.WaveFormat.Channels, Concentus.Enums.OpusApplication.OPUS_APPLICATION_AUDIO);
-                OpusOggWriteStream writer = new OpusOggWriteStream(encoder, opusfile);
-
-                var frame = wavefile.ReadNextSampleFrame();
-                while (frame != null)
+                using (var wavefile = new WaveFileReader(sourceFile))
+                using (var opusfile = File.OpenWrite(targetFile))
                 {
-                    writer.WriteSamples(frame, 0, frame.Length);
-                    frame = wavefile.ReadNextSampleFrame();
-                }
+                    OpusEncoder encoder = new OpusEncoder(wavefile.WaveFormat.SampleRate, wavefile.WaveFormat.Channels, Concentus.Enums.OpusApplication.OPUS_APPLICATION_AUDIO);
+                    OpusOggWriteStream writer = new OpusOggWriteStream(encoder, opusfile);
 
-                writer.Finish();
+                    var frame = wavefile.ReadNextSampleFrame();
+                    while (frame != null)
+                    {
+                        writer.WriteSamples(frame, 0, frame.Length);
+                        frame = wavefile.ReadNextSampleFrame();
+                    }
+
+                    writer.Finish();
+                }
+                return targetFile;
             }
-            return targetFile;
+            catch
+            {
+                // Clean up on error
+                if (File.Exists(targetFile))
+                    File.Delete(targetFile);
+                if (File.Exists(sourceFile))
+                    File.Delete(sourceFile);
+                throw;
+            }
         }
     }
 }

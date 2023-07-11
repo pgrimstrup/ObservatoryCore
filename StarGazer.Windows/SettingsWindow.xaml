@@ -55,9 +55,9 @@
                         <Label Content="{Binding Model.VoiceVolume, FallbackValue=75}"></Label>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="6,4">
-                        <Label Width="150">Rate (-10 to +10)</Label>
-                        <Slider Width="200" VerticalAlignment="Center" Value="{Binding Model.VoiceRate}" Minimum="-10" Maximum="10"></Slider>
-                        <Label Content="{Binding Model.VoiceRate, FallbackValue=0}"></Label>
+                        <Label Width="150">Rate (0 to 100)</Label>
+                        <Slider Width="200" VerticalAlignment="Center" Value="{Binding Model.VoiceRate}" Minimum="0" Maximum="100"></Slider>
+                        <Label Content="{Binding Model.VoiceRate, FallbackValue=50}"></Label>
                     </StackPanel>
                     <CheckBox Margin="4,4" IsChecked="{Binding Model.VoiceWelcomeMessage}">Speak Welcome message on Startup</CheckBox>
                     <StackPanel Orientation="Horizontal" Margin="6">

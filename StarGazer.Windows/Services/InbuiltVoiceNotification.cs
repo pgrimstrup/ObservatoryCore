@@ -7,7 +7,7 @@ using StarGazer.Framework.Interfaces;
 namespace StarGazer.UI.Services
 {
 
-    public class VoiceNotificationQueue : IVoiceNotificationQueue
+    public class InbuiltVoiceNotification : IVoiceNotificationQueue
     {
         ILogger _logger;
         BlockingCollection<VoiceNotificationArgs> _queue = new BlockingCollection<VoiceNotificationArgs>();
@@ -15,7 +15,7 @@ namespace StarGazer.UI.Services
         Thread _thread;
         CancellationTokenSource _cancel = new CancellationTokenSource();
 
-        public VoiceNotificationQueue(ILogger<VoiceNotificationQueue> logger)
+        public InbuiltVoiceNotification(ILogger<InbuiltVoiceNotification> logger)
         {
             _logger = logger;
             _thread = new Thread(Run);
@@ -82,12 +82,13 @@ namespace StarGazer.UI.Services
                     try
                     {
                         speech.Volume = msg.VoiceVolume.GetValueOrDefault(75);
-                        if (Int32.TryParse(msg.VoiceRate, out int rate))
-                            speech.Rate = rate;
+                        // Voice rate is supported, Voice pitch is not supported
+                        // Convert value of 0 to 100 to the expected rate for the SpeechSynthesizer, -10 to 10
+                        speech.Rate =  (msg.VoiceRate.GetValueOrDefault(50) - 50) / 5;
                         speech.SelectVoice(msg.VoiceName);
 
-                        Speak(speech, msg, msg.Title, cancel);
-                        Speak(speech, msg, msg.Detail, cancel);
+                        Speak(speech, msg, msg.TitleSsml, cancel);
+                        Speak(speech, msg, msg.DetailSsml, cancel);
                     }
                     catch (Exception ex)
                     {

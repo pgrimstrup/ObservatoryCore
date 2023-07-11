@@ -22,9 +22,9 @@
   
   
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0-preview.3.23174.8" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0-preview.3.23174.8" />
-    <PackageReference Include="NLua" Version="1.6.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0-preview.5.23280.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0-preview.5.23280.8" />
+    <PackageReference Include="NLua" Version="1.6.3" />
   </ItemGroup>
   
   <ItemGroup>

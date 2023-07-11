@@ -34,12 +34,10 @@ namespace StarGazer.Herald.TextToSpeech
             request.Voice.Name = args.VoiceName;
             request.Voice.LanguageCode = args.VoiceName.Substring(0, 5);
             request.AudioConfig.AudioEncoding = GoogleAudioEncoding.LINEAR16;
-
-            if (float.TryParse(args.VoiceRate, out var rate))
-                request.AudioConfig.SpeakingRate = rate;
-
-            if (float.TryParse(args.VoicePitch, out var pitch))
-                request.AudioConfig.Pitch = pitch;
+            if (args.VoiceRate.HasValue)
+                request.AudioConfig.SpeakingRate = CalculateVoiceRate(args.VoiceRate.Value);
+            if (args.VoicePitch.HasValue)
+                request.AudioConfig.Pitch = CalculateVoicePitch(args.VoicePitch.Value);
 
             if (speech.StartsWith("<speak"))
             {
@@ -132,6 +130,22 @@ namespace StarGazer.Herald.TextToSpeech
             }
 
             return $"{lang} {id}, {gender}";
+        }
+
+        public float CalculateVoiceRate(int rate)
+        {
+            if (rate < 50)
+                return (float)Math.Round(0.50 + rate / 100.0, 2);
+
+            if (rate > 50)
+                return 1 + (float)Math.Round((rate - 50) / 50.0, 2);
+
+            return 1;
+        }
+
+        public float CalculateVoicePitch(int pitch)
+        {
+            return (float)Math.Round((pitch - 50) / 2.5, 2);
         }
     }
 }

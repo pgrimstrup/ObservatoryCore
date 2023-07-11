@@ -14,19 +14,25 @@ namespace StarGazer.Framework
         readonly List<string> _ssmlFragments = new List<string>();
         bool _inParagraph;
         // Letters followed by a Number - 2 groups
-        Regex _alphaNumeric = new Regex("([a-zA-Z]+)([0-9]+)", RegexOptions.IgnoreCase);
+        Regex _alphaThenNumber = new Regex("^([a-zA-Z]+)([0-9]+)$", RegexOptions.IgnoreCase);
+        Regex _carrierNameRegex = new Regex("(.*)([A-Z0-9]{3}\\-[A-Z0-9]{3})$", RegexOptions.IgnoreCase);
+
 
         static ConcurrentDictionary<string, string> BodyTypeWordReplacements = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        static ConcurrentDictionary<string, string> BodyNameWordReplacements = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         public event EventHandler Changed;
 
         static SsmlBuilder()
         {
+            // Replace hyphens with a space when spoken
+            BodyTypeWordReplacements.TryAdd("-", " ");
             BodyTypeWordReplacements.TryAdd("I", "1");
             BodyTypeWordReplacements.TryAdd("II", "2");
             BodyTypeWordReplacements.TryAdd("III", "3");
             BodyTypeWordReplacements.TryAdd("IV", "4");
             BodyTypeWordReplacements.TryAdd("V", "5");
+
         }
 
         public SsmlBuilder()
@@ -35,7 +41,7 @@ namespace StarGazer.Framework
             PeriodBreak = 500;
         }
 
-        public int CommaBreak { get; set; } 
+        public int CommaBreak { get; set; }
         public int PeriodBreak { get; set; }
 
         public string CommaBreakSsml => $"<break time=\"{CommaBreak}ms\"/>";
@@ -43,7 +49,7 @@ namespace StarGazer.Framework
 
         public void Replace(string text, string replacement)
         {
-            for(int i = 0; i < _textFragments.Count; i++)
+            for (int i = 0; i < _textFragments.Count; i++)
                 if (_textFragments[i].Contains(text))
                     _textFragments[i] = _textFragments[i].Replace(text, replacement);
 
@@ -52,7 +58,7 @@ namespace StarGazer.Framework
 
         public void InsertEmoji(string emoji)
         {
-            if(_textFragments.Count > 0 && _textFragments[0].Length > 0)
+            if (_textFragments.Count > 0 && _textFragments[0].Length > 0)
             {
                 string first = _textFragments[0];
                 if (Char.IsAscii(first[0]))
@@ -83,8 +89,20 @@ namespace StarGazer.Framework
         {
             if (!String.IsNullOrEmpty(name))
             {
-                _textFragments.Add(name.Trim());
-                _ssmlFragments.Add(ReplaceWords(name.Replace("-", " dash ").Replace(".", " dot ").Trim()));
+                var match = _carrierNameRegex.Match(name);
+                if (match.Success)
+                {
+                    Append("Fleet Carrier");
+                    if(String.IsNullOrWhiteSpace(match.Groups[1].Value))
+                        AppendCharacters(match.Groups[2].Value);
+                    else
+                        AppendEmphasis(match.Groups[1].Value, EmphasisType.Moderate);
+                }
+                else
+                {
+                    _textFragments.Add(name.Trim());
+                    _ssmlFragments.Add(ReplaceWords(name.Replace("-", " dash ").Trim(), BodyNameWordReplacements));
+                }
             }
             Changed?.Invoke(this, EventArgs.Empty);
             return this;
@@ -164,7 +182,7 @@ namespace StarGazer.Framework
         public SsmlBuilder AppendCharacters(string text)
         {
             _textFragments.Add(text.Trim());
-            _ssmlFragments.Add($"<say-as interpret-as=\"characters\">{text.Trim()}</say-as>");
+            _ssmlFragments.Add($"<say-as interpret-as=\"verbatim\">{text.ToLower().Trim()}</say-as>");
             Changed?.Invoke(this, EventArgs.Empty);
             return this;
         }
@@ -241,6 +259,7 @@ namespace StarGazer.Framework
             return this;
         }
 
+
         // All single-letter words are spelt out.
         // All-lowercase or mixed-case words are spoken as given.
         // All-uppercase words are spelt out, as are words in the form Alpha-Number (AB01)
@@ -248,50 +267,98 @@ namespace StarGazer.Framework
         // The numbers 10 to 99 are spoken unless prefixed with a zero, all other numbers are spelt out.
         private string ReplaceWords(string text, IDictionary<string, string> replacements = null)
         {
-            var words = text.Split();
-            for (int i = 0; i < words.Length; i++)
+            var result = "";
+            var inVerbatim = false;
+
+            void StartVerbatim()
             {
-                var parts = words[i].Split('-');
-                for(int p = 0; p < parts.Length; p++)
+                if (!inVerbatim)
                 {
-                    Match match = _alphaNumeric.Match(parts[p]);
-                    if (match.Success)
+                    result = result.TrimEnd() + "<say-as interpret-as=\"verbatim\">";
+                    inVerbatim = true;
+                }
+            }
+
+            void EndVerbatim()
+            {
+                if (inVerbatim)
+                {
+                    result = result.TrimEnd() + "</say-as>";
+                    inVerbatim = false;
+                }
+            }
+
+            var match = _carrierNameRegex.Match(text);
+            if(match.Success)
+            {
+                // Special case - the name portion is not verbatim, the registration is always verbatim
+                result = match.Groups[1].Value.Trim();
+                StartVerbatim();
+                result += match.Groups[2].Value;
+                EndVerbatim();
+                return result;
+            }
+
+            var words = text.Split(new char[] { ' ', '-' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach(var word in words)
+            {
+                match = _alphaThenNumber.Match(word);
+                if (replacements != null && replacements.TryGetValue(word, out string replacement))
+                {
+                    // Simple replacement
+                    EndVerbatim();
+                    result += replacement.Trim() + " ";
+                }
+                else if (match.Success)
+                {
+                    // Spell out the letters, but only spell out the numbers if it isn't 10 to 99
+                    if (!match.Groups[2].Value.StartsWith("0") && Int32.TryParse(match.Groups[2].Value, out int num))
                     {
-                        // Spell out the letters, but only spell out the numbers if it isn't 10 to 99
-                        if (!match.Groups[2].Value.StartsWith("0") &&  Int32.TryParse(match.Groups[2].Value, out int num))
+                        // Alpha part is always verbatim
+                        StartVerbatim();
+
+                        if (num < 10 || num >= 100)
                         {
-                            if (num < 10 || num >= 100)
-                                parts[p] = $"<say-as interpret-as=\"characters\">{parts[p]}</say-as>";
-                            else
-                                parts[p] = $"<say-as interpret-as=\"characters\">{match.Groups[1].Value}</say-as> {num}";
+                            // "AB5" -> "A B 5"
+                            result += match.Groups[1].Value.ToLower().Trim() + " ";
+                            result += num.ToString() + " ";
                         }
                         else
                         {
-                            // Number if prefixed with '0', so spell out the number "AB00" -> "A B zero zero"
-                            parts[p] = $"<say-as interpret-as=\"characters\">{parts[p]}</say-as>";
+                            // "AB10" -> "A B Ten"
+                            result += match.Groups[1].Value.ToLower().Trim() + " ";
+                            EndVerbatim();
+                            result += num.ToString() + " ";
                         }
                     }
-                    else if(replacements != null && replacements.TryGetValue(parts[p], out string replacement))
+                    else
                     {
-                        // Simple replacement
-                        parts[p] = replacement;
-                    }
-                    else if (parts[p].ShouldBeSpeltOut())
-                    {
-                        // Single letter, all upper case, or a combination of alpha-numeric that didn't match the regex
-                        parts[p] = $"<say-as interpret-as=\"characters\">{parts[p]}</say-as>";
+                        // Number if prefixed with '0', whole word is verbatim "AB00" -> "A B zero zero"
+                        StartVerbatim();
+                        result += word.ToLower().Trim() + " ";
                     }
                 }
-                words[i] = String.Join("-", parts);
+                else if (word.ShouldBeVerbatim())
+                {
+                    // Single letter, all upper case, or a combination of alpha-numeric that didn't match the regex
+                    StartVerbatim();
+                    result += word.ToLower().Trim() + " ";
+                }
+                else
+                {
+                    EndVerbatim();
+                    result += word + " ";
+                }
             }
 
-            return string.Join(" ", words);
+            EndVerbatim();
+            return result;
         }
 
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            for(int i = 0; i < _textFragments.Count; i++)
+            for (int i = 0; i < _textFragments.Count; i++)
             {
                 if (i > 0 && !_textFragments[i].StartsWith(",") && !_textFragments[i].StartsWith("."))
                     sb.Append(" ");

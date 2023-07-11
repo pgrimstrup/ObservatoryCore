@@ -6,6 +6,7 @@ using System.Formats.Asn1;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Observatory.Framework.Files.Journal;
@@ -17,6 +18,8 @@ namespace StarGazer.Bridge.Events
 {
     internal class BaseEventHandler
     {
+        public static Regex CarrierNameRegex = new Regex("(.*)([A-Z0-9]{3}\\-[A-Z0-9]{3})$", RegexOptions.IgnoreCase);
+
         protected Random R = new Random();
         protected TimeSpan SpokenDestinationInterval = TimeSpan.FromSeconds(90);
 
@@ -195,14 +198,14 @@ namespace StarGazer.Bridge.Events
             if (String.IsNullOrWhiteSpace(name))
                 return name;
 
-            if (GameState.SystemName == null || name.Length < GameState.SystemName.Length || !name.StartsWith(GameState.SystemName, StringComparison.OrdinalIgnoreCase))
+            if (GameState.CurrentSystem.StarSystem == null || name.Length < GameState.CurrentSystem.StarSystem.Length || !name.StartsWith(GameState.CurrentSystem.StarSystem, StringComparison.OrdinalIgnoreCase))
                 return name;
 
             // Single star system, primary star name is the same as the system name
-            if (name.Equals(GameState.SystemName, StringComparison.OrdinalIgnoreCase))
+            if (name.Equals(GameState.CurrentSystem.StarSystem, StringComparison.OrdinalIgnoreCase))
                 return "Star A";
 
-            name = name.Substring(GameState.SystemName.Length).Trim();
+            name = name.Substring(GameState.CurrentSystem.StarSystem.Length).Trim();
 
             // Stars are named A..Z, and have a length of 1
             if (name.Length == 1 && Char.IsLetter(name[0]))
@@ -390,7 +393,7 @@ namespace StarGazer.Bridge.Events
             log.TitleSsml.Append("Science Station");
             log.DetailSsml.Append($"System Scan Complete.");
 
-            if(discoveredStars == 0 && discoveredPlanets == 0)
+            if (discoveredStars == 0 && discoveredPlanets == 0)
             {
                 log.DetailSsml.Append("This system of");
                 AddStarsAndPlanets(log, false);
@@ -444,6 +447,96 @@ namespace StarGazer.Bridge.Events
                 signalText.Add(Emojis.OtherSignals + otherCount.ToString());
 
             scanEntry.Signals = String.Join(" ", signalText);
+        }
+
+        protected double DistanceBetween((double x, double y, double z) start, (double x, double y, double z) end)
+        {
+            if (start.x == 0 && start.y == 0 && start.z == 0)
+                return 0;
+
+            double dx = Math.Abs(start.x - end.x);
+            double dy = Math.Abs(start.y - end.y);
+            double dz = Math.Abs(start.z - end.z);
+
+            return Math.Sqrt(dx * dx + dy * dy + dz * dz);
+        }
+
+        protected void AppendRemainingJumps(BridgeLog log, bool newCourse)
+        {
+            if (GameState.JumpDestination.RemainingJumpsInRoute < 1)
+                return;
+
+            string planType = newCourse ? "new" : "current";
+                 
+            if (GameState.JumpDestination.RemainingJumpsInRoute == 1)
+            {
+                if (newCourse)
+                {
+                    log.DetailSsml.AppendSsml($"This is the only jump in the {planType} flight plan.");
+                    GameState.RemainingJumpsInRouteTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval * 2);
+                }
+                else if (GameState.RemainingJumpsInRouteTimeToSpeak < DateTime.Now)
+                {
+                    log.DetailSsml.AppendSsml($"This is the final jump in the {planType} flight plan.");
+                    GameState.RemainingJumpsInRouteTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval * 2);
+                }
+            }
+            else if (GameState.JumpDestination.RemainingJumpsInRoute > 1 && GameState.RemainingJumpsInRouteTimeToSpeak < DateTime.Now)
+            {
+                // Every jump below 5, or every multiple of 5
+                if (GameState.JumpDestination.RemainingJumpsInRoute < 5 || (GameState.JumpDestination.RemainingJumpsInRoute % 5) == 0)
+                {
+                    int remain = GameState.JumpDestination.RemainingJumpsInRoute;
+                    log.DetailSsml.AppendSsml($"There are {"jump".CountAndPlural(remain)} remaining in the {planType} flight plan.");
+                    GameState.RemainingJumpsInRouteTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval * 2);
+                }
+            }
+            else if (newCourse && GameState.JumpDestination.RemainingJumpsInRoute > 0)
+            {
+                int remain = GameState.JumpDestination.RemainingJumpsInRoute;
+                log.DetailSsml.AppendSsml($"There are {"jump".CountAndPlural(remain)} in the {planType} flight plan.");
+                GameState.RemainingJumpsInRouteTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval * 2);
+            }
+        }
+
+        protected void AppendHazardousStarWarning(BridgeLog log, string starClass)
+        {
+            if (starClass.IsNeutronStar() || starClass.IsWhiteDwarf() || starClass.IsBlackHole())
+            {
+                // Spoken only
+                log.DetailSsml
+                    .AppendSsml($"<emphasis level=\"moderate\">Commander</emphasis>")
+                    .AppendSsml("that is a hazardous star type.")
+                    .AppendSsml($"<emphasis level=\"moderate\">Caution is advised</emphasis>")
+                    .AppendSsml("on exiting jump");
+            }
+
+        }
+
+        protected bool TryGetStationName(string name, out string stationName)
+        {
+            stationName = name;
+
+            var match = CarrierNameRegex.Match(name);
+            if (match.Success)
+            {
+                // We have a registration, so lookup the name from the signals data that we have in this system
+                if(String.IsNullOrWhiteSpace(match.Groups[1].Value))
+                {
+                    if (GameState.Carriers.TryGetValue(match.Groups[2].Value, out var found))
+                        stationName = found;
+                    else
+                        stationName = name;
+                }
+                else
+                {
+                    // Use the carrier name part only
+                    stationName = match.Groups[1].Value.Trim();
+                    GameState.Carriers[match.Groups[2].Value] = stationName;
+                }
+            }
+
+            return true;
         }
 
     }

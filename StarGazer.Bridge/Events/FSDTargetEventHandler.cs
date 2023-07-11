@@ -8,9 +8,6 @@ namespace StarGazer.Bridge.Events
     {
         public void HandleEvent(FSDTarget journal)
         {
-            string previousDestination = GameState.DestinationName;
-            GameState.Assign(journal);
-
             // This event is received mid-jump when auto-plotting to the next star system in the route.
             // It also occurs when the ship is returning from orbit while on the surface (ie, Cmdr not in MainShip)
             if (GameState.Status.HasFlag(StatusFlags.FSDJump) || !GameState.Status.HasFlag(StatusFlags.MainShip))
@@ -19,7 +16,7 @@ namespace StarGazer.Bridge.Events
             // Manually selected the next destination system
             if (!String.IsNullOrEmpty(journal.Name))
             {
-                if (GameState.DestinationTimeToSpeak > DateTime.Now || previousDestination == journal.Name)
+                if (GameState.DestinationTimeToSpeak >= DateTime.Now)
                     return;
 
                 var log = new BridgeLog(journal);
@@ -27,33 +24,17 @@ namespace StarGazer.Bridge.Events
 
                 var fuelStar = journal.StarClass.IsFuelStar() ? ", a fuel star" : "";
                 log.DetailSsml
-                    .Append("Course laid in to")
+                    .Append("Jump course laid in to")
                         .AppendBodyName(journal.Name)
                         .Append($". Destination star is a")
                         .AppendBodyType(GetStarTypeName(journal.StarClass))
                         .Append($"{fuelStar}.");
 
-                if (GameState.RemainingJumpsInRoute == 1)
-                    log.DetailSsml.Append($"This is the final jump in the current flight plan.");
-                else if (GameState.RemainingJumpsInRoute > 1 && GameState.RemainingJumpsInRouteTimeToSpeak < DateTime.Now && (GameState.RemainingJumpsInRoute < 5 || (GameState.RemainingJumpsInRoute % 5) == 0))
-                {
-                    log.DetailSsml.Append($"There are {GameState.RemainingJumpsInRoute} jumps remaining in the current flight plan.");
-                    if (!Bridge.Instance.Core.IsLogMonitorBatchReading)
-                        GameState.RemainingJumpsInRouteTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval * 2);
-                }
-
-                if (journal.StarClass.IsNeutronStar() || journal.StarClass.IsWhiteDwarf() || journal.StarClass.IsBlackHole())
-                {
-                    log.DetailSsml
-                        .AppendEmphasis("Commander,", EmphasisType.Moderate)
-                        .Append("that is a hazardous star type.")
-                        .AppendEmphasis("Caution is advised", EmphasisType.Moderate)
-                        .Append("on exiting jump");
-                }
+                AppendRemainingJumps(log, true);
+                AppendHazardousStarWarning(log, journal.StarClass);
 
                 log.Send();
-                if(!Bridge.Instance.Core.IsLogMonitorBatchReading)
-                    GameState.DestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval);
+                GameState.DestinationTimeToSpeak = DateTime.Now.Add(SpokenDestinationInterval);
             }
         }
     }

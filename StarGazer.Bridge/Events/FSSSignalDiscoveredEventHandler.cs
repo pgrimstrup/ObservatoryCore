@@ -7,21 +7,40 @@ namespace StarGazer.Bridge.Events
     {
         public void HandleEvent(FSSSignalDiscovered journal)
         {
-            if (!String.IsNullOrEmpty(journal.USSType_Localised))
+            // Track all station names in this system
+            if (journal.IsStation)
+            {
+                var match = CarrierNameRegex.Match(journal.SignalNameSpoken);
+                if(match.Success)
+                {
+                    GameState.Carriers[match.Groups[2].Value] = match.Groups[1].Value.Trim();
+                }
+                else
+                {
+                    if(!GameState.Stations.Contains(journal.SignalNameSpoken))
+                        GameState.Stations.Add(journal.SignalNameSpoken);
+                }
+            }
+
+            if (!String.IsNullOrEmpty(journal.USSTypeSpoken))
             {
                 var log = new BridgeLog(journal);
+                log.SpokenOnly();
                 log.TitleSsml.Append("Science Station");
 
-                log.DetailSsml.Append($"Sensors are picking up {journal.USSType_Localised} signal")
-                    .AppendEmphasis("Commander.", EmphasisType.Moderate)
-                    .Append($"Threat level {journal.ThreatLevel}.");
+                log.DetailSsml.Append($"{journal.USSTypeSpoken},")
+                    .Append($"threat level {journal.ThreatLevel}.");
 
                 var minutes = (int)Math.Truncate(journal.TimeRemaining) / 60;
                 var seconds = (int)Math.Truncate(journal.TimeRemaining) % 60;
-                if (minutes > 0 || seconds > 0)
+                if(minutes == 0)
                 {
-                    log.DetailSsml.Append($"{minutes} " + (minutes == 1 ? "minute" : "minutes"));
-                    log.DetailSsml.Append($"and {seconds} " + (seconds == 1 ? "second" : "seconds") + " remaining.");
+                    log.DetailSsml.Append("Less than a minute remaining.");
+                }
+                else 
+                {
+                    log.DetailSsml.Append(BridgeUtils.CountAndPlural("minute", minutes));
+                    log.DetailSsml.Append("remaining");
                 }
                 log.Send();
             }

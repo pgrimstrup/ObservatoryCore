@@ -22,7 +22,7 @@ namespace StarGazer.UI.Services
 
         public bool InbuiltVoiceEnabled { get; set; } = true;
         public int VoiceVolume { get; set; } = 75;
-        public string VoiceRate { get; set; } = "";
+        public int VoiceRate { get; set; } = 50;
         public string VoiceName { get; set; } = "";
         public string VoiceStyle { get; set; } = "";
         public string GoogleTextToSpeechApiKey { get; set; } = "";
