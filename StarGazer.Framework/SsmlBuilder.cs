@@ -93,7 +93,7 @@ namespace StarGazer.Framework
                 if (match.Success)
                 {
                     Append("Fleet Carrier");
-                    if(String.IsNullOrWhiteSpace(match.Groups[1].Value))
+                    if (String.IsNullOrWhiteSpace(match.Groups[1].Value))
                         AppendCharacters(match.Groups[2].Value);
                     else
                         AppendEmphasis(match.Groups[1].Value, EmphasisType.Moderate);
@@ -101,7 +101,7 @@ namespace StarGazer.Framework
                 else
                 {
                     _textFragments.Add(name.Trim());
-                    _ssmlFragments.Add(ReplaceWords(name.Replace("-", " dash ").Trim(), BodyNameWordReplacements));
+                    _ssmlFragments.Add(ReplaceWords(name.Trim(), BodyNameWordReplacements, true));
                 }
             }
             Changed?.Invoke(this, EventArgs.Empty);
@@ -265,7 +265,7 @@ namespace StarGazer.Framework
         // All-uppercase words are spelt out, as are words in the form Alpha-Number (AB01)
         // This means that the word "a" is always spelt out as the alphabet letter and not the noun-article.
         // The numbers 10 to 99 are spoken unless prefixed with a zero, all other numbers are spelt out.
-        private string ReplaceWords(string text, IDictionary<string, string> replacements = null)
+        private string ReplaceWords(string text, IDictionary<string, string> replacements = null, bool replaceDash = false)
         {
             var result = "";
             var inVerbatim = false;
@@ -289,7 +289,7 @@ namespace StarGazer.Framework
             }
 
             var match = _carrierNameRegex.Match(text);
-            if(match.Success)
+            if (match.Success)
             {
                 // Special case - the name portion is not verbatim, the registration is always verbatim
                 result = match.Groups[1].Value.Trim();
@@ -299,11 +299,11 @@ namespace StarGazer.Framework
                 return result;
             }
 
-            var words = text.Split(new char[] { ' ', '-' }, StringSplitOptions.RemoveEmptyEntries);
-            foreach(var word in words)
+            //var words =  text.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var word in SplitWords(text, replaceDash))
             {
-                match = _alphaThenNumber.Match(word);
-                if (replacements != null && replacements.TryGetValue(word, out string replacement))
+                match = _alphaThenNumber.Match(word.Text);
+                if (!word.ForceVerbatim && replacements != null && replacements.TryGetValue(word.Text, out string replacement))
                 {
                     // Simple replacement
                     EndVerbatim();
@@ -335,24 +335,54 @@ namespace StarGazer.Framework
                     {
                         // Number if prefixed with '0', whole word is verbatim "AB00" -> "A B zero zero"
                         StartVerbatim();
-                        result += word.ToLower().Trim() + " ";
+                        result += word.Text.ToLower().Trim() + " ";
                     }
                 }
-                else if (word.ShouldBeVerbatim())
+                else if (word.ForceVerbatim || word.Text.ShouldBeVerbatim())
                 {
                     // Single letter, all upper case, or a combination of alpha-numeric that didn't match the regex
                     StartVerbatim();
-                    result += word.ToLower().Trim() + " ";
+                    result += word.Text.ToLower().Trim() + " ";
                 }
                 else
                 {
                     EndVerbatim();
-                    result += word + " ";
+                    result += word.Text + " ";
                 }
             }
 
             EndVerbatim();
             return result;
+        }
+
+        public struct SplitWord
+        {
+            public string Text;
+            public bool ForceVerbatim;
+        }
+
+        private IEnumerable<SplitWord> SplitWords(string text, bool replaceDash)
+        {
+            foreach (var word in text.Split())
+            {
+                if (String.IsNullOrWhiteSpace(word))
+                    continue;
+
+                if(replaceDash && word.Contains("-"))
+                {
+                    // Word contains a hyphen - all parts must be verbatim, but include a non-verbatim
+                    // dash in between each word.
+                    var parts = word.Split('-');
+                    yield return new SplitWord { Text = parts[0], ForceVerbatim = true };
+                    for(int i = 1; i < parts.Length; i++)
+                    {
+                        yield return new SplitWord { Text = "dash", ForceVerbatim = false };
+                        yield return new SplitWord { Text = parts[i], ForceVerbatim = true };
+                    }
+                }
+                else
+                    yield return new SplitWord { Text = word, ForceVerbatim = false };
+            }
         }
 
         public override string ToString()

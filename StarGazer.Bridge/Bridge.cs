@@ -232,8 +232,12 @@ namespace StarGazer.Bridge
                     .OfType<BridgeLog>()
                     .LastOrDefault(e => e.EventName == nameof(CarrierJumpRequest) || e.EventName == nameof(StartJump));
 
-                while (logs.Count > 0 && logs[0] != lastRequest)
-                    logs.RemoveAt(0);
+                if(lastRequest != null)
+                {
+                    int index = logs.IndexOf(lastRequest);
+                    for (int i = 0; i < index; i++)
+                        logs.RemoveAt(0);
+                }
             }
 
             if (Core.IsLogMonitorBatchReading)

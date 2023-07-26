@@ -99,35 +99,38 @@ namespace StarGazer.UI.Services
 
         public string ConvertWavToOpus(string sourceFile)
         {
-            var targetFile = Path.ChangeExtension(sourceFile, ".opus");
-            try
-            {
-                using (var wavefile = new WaveFileReader(sourceFile))
-                using (var opusfile = File.OpenWrite(targetFile))
-                {
-                    OpusEncoder encoder = new OpusEncoder(wavefile.WaveFormat.SampleRate, wavefile.WaveFormat.Channels, Concentus.Enums.OpusApplication.OPUS_APPLICATION_AUDIO);
-                    OpusOggWriteStream writer = new OpusOggWriteStream(encoder, opusfile);
+            // Need to find a new conversion library
+            return sourceFile;
 
-                    var frame = wavefile.ReadNextSampleFrame();
-                    while (frame != null)
-                    {
-                        writer.WriteSamples(frame, 0, frame.Length);
-                        frame = wavefile.ReadNextSampleFrame();
-                    }
+            //var targetFile = Path.ChangeExtension(sourceFile, ".opus");
+            //try
+            //{
+            //    using (var wavefile = new WaveFileReader(sourceFile))
+            //    using (var opusfile = File.OpenWrite(targetFile))
+            //    {
+            //        OpusEncoder encoder = new OpusEncoder(wavefile.WaveFormat.SampleRate, wavefile.WaveFormat.Channels, Concentus.Enums.OpusApplication.OPUS_APPLICATION_AUDIO);
+            //        OpusOggWriteStream writer = new OpusOggWriteStream(encoder, opusfile);
 
-                    writer.Finish();
-                }
-                return targetFile;
-            }
-            catch
-            {
-                // Clean up on error
-                if (File.Exists(targetFile))
-                    File.Delete(targetFile);
-                if (File.Exists(sourceFile))
-                    File.Delete(sourceFile);
-                throw;
-            }
+            //        var frame = wavefile.ReadNextSampleFrame();
+            //        while (frame != null)
+            //        {
+            //            writer.WriteSamples(frame, 0, frame.Length);
+            //            frame = wavefile.ReadNextSampleFrame();
+            //        }
+
+            //        writer.Finish();
+            //    }
+            //    return targetFile;
+            //}
+            //catch
+            //{
+            //    // Clean up on error
+            //    if (File.Exists(targetFile))
+            //        File.Delete(targetFile);
+            //    if (File.Exists(sourceFile))
+            //        File.Delete(sourceFile);
+            //    throw;
+            //}
         }
     }
 }

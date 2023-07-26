@@ -17,16 +17,20 @@ namespace StarGazer.Bridge.Events
                 .Append($"Jump completed")
                 .AppendEmphasis("Commander.", Framework.EmphasisType.Moderate)
                 .Append(arrivedAt)
-                .AppendBodyName(journal.StarSystem)
-                .Append(". We travelled")
+                .AppendBodyName(journal.StarSystem);
+            log.Send();
+
+            log = new BridgeLog();
+            log.TitleSsml.Append("Flight Operations");
+            log.DetailSsml
+                .Append("We travelled")
                 .AppendNumber(Math.Round(journal.JumpDist, 2))
                 .Append("light years, using")
                 .AppendNumber(Math.Round(journal.FuelUsed, 2))
-            .Append("tons of fuel.");
+                .Append("tons of fuel.");
+            log.Send();
 
             Bridge.Instance.ResetLogEntries();
-
-            log.Send();
 
             // Next time we prepare or start a jump, we need to speak the destination
             GameState.DestinationTimeToSpeak = DateTime.Now;

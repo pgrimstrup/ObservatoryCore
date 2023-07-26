@@ -87,9 +87,10 @@ namespace StarGazer.Herald
                     {
                         // Convert to Ogg Opus to reduce size, keeping quality pretty good.
                         var opusFilename = _player.ConvertWavToOpus(waveFilename);
-                        File.Delete(waveFilename);
+                        if(opusFilename != waveFilename)
+                            File.Delete(waveFilename);
 
-                        audioFileInfo = new FileInfo(opusFilename);
+                        audioFileInfo = new FileInfo(waveFilename);
                     }
                 }
                 catch(Exception ex)
@@ -106,39 +107,6 @@ namespace StarGazer.Herald
             }
 
             return audioFileInfo;
-        }
-
-        private static string AddVoiceToSsml(string ssml, string voiceName, string styleName, string rate)
-        {
-            XmlDocument ssmlDoc = new();
-            ssmlDoc.LoadXml(ssml);
-
-            var ssmlNamespace = ssmlDoc.DocumentElement.NamespaceURI;
-            XmlNamespaceManager ssmlNs = new(ssmlDoc.NameTable);
-            ssmlNs.AddNamespace("ssml", ssmlNamespace);
-            ssmlNs.AddNamespace("mstts", "http://www.w3.org/2001/mstts");
-            ssmlNs.AddNamespace("emo", "http://www.w3.org/2009/10/emotionml");
-
-            var voiceNode = ssmlDoc.SelectSingleNode("/ssml:speak/ssml:voice", ssmlNs);
-            voiceNode.Attributes.GetNamedItem("name").Value = voiceName;
-
-            if (!string.IsNullOrWhiteSpace(rate))
-            {
-                var prosodyNode = ssmlDoc.CreateElement("ssml", "prosody", ssmlNamespace);
-                prosodyNode.SetAttribute("rate", rate);
-                prosodyNode.InnerXml = voiceNode.InnerXml;
-                voiceNode.InnerXml = prosodyNode.OuterXml;
-            }
-
-            if (!string.IsNullOrWhiteSpace(styleName))
-            {
-                var expressAsNode = ssmlDoc.CreateElement("mstts", "express-as", "http://www.w3.org/2001/mstts");
-                expressAsNode.SetAttribute("style", styleName);
-                expressAsNode.InnerXml = voiceNode.InnerXml;
-                voiceNode.InnerXml = expressAsNode.OuterXml;
-            }
-
-            return ssmlDoc.OuterXml;
         }
 
         internal async Task<List<Voice>> GetVoices()

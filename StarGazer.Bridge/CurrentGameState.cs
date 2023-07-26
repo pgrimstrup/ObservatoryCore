@@ -110,13 +110,17 @@ namespace StarGazer.Bridge
         {
             Bridge.Instance.ResetLogEntries();
             CurrentSystem.Set(location.SystemAddress, location.StarSystem, "", location.StarPos);
-            var match = BaseEventHandler.CarrierNameRegex.Match(location.StationName);
-            if (match.Success && !String.IsNullOrWhiteSpace(match.Groups[1].Value))
-                Carriers[match.Groups[2].Value] = match.Groups[1].Value.Trim();
+            if (!String.IsNullOrWhiteSpace(location.StationName))
+            {
+                var match = BaseEventHandler.CarrierNameRegex.Match(location.StationName);
+                if (match.Success && !String.IsNullOrWhiteSpace(match.Groups[1].Value))
+                    Carriers[match.Groups[2].Value] = match.Groups[1].Value.Trim();
 
-            if (location.Docked)
-                CurrentLocation.Set(location.SystemAddress, location.StationName);
-            else
+                if(location.Docked)
+                    CurrentLocation.Set(location.SystemAddress, location.StationName);
+            }
+
+            if (!location.Docked)
                 CurrentLocation.Set(location.SystemAddress, location.BodyID, location.Body);
         }
 
