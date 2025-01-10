@@ -1,6 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Net.Http.Json;
-using System.Text.Json;
 using Observatory.Framework;
 using Observatory.Framework.Files;
 using Observatory.Framework.Files.Journal;
@@ -11,8 +9,6 @@ namespace StarGazer.EDSM
 {
     public class EdsmWorker : IStarGazerWorker
     {
-        static string GetDiscardList = "https://www.edsm.net/api-journal-v1/discard";
-
         IStarGazerCore _core = null!;
         EdsmWorkerSettings _settings = new EdsmWorkerSettings();
         EdsmTransientState _state = new EdsmTransientState();

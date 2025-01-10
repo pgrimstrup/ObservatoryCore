@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net9.0-windows7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
@@ -11,6 +11,8 @@
     <PlatformTarget>x86</PlatformTarget>
     <ApplicationIcon>graphics-design.ico</ApplicationIcon>
     <AssemblyName>StarGazer</AssemblyName>
+    <AssemblyVersion>1.0.0.4</AssemblyVersion>
+    <FileVersion>1.0.0.4</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,23 +28,23 @@
 
   <ItemGroup>
     <PackageReference Include="Emoji.Wpf" Version="0.3.4" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0-preview.5.23280.8" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0-preview.5.23280.8" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0-preview.5.23280.8" />
-    <PackageReference Include="NAudio" Version="2.1.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="NAudio.Vorbis" Version="1.5.0" />
     <PackageReference Include="NVorbis" Version="0.10.5" />
-    <PackageReference Include="Syncfusion.Licensing" Version="21.2.10" />
-    <PackageReference Include="Syncfusion.SfGrid.WPF" Version="21.2.10" />
-    <PackageReference Include="Syncfusion.SfSkinManager.WPF" Version="21.2.10" />
-    <PackageReference Include="Syncfusion.Themes.FluentDark.WPF" Version="21.2.10" />
-    <PackageReference Include="Syncfusion.Themes.FluentLight.WPF" Version="21.2.10" />
-    <PackageReference Include="Syncfusion.Themes.MaterialDark.WPF" Version="21.2.10" />
-    <PackageReference Include="Syncfusion.Themes.MaterialLight.WPF" Version="21.2.10" />
-    <PackageReference Include="Syncfusion.Themes.Windows11Dark.WPF" Version="21.2.10" />
-    <PackageReference Include="Syncfusion.Themes.Windows11Light.WPF" Version="21.2.10" />
-    <PackageReference Include="Syncfusion.Tools.WPF" Version="21.2.10" />
-    <PackageReference Include="System.Drawing.Common" Version="8.0.0-preview.2.23128.3" />
+    <PackageReference Include="Syncfusion.Licensing" Version="28.1.38" />
+    <PackageReference Include="Syncfusion.SfGrid.WPF" Version="28.1.38" />
+    <PackageReference Include="Syncfusion.SfSkinManager.WPF" Version="28.1.38" />
+    <PackageReference Include="Syncfusion.Themes.FluentDark.WPF" Version="28.1.38" />
+    <PackageReference Include="Syncfusion.Themes.FluentLight.WPF" Version="28.1.38" />
+    <PackageReference Include="Syncfusion.Themes.MaterialDark.WPF" Version="28.1.38" />
+    <PackageReference Include="Syncfusion.Themes.MaterialLight.WPF" Version="28.1.38" />
+    <PackageReference Include="Syncfusion.Themes.Windows11Dark.WPF" Version="28.1.38" />
+    <PackageReference Include="Syncfusion.Themes.Windows11Light.WPF" Version="28.1.38" />
+    <PackageReference Include="Syncfusion.Tools.WPF" Version="28.1.38" />
+    <PackageReference Include="System.Drawing.Common" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>

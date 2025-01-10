@@ -62,11 +62,11 @@ namespace StarGazer.UI
 
                 // Font size changes on the grid
                 view.FontSizeChanged += (s, e) => {
-                    _settings.GridFontSizes[plugin.GetType().FullName] = view.DataGrid.FontSize;
+                    _settings.GridFontSizes[plugin.GetType().FullName ?? ""] = view.DataGrid.FontSize;
                 };
 
                 // Speaking of which, initialize the font size
-                if (_settings.GridFontSizes.TryGetValue(plugin.GetType().FullName, out var size))
+                if (_settings.GridFontSizes.TryGetValue(plugin.GetType().FullName ?? "", out var size))
                 {
                     view.DataGrid.FontSize = size;
                     view.ResetColumnRowSizes();

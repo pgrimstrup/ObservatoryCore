@@ -1,21 +1,12 @@
-﻿using StarGazer.Framework;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
+﻿using System.Collections.Concurrent;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Xml;
-using System.Security.Cryptography;
-using System.Threading.Tasks;
-using System.Collections.Concurrent;
-using StarGazer.Herald.TextToSpeech;
-using Microsoft.Extensions.Logging;
-using System.Net.Http.Headers;
-using StarGazer.Framework.Interfaces;
-using static System.Formats.Asn1.AsnWriter;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
+using StarGazer.Framework;
+using StarGazer.Framework.Interfaces;
+using StarGazer.Herald.TextToSpeech;
 
 namespace StarGazer.Herald
 {
@@ -27,7 +18,6 @@ namespace StarGazer.Herald
         private ConcurrentDictionary<string, CacheData> cacheIndex;
         private List<Voice> voices;
         private string initialVoice;
-        private string oopsie;
 
         ITextToSpeechService _speech;
         IAudioPlayback _player;

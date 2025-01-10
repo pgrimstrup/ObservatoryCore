@@ -1,4 +1,4 @@
-﻿using System.Configuration;
+﻿    using System.Configuration;
 using System.Data;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,7 +27,7 @@ namespace StarGazer.UI
 
         public App()
         {
-            Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Mgo+DSMBaFt+QHFqUUdrXVNbdV5dVGpAd0N3RGlcdlR1fUUmHVdTRHRcQllhQH5WdExnW3ZZcHU=;Mgo+DSMBPh8sVXJ1S0d+WFBPd11dXmJWd1p/THNYflR1fV9DaUwxOX1dQl9gSXpRf0VmW3Zacn1dQGE=;ORg4AjUWIQA/Gnt2VFhhQlVFfV5AQmBIYVp/TGpJfl96cVxMZVVBJAtUQF1hSn5XdExjXH1XdHZcT2ld;MTg3NDYwOUAzMjMxMmUzMTJlMzQzMU0xQVNLYlRDaG9WWXY2MXBJRHVUM0E0SGVlRHJnekFBYXU2dytqMER3dTg9;MTg3NDYxMEAzMjMxMmUzMTJlMzQzMUpKaGh1N2s5MlpkZHVrU1NKSUJSazkxZ3g5b0c3LzFMMVEralpMd3EvSUE9;NRAiBiAaIQQuGjN/V0d+XU9Ad1RDX3xKf0x/TGpQb19xflBPallYVBYiSV9jS31TckdqWXpceXBWRmZVUA==;MTg3NDYxMkAzMjMxMmUzMTJlMzQzMUpRL0t1RElqblpObXlFU0lQRkFhMSt5Y29lVkkvWW1DNnZCK3I5M3FCQWc9;MTg3NDYxM0AzMjMxMmUzMTJlMzQzMUc2MnluSklMY05keERWemVpczRpNEptZTlGMWlQZFBacGE5WFpUeTl0Tk09;Mgo+DSMBMAY9C3t2VFhhQlVFfV5AQmBIYVp/TGpJfl96cVxMZVVBJAtUQF1hSn5XdExjXH1XdHdUQ2Ja;MTg3NDYxNUAzMjMxMmUzMTJlMzQzMUkzekxRS0xyVTNWOUdQcEphT1RCaHpFM29ZUjJzVzRTbjJ4SDBqeS9HYkE9;MTg3NDYxNkAzMjMxMmUzMTJlMzQzMUl1SGgxcUFRa3RoU1NaaEw5NmNLd0xhajJibU1NdjNjY25hem9Td1FRcVk9;MTg3NDYxN0AzMjMxMmUzMTJlMzQzMUpRL0t1RElqblpObXlFU0lQRkFhMSt5Y29lVkkvWW1DNnZCK3I5M3FCQWc9");
+            Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1NMaF5cXmBCf0x3Q3xbf1x1ZFRGal5WTnZeUj0eQnxTdEBjWH9XcnZXQWBdUkF1Wg==");
 
             ServiceCollection builder = new ServiceCollection();
             ConfigureServices(builder);

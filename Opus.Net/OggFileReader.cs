@@ -10,7 +10,7 @@ namespace NAudio.Ogg
 {
     public class OggFileReader : IWaveProvider, IDisposable
     {
-        ISampleProvider? _sampleProvider;
+        ISampleProvider _sampleProvider;
         bool _disposed;
         float[] _floatBuffer = new float[0];
 
@@ -28,7 +28,7 @@ namespace NAudio.Ogg
                 // Check Ogg header for stream encoding
                 var bytes = new byte[8];
                 sourceStream.Seek(0x1C, SeekOrigin.Begin);
-                sourceStream.Read(bytes, 0, 8);
+                sourceStream.ReadExactly(bytes, 0, 8);
                 sourceStream.Seek(0, SeekOrigin.Begin);
 
                 if (Encoding.ASCII.GetString(bytes) == "OpusHead")

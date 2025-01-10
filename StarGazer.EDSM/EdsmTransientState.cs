@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Text;
+﻿using System.Dynamic;
 using System.Text.Json;
-using System.Threading.Tasks;
-using Observatory.Framework.Files;
 using Observatory.Framework.Files.Journal;
 
 namespace StarGazer.EDSM
