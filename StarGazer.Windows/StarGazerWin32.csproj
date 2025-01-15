@@ -11,8 +11,8 @@
     <PlatformTarget>x86</PlatformTarget>
     <ApplicationIcon>graphics-design.ico</ApplicationIcon>
     <AssemblyName>StarGazer</AssemblyName>
-    <AssemblyVersion>1.0.0.4</AssemblyVersion>
-    <FileVersion>1.0.0.4</FileVersion>
+    <AssemblyVersion>1.0.0.7</AssemblyVersion>
+    <FileVersion>1.0.0.7</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

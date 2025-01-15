@@ -1,18 +1,14 @@
-﻿    using System.Configuration;
-using System.Data;
+﻿using System.IO;
+using System.Net.Http;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Win32;
+using Observatory.Framework.Interfaces;
 using StarGazer.Framework.Interfaces;
 using StarGazer.Plugins;
-using StarGazer;
 using StarGazer.UI.Services;
-using Syncfusion.SfSkinManager;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Debug;
 using StarGazer.UI.Views;
-using System.Net.Http;
-using System.IO;
-using Observatory.Framework.Interfaces;
 
 namespace StarGazer.UI
 {
@@ -27,7 +23,10 @@ namespace StarGazer.UI
 
         public App()
         {
-            Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1NMaF5cXmBCf0x3Q3xbf1x1ZFRGal5WTnZeUj0eQnxTdEBjWH9XcnZXQWBdUkF1Wg==");
+            using var root = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default);
+            using var key = root.OpenSubKey("SOFTWARE\\Stargazer\\Keys", false);
+            if (key != null)
+                Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense((string?)key.GetValue("Syncfusion"));
 
             ServiceCollection builder = new ServiceCollection();
             ConfigureServices(builder);
