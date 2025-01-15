@@ -23,11 +23,6 @@ namespace StarGazer.UI
 
         public App()
         {
-            using var root = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default);
-            using var key = root.OpenSubKey("SOFTWARE\\Stargazer\\Keys", false);
-            if (key != null)
-                Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense((string?)key.GetValue("Syncfusion"));
-
             ServiceCollection builder = new ServiceCollection();
             ConfigureServices(builder);
             _services = builder.BuildServiceProvider();
@@ -75,6 +70,10 @@ namespace StarGazer.UI
             builder.AddTransient<IDebugPlugins, DebugPlugins>();
             builder.AddTransient<IMainFormDispatcher, AppDispatcher>();
 
+            using var root = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default);
+            using var key = root.OpenSubKey("SOFTWARE\\Stargazer\\Keys", false);
+            if (key != null)
+                Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense((string?)key.GetValue("Syncfusion"));
         }
     }
 }
