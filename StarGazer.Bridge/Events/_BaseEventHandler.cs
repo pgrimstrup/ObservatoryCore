@@ -503,12 +503,16 @@ namespace StarGazer.Bridge.Events
         {
             if (starClass.IsNeutronStar() || starClass.IsWhiteDwarf() || starClass.IsBlackHole())
             {
-                // Spoken only
-                log.DetailSsml
-                    .AppendSsml($"<emphasis level=\"moderate\">Commander</emphasis>")
-                    .AppendSsml("that is a hazardous star type.")
-                    .AppendSsml($"<emphasis level=\"moderate\">Caution is advised</emphasis>")
-                    .AppendSsml("on exiting jump");
+                if (GameState.HazardousStarTimeToSpeak <= DateTime.Now)
+                {
+                    GameState.HazardousStarTimeToSpeak = DateTime.Now.AddSeconds(90);
+                    // Spoken only
+                    log.DetailSsml
+                        .AppendSsml($"<emphasis level=\"moderate\">Commander</emphasis>")
+                        .AppendSsml("that is a hazardous star type.")
+                        .AppendSsml($"<emphasis level=\"moderate\">Caution is advised</emphasis>")
+                        .AppendSsml("on exiting jump");
+                }
             }
 
         }

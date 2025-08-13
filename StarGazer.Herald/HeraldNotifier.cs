@@ -121,7 +121,7 @@ namespace StarGazer.Herald
                 style = heraldSettings.SelectedStyle;
 
             return Task.FromResult(_voices.Value
-                .Where(v => v.Category == style)
+                .Where(v => (v.Category) == style)
                 .OrderBy(v => v.Description)
                 .ToDictionary(v => v.Description, v => (object)v.Name));
         }
@@ -135,8 +135,8 @@ namespace StarGazer.Herald
         {
             if (testSettings is HeraldSettings settings)
             {
-                var style = (string)_voiceStyles.Value[settings.SelectedStyle];
-                var voice = _voices.Value.FirstOrDefault(v => v.Description == settings.SelectedVoice && v.Category == style);
+                string style = (string)_voiceStyles.Value[settings.SelectedStyle];
+                var voice = _voices.Value.FirstOrDefault(v => v.Description == settings.SelectedVoice && (v.Category) == style);
 
                 Debug.WriteLine($"Testing Herald Voice settings using voice {voice?.Name} at Rate {settings.SelectedRate}, Pitch {settings.SelectedPitch}");
 

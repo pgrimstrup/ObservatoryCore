@@ -54,8 +54,8 @@ namespace StarGazer.Herald
                 throw new ArgumentException(nameof(notification.VoiceName));
             if (notification.VoiceVolume == null)
                 throw new ArgumentException(nameof(notification.VoiceVolume));
-            if (String.IsNullOrWhiteSpace(notification.VoiceStyle))
-                throw new ArgumentException(nameof(notification.VoiceStyle));
+            //if (String.IsNullOrWhiteSpace(notification.VoiceStyle))
+            //    throw new ArgumentException(nameof(notification.VoiceStyle));
 
             textToSpeech.Add(notification);
         }

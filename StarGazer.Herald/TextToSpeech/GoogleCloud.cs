@@ -9,7 +9,7 @@ namespace StarGazer.Herald.TextToSpeech
 {
     internal class GoogleCloud : ITextToSpeechService
     {
-        public const string ApiEndPoint = "https://texttospeech.googleapis.com/v1beta1/";
+        public const string ApiEndPoint = "https://texttospeech.googleapis.com/v1/";
         public const string ApiGetVoices = "voices";
         public const string ApiTextToSpeech = "text:synthesize";
         static readonly char[] LettersAndNumbers = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".ToCharArray();
@@ -64,8 +64,15 @@ namespace StarGazer.Herald.TextToSpeech
 
             _logger.LogDebug($"Google Text-to-Speech Request: Voice={request.Voice.Name}, Rate={request.AudioConfig.SpeakingRate}, Pitch={request.AudioConfig.Pitch}, Encoding={request.AudioConfig.AudioEncoding}\r\n{speech}");
             var response = await _http.PostAsJsonAsync($"{ApiEndPoint}{ApiTextToSpeech}?key={ApiKey}", request);
+            if (!response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                Debug.WriteLine(content);
 
-            response.EnsureSuccessStatusCode();
+                response.EnsureSuccessStatusCode();
+                return false;
+            }
+            
             var textToSpeech = await response.Content.ReadFromJsonAsync<GoogleTextToSpeechResponse>();
             await File.WriteAllBytesAsync(filename, textToSpeech.AudioContent);
 
@@ -74,12 +81,12 @@ namespace StarGazer.Herald.TextToSpeech
 
         public async Task<IEnumerable<Voice>> GetVoicesAsync()
         {
-            var voiceData = await _http.GetFromJsonAsync<GoogleVoiceListResponse>($"{ApiEndPoint}{ApiGetVoices}?key={ApiKey}");
+            var voiceData = await _http.GetFromJsonAsync<GoogleVoiceListResponse>($"{ApiEndPoint}{ApiGetVoices}?key={ApiKey}&languageCode=en");
 
             // Pull out all voices with an English language code
-            var englishVoices = voiceData.Voices.Where(v => v.LanguageCodes.Any(lc => lc.StartsWith("en-"))).ToArray();
+            var englishVoices = voiceData.Voices.ToArray();
 
-            return englishVoices
+            var result = englishVoices
                 .OrderBy(v => v.Name)
                 .Select(v => new Voice {
                     Language = v.LanguageCodes.FirstOrDefault(lc => lc.StartsWith("en-")),
@@ -88,11 +95,12 @@ namespace StarGazer.Herald.TextToSpeech
                     Category = GetCategory(v.Name),
                     Description = GetDescription(v.Name, v.Gender)
                 });
+            return result;
         }
 
         private string GetCategory(string name)
         {
-            return name.Split('-').Skip(2).FirstOrDefault();
+            return name.Split('-').Skip(2).FirstOrDefault() ?? "--none--";
         }
 
         private string GetDescription(string name, string gender)

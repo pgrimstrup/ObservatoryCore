@@ -34,6 +34,7 @@ namespace StarGazer.Bridge.Events
 
             // Next time we prepare or start a jump, we need to speak the destination
             GameState.DestinationTimeToSpeak = DateTime.Now;
+            GameState.HazardousStarTimeToSpeak = DateTime.Now;
         }
     }
 }

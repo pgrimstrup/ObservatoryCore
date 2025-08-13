@@ -33,6 +33,7 @@ namespace StarGazer.Bridge
 
         public DateTime DestinationTimeToSpeak { get; set; }
         public DateTime RemainingJumpsInRouteTimeToSpeak { get; set; }
+        public DateTime HazardousStarTimeToSpeak { get; set; }
 
         public int ScanPercent { get; set; }
 
@@ -174,6 +175,7 @@ namespace StarGazer.Bridge
             else
             {
                 DestinationTimeToSpeak = DateTime.Now;
+                HazardousStarTimeToSpeak = DateTime.Now;
             }
 
             // Setting new destination for the next jump. 

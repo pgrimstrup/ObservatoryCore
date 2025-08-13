@@ -7,13 +7,28 @@ using System.Threading.Tasks;
 
 namespace StarGazer.Herald.TextToSpeech
 {
-    internal class GoogleVoiceListResponse
+    /// <summary>
+    /// Google Docs https://cloud.google.com/text-to-speech/docs/reference/rest/v1beta1/text/synthesize
+    /// </summary>
+    internal record GoogleTextToSpeechRequest
+    {
+        [JsonPropertyName("input")]
+        public GoogleSynthesisInput Input { get; } = new GoogleSynthesisInput();
+
+        [JsonPropertyName("voice")]
+        public GoogleVoiceSelectionParams Voice { get; } = new GoogleVoiceSelectionParams();
+
+        [JsonPropertyName("audioConfig")]
+        public GoogleAudioConfig AudioConfig { get; } = new GoogleAudioConfig();
+    }
+
+    internal record GoogleVoiceListResponse
     {
         [JsonPropertyName("voices")]
         public GoogleVoiceData[] Voices { get; set; }
     }
 
-    internal class GoogleVoiceData
+    internal record GoogleVoiceData
     {
         [JsonPropertyName("languageCodes")]
         public string[] LanguageCodes { get; set; }
@@ -28,19 +43,7 @@ namespace StarGazer.Herald.TextToSpeech
         public int NaturalSampleRateHertz { get; set; }
     }
 
-    internal class GoogleTextToSpeechRequest
-    {
-        [JsonPropertyName("input")]
-        public GoogleSynthesisInput Input { get; } = new GoogleSynthesisInput();
-
-        [JsonPropertyName("voice")]
-        public GoogleVoiceSelectionParams Voice { get; } = new GoogleVoiceSelectionParams();
-
-        [JsonPropertyName("audioConfig")]
-        public GoogleAudioConfig AudioConfig { get; } = new GoogleAudioConfig();
-    }
-
-    internal class GoogleSynthesisInput
+    internal record GoogleSynthesisInput
     {
         [JsonPropertyName("text")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -59,7 +62,7 @@ namespace StarGazer.Herald.TextToSpeech
         NEUTRAL
     }
 
-    internal class GoogleVoiceSelectionParams
+    internal record GoogleVoiceSelectionParams
     {
         [JsonPropertyName("languageCode")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -89,7 +92,7 @@ namespace StarGazer.Herald.TextToSpeech
         ALAW
     }
 
-    internal class GoogleAudioConfig
+    internal record GoogleAudioConfig
     {
         [JsonPropertyName("audioEncoding")]
         public GoogleAudioEncoding AudioEncoding { get; set; }
@@ -116,7 +119,7 @@ namespace StarGazer.Herald.TextToSpeech
 
     }
 
-    internal class GoogleTextToSpeechResponse
+    internal record GoogleTextToSpeechResponse
     {
         [JsonPropertyName("audioContent")]
         public byte[] AudioContent { get; set; }
