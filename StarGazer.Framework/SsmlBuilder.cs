@@ -89,19 +89,27 @@ namespace StarGazer.Framework
         {
             if (!String.IsNullOrEmpty(name))
             {
-                var match = _carrierNameRegex.Match(name);
-                if (match.Success)
+                if (name.Contains("EXT_PANEL_ColonisationShip"))
                 {
-                    Append("Fleet Carrier");
-                    if (String.IsNullOrWhiteSpace(match.Groups[1].Value))
-                        AppendCharacters(match.Groups[2].Value);
-                    else
-                        AppendEmphasis(match.Groups[1].Value, EmphasisType.Moderate);
+                    Append("System Colonisation Ship");
+                    Append(name.Split(';').Last().Trim());
                 }
                 else
                 {
-                    _textFragments.Add(name.Trim());
-                    _ssmlFragments.Add(ReplaceWords(name.Trim(), BodyNameWordReplacements, true));
+                    var match = _carrierNameRegex.Match(name);
+                    if (match.Success)
+                    {
+                        Append("Fleet Carrier");
+                        if (String.IsNullOrWhiteSpace(match.Groups[1].Value))
+                            AppendCharacters(match.Groups[2].Value);
+                        else
+                            AppendEmphasis(match.Groups[1].Value, EmphasisType.Moderate);
+                    }
+                    else
+                    {
+                        _textFragments.Add(name.Trim());
+                        _ssmlFragments.Add(ReplaceWords(name.Trim(), BodyNameWordReplacements, true));
+                    }
                 }
             }
             Changed?.Invoke(this, EventArgs.Empty);

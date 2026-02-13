@@ -73,7 +73,7 @@ namespace StarGazer.UI
             using var root = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default);
             using var key = root.OpenSubKey("SOFTWARE\\Stargazer\\Keys", false);
             if (key != null)
-                Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense((string?)key.GetValue("Syncfusion"));
+                Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense((string?)key.GetValue("Syncfusion_v10"));
         }
     }
 }

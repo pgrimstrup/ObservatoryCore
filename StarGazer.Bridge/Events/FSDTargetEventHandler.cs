@@ -22,10 +22,14 @@ namespace StarGazer.Bridge.Events
                 var log = new BridgeLog(journal);
                 log.TitleSsml.Append("Flight Operations");
 
+                string destination = journal.Name;
+                if (destination.Contains("EXT_PANEL_ColonisationShip"))
+                    destination = destination.Split(';').Last().Trim();
+
                 var fuelStar = journal.StarClass.IsFuelStar() ? ", a fuel star" : "";
                 log.DetailSsml
                     .Append("Jump course laid in to")
-                        .AppendBodyName(journal.Name)
+                        .AppendBodyName(destination)
                         .Append($". Destination star is a")
                         .AppendBodyType(GetStarTypeName(journal.StarClass))
                         .Append($"{fuelStar}.");

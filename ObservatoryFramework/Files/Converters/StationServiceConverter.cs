@@ -13,7 +13,8 @@ namespace Observatory.Framework.Files.Converters
 
             while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
             {
-                services |= (StationService)Enum.Parse(typeof(StationService), reader.GetString(), true);
+                string value = reader.GetString();
+                services |= (StationService)Enum.Parse(typeof(StationService), value, true);
             }
 
             return services;

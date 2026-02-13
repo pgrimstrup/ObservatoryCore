@@ -14,6 +14,9 @@ namespace StarGazer.Bridge.Events
             string stationName = journal.StationName + " Tower";
             if (journal.StationType == "FleetCarrier")
                 stationName = carrierName + " Flight";
+            if (journal.StationName.Contains("EXT_PANEL_ColonisationShip"))
+                stationName = journal.StationName.Split(';').Last().Trim() + " Flight";
+
 
             var log = new BridgeLog(journal);
             log.TitleSsml.Append("Flight Operations");

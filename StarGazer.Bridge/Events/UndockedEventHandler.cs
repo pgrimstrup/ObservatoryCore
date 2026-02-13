@@ -8,6 +8,8 @@ namespace StarGazer.Bridge.Events
         {
             if (!TryGetStationName(journal.StationName, out string stationName))
                 stationName = journal.StationName;
+            if (journal.StationName.Contains("EXT_PANEL_ColonisationShip"))
+                stationName = journal.StationName.Split(';').Last().Trim();
 
             if (journal.StationType == "FleetCarrier")
                 stationName = stationName + " Flight";

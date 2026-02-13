@@ -370,7 +370,9 @@ namespace Observatory.Framework.Files.ParameterTypes
         VistaGenomics = 1L << 37,
         PioneerSupplies = 1L << 38,
         ApexInterstellar = 1L << 39,
-        FrontlineSolutions = 1L << 40
+        FrontlineSolutions = 1L << 40,
+        ColonisationContribution = 1L << 41,
+        RegisteringColonisation = 1L <<42
     }
 
     public enum TextChannel

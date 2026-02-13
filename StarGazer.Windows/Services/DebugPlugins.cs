@@ -8,7 +8,8 @@ namespace StarGazer.UI.Services
             { "Bridge", "StarGazer.Bridge.Bridge, StarGazer.Bridge" },
             { "Explorer", "StarGazer.Explorer.ExplorerWorker, StarGazer.Explorer" },
             { "Herald", "StarGazer.Herald.HeraldNotifier, StarGazer.Herald" },
-            { "EDSM", "StarGazer.EDSM.EdsmWorker, StarGazer.EDSM" }
+            { "EDSM", "StarGazer.EDSM.EdsmWorker, StarGazer.EDSM" },
+            { "Colonization", "StarGazer.Colonization.ColonizationWorker, StarGazer.Colonization" }
         };
     }
 }

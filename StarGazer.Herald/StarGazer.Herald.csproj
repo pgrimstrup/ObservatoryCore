@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	<TargetFramework>net9.0</TargetFramework>
+	<TargetFramework>net10.0</TargetFramework>
 	<ImplicitUsings>enable</ImplicitUsings>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
@@ -13,8 +13,8 @@
     <Version Condition=" '$(VersionSuffix)' == '' ">0.0.1.0</Version>
     <Version Condition=" '$(VersionSuffix)' != '' ">$(VersionSuffix)</Version>
     <RootNamespace>StarGazer.Herald</RootNamespace>
-    <AssemblyVersion>1.0.25010.334</AssemblyVersion>
-    <FileVersion>1.0.25010.335</FileVersion>
+    <AssemblyVersion>1.0.25010.335</AssemblyVersion>
+    <FileVersion>1.0.25010.336</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,8 +30,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3" />
   </ItemGroup>
 
   <ItemGroup>
